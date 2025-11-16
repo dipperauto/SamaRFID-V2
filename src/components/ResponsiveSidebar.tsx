@@ -4,7 +4,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, TestTube, UserPlus, Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, TestTube, UserPlus, Menu } from "lucide-react";
 
 type NavItem = {
   to: string;
@@ -19,7 +19,6 @@ const navItems: NavItem[] = [
 ];
 
 const ResponsiveSidebar: React.FC = () => {
-  const [collapsed, setCollapsed] = React.useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
   const navigate = useNavigate();
 
@@ -67,24 +66,11 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 z-40 ${
-          collapsed ? "w-16" : "w-64"
-        }`}
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 z-40 w-64`}
       >
         <div className="flex flex-col w-full h-full text-white">
           <div className="flex items-center justify-between px-3 py-3 border-b border-white/25">
-            <div className={`font-semibold ${collapsed ? "opacity-0 pointer-events-none" : ""}`}>
-              Meu App
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed((c) => !c)}
-              className="text-white hover:bg-white/10"
-              aria-label={collapsed ? "Expandir" : "Recolher"}
-            >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
+            <div className="font-semibold">Meu App</div>
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
@@ -99,7 +85,7 @@ const ResponsiveSidebar: React.FC = () => {
                 }
               >
                 <span className="shrink-0">{item.icon}</span>
-                <span className={`text-sm font-medium ${collapsed ? "hidden" : "block"}`}>{item.label}</span>
+                <span className="text-sm font-medium block">{item.label}</span>
               </NavLink>
             ))}
           </nav>
