@@ -183,7 +183,7 @@ const ClientsPage: React.FC = () => {
 
       {/* View Dialog */}
       <Dialog open={openView} onOpenChange={(o) => !o ? setSelected(null) : null}>
-        <DialogContent className="sm:max-w-2xl bg-black/50 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl text-white">
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
           <DialogHeader>
             <DialogTitle>Cliente</DialogTitle>
           </DialogHeader>
@@ -211,7 +211,7 @@ const ClientsPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={(o) => !o ? setSelected(null) : null}>
-        <DialogContent className="sm:max-w-2xl bg-black/50 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl text-white">
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
