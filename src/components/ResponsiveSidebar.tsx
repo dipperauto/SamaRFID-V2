@@ -93,7 +93,7 @@ const ResponsiveSidebar: React.FC = () => {
       >
         <div className="flex flex-col w-full h-full text-white">
           <div className="flex items-center justify-between px-3 py-3 border-b border-white/25">
-            <div className="font-semibold">Meu App</div>
+            <img src="/logo.png" alt="Logo da empresa" className="h-8 w-auto" />
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
