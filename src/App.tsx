@@ -9,7 +9,7 @@ import Teste from "./pages/Teste";
 import AdminAddUser from "./pages/AdminAddUser";
 import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
-import ClientsPage from "./pages/ClientsPage";
+import ClientsPage from "./pages/Clients";
 
 const queryClient = new QueryClient();
 
