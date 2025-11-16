@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import ClientForm, { ClientFormValues } from "@/components/clients/ClientForm";
 import ClientCard, { Client } from "@/components/clients/ClientCard";
@@ -135,9 +135,12 @@ const ClientsPage: React.FC = () => {
                   <DialogTrigger asChild>
                     <Button className="bg-white/20 text-white hover:bg-white/25">Cadastrar Cliente</Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl bg-black/50 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl text-white">
+                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-gradient-to-b from-black/85 via-black/80 to-black/70 border border-white/20 ring-1 ring-white/10 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
                     <DialogHeader>
                       <DialogTitle>Novo Cliente</DialogTitle>
+                      <DialogDescription className="text-white/70">
+                        Preencha os dados abaixo para cadastrar um novo cliente.
+                      </DialogDescription>
                     </DialogHeader>
                     <ClientForm
                       onSubmit={handleCreate}
