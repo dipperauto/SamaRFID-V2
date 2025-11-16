@@ -4,13 +4,32 @@ import React from "react";
 import ResponsiveSidebar from "./ResponsiveSidebar";
 import { Outlet } from "react-router-dom";
 import { Navigate, useLocation } from "react-router-dom";
-import { isLoggedIn } from "@/utils/auth";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
-  const logged = isLoggedIn();
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const [checked, setChecked] = React.useState(false);
+  const [authed, setAuthed] = React.useState(false);
 
-  if (!logged) {
+  React.useEffect(() => {
+    const check = async () => {
+      setChecked(false);
+      const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
+      setAuthed(res.ok);
+      setChecked(true);
+    };
+    check();
+  }, [API_URL, location.pathname]);
+
+  if (!checked) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
+        <div className="text-sm text-slate-600">Verificando sessão…</div>
+      </div>
+    );
+  }
+
+  if (!authed) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 

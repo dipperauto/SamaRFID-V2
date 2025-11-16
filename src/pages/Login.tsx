@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { login as setLoggedIn } from "@/utils/auth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +48,7 @@ const Login: React.FC = () => {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "omit",
+        credentials: "include",
         body: JSON.stringify({ username: login, password }),
       });
 
@@ -60,7 +59,6 @@ const Login: React.FC = () => {
 
       const data = await res.json();
       toast.success(`Login bem-sucedido! Papel: ${data.role ?? "não definido"}`);
-      setLoggedIn(data?.role);
       navigate("/home");
     } catch {
       toast.error("Não foi possível conectar ao servidor. Verifique o endereço do backend.");

@@ -1,8 +1,11 @@
 import os
-from fastapi import FastAPI, HTTPException, status, Header
+from fastapi import FastAPI, HTTPException, status, Header, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from hashlib import sha256
+import hmac
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
 from storage import get_user, add_user
@@ -63,6 +66,42 @@ app.add_middleware(
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 
+# Configuração de cookie/sessão
+SESSION_SECRET = os.environ.get("SESSION_SECRET", ADMIN_TOKEN or "dev-secret-change-me").strip()
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower()  # 'lax' por padrão; use 'none' + secure em domínios diferentes
+COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN", "").strip() or None
+SESSION_TTL = int(os.environ.get("SESSION_TTL", "86400"))  # 24h por padrão
+
+def _make_session_token(username: str, role: Optional[str]) -> str:
+    exp = int((datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL)).timestamp())
+    nonce = secrets.token_hex(8)
+    payload = f"{username}|{role or ''}|{exp}|{nonce}"
+    sig = hmac.new(SESSION_SECRET.encode(), payload.encode(), sha256).hexdigest()
+    return f"v1|{payload}|{sig}"
+
+def _verify_session_token(token: str) -> Optional[dict]:
+    try:
+        parts = token.split("|")
+        if len(parts) != 6 or parts[0] != "v1":
+            return None
+        _, username, role, exp_str, nonce, sig = parts
+        payload = f"{username}|{role}|{exp_str}|{nonce}"
+        expected_sig = hmac.new(SESSION_SECRET.encode(), payload.encode(), sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected_sig):
+            return None
+        exp = int(exp_str)
+        if exp < int(datetime.now(timezone.utc).timestamp()):
+            return None
+        # garante que usuário ainda existe
+        from storage import get_user
+        user = get_user(username)
+        if not user:
+            return None
+        return {"username": username, "role": role or user.get("role") or ""}
+    except Exception:
+        return None
+
 @app.get("/health")
 def health():
     return {"status": "ok", "adminConfigured": bool(ADMIN_TOKEN)}
@@ -73,7 +112,7 @@ def token_check():
     return {"adminConfigured": bool(ADMIN_TOKEN), "tokenPreview": masked}
 
 @app.post("/auth/login", response_model=LoginResponse)
-def auth_login(payload: LoginRequest):
+def auth_login(payload: LoginRequest, response: Response):
     user = get_user(payload.username)
     if not user:
         raise HTTPException(
@@ -85,7 +124,37 @@ def auth_login(payload: LoginRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas.",
         )
+    # cria cookie de sessão HttpOnly
+    token = _make_session_token(user["username"], user.get("role"))
+    response.set_cookie(
+        key="session",
+        value=token,
+        max_age=SESSION_TTL,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,  # 'lax' funciona bem em localhost; para domínios diferentes use 'none' + secure
+        domain=COOKIE_DOMAIN,
+        path="/",
+    )
     return LoginResponse(success=True, role=user["role"])
+
+
+@app.get("/auth/me", response_model=LoginResponse)
+def auth_me(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    data = _verify_session_token(token)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida ou expirada.")
+    return LoginResponse(success=True, role=data.get("role"))
+
+
+@app.post("/auth/logout")
+def auth_logout(response: Response, request: Request):
+    # Remove cookie de sessão
+    response.delete_cookie(key="session", domain=COOKIE_DOMAIN, path="/")
+    return {"success": True}
 
 
 @app.post("/users/register", response_model=AddUserResponse)
