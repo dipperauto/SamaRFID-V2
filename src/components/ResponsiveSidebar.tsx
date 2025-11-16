@@ -34,20 +34,20 @@ const ResponsiveSidebar: React.FC = () => {
       <div className="lg:hidden fixed top-3 left-3 z-50">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="secondary" size="icon" className="shadow-md bg-white/30 backdrop-blur-xl text-slate-900 hover:bg-white/40 border border-white/25">
+            <Button variant="secondary" size="icon" className="shadow-md bg-black/40 backdrop-blur-xl text-white hover:bg-black/50 border border-white/20">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:max-w-sm p-0 bg-white/20 backdrop-blur-xl border border-white/25 shadow-2xl">
+          <SheetContent side="left" className="w-full sm:max-w-sm p-0 bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-2xl text-white">
             <SheetHeader className="p-4">
-              <SheetTitle className="text-slate-900">Menu</SheetTitle>
+              <SheetTitle className="text-white">Menu</SheetTitle>
             </SheetHeader>
             <div className="px-4 pb-4 space-y-2">
               {navItems.map((item) => (
                 <button
                   key={item.to}
                   onClick={() => onItemClick(item.to)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-muted"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-white/90"
                 >
                   {item.icon}
                   <span className="text-sm font-medium">{item.label}</span>
@@ -60,20 +60,20 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-white/20 backdrop-blur-xl border-r border-white/25 shadow-lg transition-[width] duration-200 ${
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-slate-900/40 backdrop-blur-xl border-r border-white/10 shadow-lg transition-[width] duration-200 ${
           collapsed ? "w-16" : "w-64"
         }`}
       >
-        <div className="flex flex-col w-full h-full">
-          <div className="flex items-center justify-between px-3 py-3 border-b border-white/20">
-            <div className={`font-semibold text-slate-800 ${collapsed ? "opacity-0 pointer-events-none" : ""}`}>
+        <div className="flex flex-col w-full h-full text-white">
+          <div className="flex items-center justify-between px-3 py-3 border-b border-white/10">
+            <div className={`font-semibold ${collapsed ? "opacity-0 pointer-events-none" : ""}`}>
               Meu App
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCollapsed((c) => !c)}
-              className="text-slate-700 hover:bg-white/20"
+              className="text-white hover:bg-white/10"
               aria-label={collapsed ? "Expandir" : "Recolher"}
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -87,7 +87,7 @@ const ResponsiveSidebar: React.FC = () => {
                 to={item.to}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
-                    isActive ? "bg-white/20 text-slate-900" : "text-slate-800 hover:bg-white/15"
+                    isActive ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
                   }`
                 }
               >
