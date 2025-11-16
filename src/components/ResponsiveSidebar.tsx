@@ -67,7 +67,7 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 ${
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 z-40 ${
           collapsed ? "w-16" : "w-64"
         }`}
       >
@@ -105,9 +105,6 @@ const ResponsiveSidebar: React.FC = () => {
           </nav>
         </div>
       </aside>
-
-      {/* Content offset on desktop */}
-      <div className={`hidden lg:block ${collapsed ? "w-16" : "w-64"}`} />
     </>
   );
 };
