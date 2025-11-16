@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
@@ -79,4 +79,4 @@ class AddClientResponse(BaseModel):
 
 class ListClientsResponse(BaseModel):
     count: int
-    clients: list[Client]
+    clients: List[Client]
