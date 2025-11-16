@@ -3,6 +3,7 @@
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import BackendStatus from "@/components/BackendStatus";
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
           <Link to="/login">Ir para o Login</Link>
         </Button>
       </div>
+      <BackendStatus />
       <MadeWithDyad />
     </div>
   );

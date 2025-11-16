@@ -5,14 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [login, setLogin] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
+  const [health, setHealth] = React.useState<{ status?: string; adminConfigured?: boolean } | null>(null);
+  const [healthErr, setHealthErr] = React.useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
+  React.useEffect(() => {
+    const check = async () => {
+      setHealthErr(null);
+      try {
+        const res = await fetch(`${API_URL}/health`, { method: "GET" });
+        if (!res.ok) {
+          setHealth(null);
+          setHealthErr(`HTTP ${res.status}`);
+          return;
+        }
+        const data = await res.json();
+        setHealth(data);
+      } catch (e: any) {
+        setHealth(null);
+        setHealthErr(e?.message || "Falha ao conectar");
+      }
+    };
+    check();
+  }, [API_URL]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,6 +89,31 @@ const Login: React.FC = () => {
               alt="Logo"
               className="h-20 w-auto drop-shadow"
             />
+            <div className="mt-3 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+                <span className="text-white/80">Backend:</span>
+                <Badge variant="outline" className="bg-white/10 text-white">{API_URL}</Badge>
+                <span className="text-white/80">Conexão:</span>
+                {health && !healthErr ? (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100">OK</Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Indisponível</Badge>
+                )}
+                <span className="text-white/80">Token admin:</span>
+                {health && !healthErr ? (
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    {health?.adminConfigured ? "Configurado" : "Não configurado"}
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-white/20 text-white">—</Badge>
+                )}
+              </div>
+              {healthErr && (
+                <div className="mt-2 text-[10px] text-red-200 text-center">
+                  Erro: {healthErr}. Se o backend estiver desligado, pode haver outro serviço respondendo em {API_URL} ou sua variável VITE_BACKEND_URL aponta para outro servidor.
+                </div>
+              )}
+            </div>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
