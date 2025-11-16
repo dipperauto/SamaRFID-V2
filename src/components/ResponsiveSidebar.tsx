@@ -34,11 +34,18 @@ const ResponsiveSidebar: React.FC = () => {
       <div className="lg:hidden fixed top-3 left-3 z-50">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="secondary" size="icon" className="shadow-md bg-black/40 backdrop-blur-xl text-white hover:bg-black/50 border border-white/20">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="shadow-md bg-black/50 text-white hover:bg-black/60 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75"
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:max-w-sm p-0 bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-2xl text-white">
+          <SheetContent
+            side="left"
+            className="w-full sm:max-w-sm p-0 bg-black/50 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white shadow-2xl"
+          >
             <SheetHeader className="p-4">
               <SheetTitle className="text-white">Menu</SheetTitle>
             </SheetHeader>
@@ -60,12 +67,12 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-slate-900/40 backdrop-blur-xl border-r border-white/10 shadow-lg transition-[width] duration-200 ${
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl border-r border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 ${
           collapsed ? "w-16" : "w-64"
         }`}
       >
         <div className="flex flex-col w-full h-full text-white">
-          <div className="flex items-center justify-between px-3 py-3 border-b border-white/10">
+          <div className="flex items-center justify-between px-3 py-3 border-b border-white/25">
             <div className={`font-semibold ${collapsed ? "opacity-0 pointer-events-none" : ""}`}>
               Meu App
             </div>
@@ -87,7 +94,7 @@ const ResponsiveSidebar: React.FC = () => {
                 to={item.to}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
-                    isActive ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
+                    isActive ? "bg-white/10 text-white" : "text-white/85 hover:bg-white/10"
                   }`
                 }
               >
