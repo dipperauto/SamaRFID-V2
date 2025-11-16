@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from typing import Optional
 from hashlib import sha256
 import hmac
@@ -10,6 +11,14 @@ from datetime import datetime, timedelta, timezone
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
 from storage import get_user, add_user
 from security import verify_password, hash_password
+from models import (
+    Client,
+    AddClientRequest,
+    UpdateClientRequest,
+    AddClientResponse,
+    ListClientsResponse,
+)
+from storage_clients import get_all_clients, add_client, update_client
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -62,6 +71,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Servir arquivos estáticos (fotos de perfil etc.)
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "media")),
+    name="static",
 )
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
@@ -182,6 +198,99 @@ def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     hashed = hash_password(payload.password)
     return HashPasswordResponse(hash=hashed)
+
+
+@app.get("/clients", response_model=ListClientsResponse)
+def clients_list(request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    raw = get_all_clients()
+    clients: list[Client] = []
+    for row in raw:
+        clients.append(
+            Client(
+                id=int(row.get("id") or "0"),
+                full_name=row.get("full_name", ""),
+                doc=row.get("doc", ""),
+                address=row.get("address", ""),
+                phone=row.get("phone", ""),
+                profile_photo_path=row.get("profile_photo_path") or None,
+                pix_key=row.get("pix_key") or None,
+                bank_data=row.get("bank_data") or None,
+                municipal_registration=row.get("municipal_registration") or None,
+                state_registration=row.get("state_registration") or None,
+                notes=row.get("notes") or None,
+            )
+        )
+    return ListClientsResponse(count=len(clients), clients=clients)
+
+@app.post("/clients/register", response_model=AddClientResponse)
+def clients_register(payload: AddClientRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    created = add_client(
+        payload.full_name,
+        payload.doc,
+        payload.address,
+        payload.phone,
+        payload.profile_photo_base64,
+        payload.pix_key,
+        payload.bank_data,
+        payload.municipal_registration,
+        payload.state_registration,
+        payload.notes,
+    )
+    client = Client(
+        id=int(created["id"]),
+        full_name=created["full_name"],
+        doc=created["doc"],
+        address=created["address"],
+        phone=created["phone"],
+        profile_photo_path=created.get("profile_photo_path") or None,
+        pix_key=created.get("pix_key") or None,
+        bank_data=created.get("bank_data") or None,
+        municipal_registration=created.get("municipal_registration") or None,
+        state_registration=created.get("state_registration") or None,
+        notes=created.get("notes") or None,
+    )
+    return AddClientResponse(success=True, message="Cliente cadastrado com sucesso.", client=client)
+
+@app.put("/clients/{client_id}", response_model=AddClientResponse)
+def clients_update(client_id: int, payload: UpdateClientRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    updated = update_client(
+        client_id,
+        payload.full_name,
+        payload.doc,
+        payload.address,
+        payload.phone,
+        payload.profile_photo_base64,
+        payload.pix_key,
+        payload.bank_data,
+        payload.municipal_registration,
+        payload.state_registration,
+        payload.notes,
+    )
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
+    client = Client(
+        id=int(updated["id"]),
+        full_name=updated["full_name"],
+        doc=updated["doc"],
+        address=updated["address"],
+        phone=updated["phone"],
+        profile_photo_path=updated.get("profile_photo_path") or None,
+        pix_key=updated.get("pix_key") or None,
+        bank_data=updated.get("bank_data") or None,
+        municipal_registration=updated.get("municipal_registration") or None,
+        state_registration=updated.get("state_registration") or None,
+        notes=updated.get("notes") or None,
+    )
+    return AddClientResponse(success=True, message="Cliente atualizado com sucesso.", client=client)
 
 
 if __name__ == "__main__":

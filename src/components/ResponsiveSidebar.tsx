@@ -4,7 +4,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, TestTube, UserPlus, Menu, LogOut } from "lucide-react";
+import { Home, TestTube, UserPlus, Menu, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
 
 type NavItem = {
@@ -16,6 +16,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { to: "/home", label: "Home", icon: <Home className="h-4 w-4" /> },
   { to: "/teste", label: "Teste", icon: <TestTube className="h-4 w-4" /> },
+  { to: "/clients", label: "Clientes", icon: <Users className="h-4 w-4" /> },
   { to: "/admin/add-user", label: "Adicionar Usuário", icon: <UserPlus className="h-4 w-4" /> },
 ];
 

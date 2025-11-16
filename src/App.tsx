@@ -9,6 +9,7 @@ import Teste from "./pages/Teste";
 import AdminAddUser from "./pages/AdminAddUser";
 import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
+import ClientsPage from "./pages/ClientsPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/home" element={<Home />} />
             <Route path="/teste" element={<Teste />} />
             <Route path="/admin/add-user" element={<AdminAddUser />} />
+            <Route path="/clients" element={<ClientsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
