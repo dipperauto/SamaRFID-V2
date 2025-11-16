@@ -163,7 +163,12 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
 
       <div className="flex items-center justify-end gap-2 pt-2">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="text-black bg-white hover:bg-white/90"
+          >
             {readOnly ? "Fechar" : "Cancelar"}
           </Button>
         )}

@@ -93,11 +93,21 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null }) => {
           onChange={onFileChange}
           className="hidden"
         />
-        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-black bg-white hover:bg-white/90"
+        >
           Carregar foto
         </Button>
         {preview && (
-          <Button type="button" variant="secondary" onClick={clearImage}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={clearImage}
+            className="text-black"
+          >
             Remover
           </Button>
         )}
@@ -130,7 +140,14 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null }) => {
           </div>
           <div className="flex gap-2">
             <Button type="button" onClick={confirmCrop}>Confirmar corte</Button>
-            <Button type="button" variant="outline" onClick={clearImage}>Cancelar</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearImage}
+              className="text-black bg-white hover:bg-white/90"
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       )}
