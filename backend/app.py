@@ -9,7 +9,7 @@ from storage import get_user, add_user
 from security import verify_password, hash_password
 
 # Simple .env loader (no extra dependency)
-def load_env_file(path: str = ".env"):
+def load_env_file(path: str, override: bool = True):
     if not os.path.isfile(path):
         return
     try:
@@ -23,15 +23,29 @@ def load_env_file(path: str = ".env"):
                 key, value = line.split("=", 1)
                 key = key.strip()
                 value = value.strip().strip('"').strip("'")
-                # Only set if not present in environment
-                if key and key not in os.environ:
-                    os.environ[key] = value
+                # Agora: opcionalmente sobrescreve variáveis já existentes
+                if key:
+                    if override or key not in os.environ or not os.environ.get(key):
+                        os.environ[key] = value
     except Exception:
         # Let errors bubble in normal flow; env loading is best-effort
         pass
 
+def load_env_files(paths, override: bool = True):
+    for p in paths:
+        load_env_file(p, override=override)
+
 # Load .env before reading variables
-load_env_file()
+# UPDATED: tentar múltiplos caminhos e sobrescrever para garantir aplicação do ADMIN_TOKEN
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_env_files(
+    [
+      os.path.join(project_root, ".env"),
+      os.path.join(os.path.dirname(__file__), ".env"),
+      ".env",
+    ],
+    override=True,
+)
 
 app = FastAPI(title="Backend Dyad - Auth")
 
@@ -101,4 +115,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("BACKEND_PORT", "8000"))
     import uvicorn
 
-    uvicorn.run("backend.app:app", host=host, port=port, reload=True)
+    uvicorn.run("app:app", host=host, port=port, reload=True)
