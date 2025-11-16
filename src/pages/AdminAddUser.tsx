@@ -19,7 +19,8 @@ const AdminAddUser: React.FC = () => {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!username || !password || !role || !adminToken) {
+    const token = adminToken.trim();
+    if (!username || !password || !role || token.length === 0) {
       toast.error("Preencha todos os campos e o token de administrador.");
       return;
     }
@@ -27,13 +28,17 @@ const AdminAddUser: React.FC = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-token": adminToken,
+        "x-admin-token": token,
       },
       body: JSON.stringify({ username, password, role }),
     });
     if (!res.ok) {
       const detail = await res.json().catch(() => null);
-      toast.error(detail?.detail ?? "Falha ao cadastrar usuário.");
+      if (res.status === 401) {
+        toast.error("Token de administrador inválido ou não configurado no backend.");
+      } else {
+        toast.error(detail?.detail ?? "Falha ao cadastrar usuário.");
+      }
       return;
     }
     toast.success("Usuário cadastrado com sucesso!");

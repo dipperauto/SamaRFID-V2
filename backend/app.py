@@ -21,11 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "adminConfigured": bool(ADMIN_TOKEN)}
 
 
 @app.post("/auth/login", response_model=LoginResponse)
@@ -46,7 +46,8 @@ def auth_login(payload: LoginRequest):
 
 @app.post("/users/register", response_model=AddUserResponse)
 def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
-    if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
+    token = (x_admin_token or "").strip()
+    if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     try:
         add_user(payload.username, payload.password, payload.role)
@@ -58,7 +59,8 @@ def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Heade
 
 @app.post("/auth/hash", response_model=HashPasswordResponse)
 def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
-    if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
+    token = (x_admin_token or "").strip()
+    if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     hashed = hash_password(payload.password)
     return HashPasswordResponse(hash=hashed)
