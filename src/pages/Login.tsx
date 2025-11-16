@@ -40,18 +40,12 @@ const Login: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-3xl border border-white/25 bg-black/50 p-8 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75">
-          <div className="mb-12 flex flex-col items-center">
+          <div className="mb-8 flex flex-col items-center">
             <img
               src="/logo.png"
               alt="Logo"
-              className="h-20 w-auto mb-6 drop-shadow"
+              className="h-20 w-auto drop-shadow"
             />
-            <h1 className="text-2xl font-semibold text-white/90 tracking-tight">
-              Bem-vindo
-            </h1>
-            <p className="text-white/60 text-sm">
-              Acesse sua conta para continuar
-            </p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
