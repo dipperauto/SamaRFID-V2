@@ -2,10 +2,36 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from hashlib import sha256
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
 from storage import get_user, add_user
 from security import verify_password, hash_password
+
+# Simple .env loader (no extra dependency)
+def load_env_file(path: str = ".env"):
+    if not os.path.isfile(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                # Only set if not present in environment
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        # Let errors bubble in normal flow; env loading is best-effort
+        pass
+
+# Load .env before reading variables
+load_env_file()
 
 app = FastAPI(title="Backend Dyad - Auth")
 
@@ -27,6 +53,10 @@ ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 def health():
     return {"status": "ok", "adminConfigured": bool(ADMIN_TOKEN)}
 
+@app.get("/auth/token-check")
+def token_check():
+    masked = sha256(ADMIN_TOKEN.encode()).hexdigest()[:8] if ADMIN_TOKEN else None
+    return {"adminConfigured": bool(ADMIN_TOKEN), "tokenPreview": masked}
 
 @app.post("/auth/login", response_model=LoginResponse)
 def auth_login(payload: LoginRequest):
@@ -53,7 +83,6 @@ def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Heade
         add_user(payload.username, payload.password, payload.role)
         return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.")
     except ValueError as e:
-        # Usuário já existe
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
