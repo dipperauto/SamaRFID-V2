@@ -9,10 +9,12 @@ from .security import verify_password
 app = FastAPI(title="Backend Dyad - Auth")
 
 # CORS: permite o frontend acessar este backend
-frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:8080")
+frontend_url = os.environ.get("FRONTEND_URL")  # pode ser vazio
+frontend_origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url],
+    allow_origins=[frontend_url] if frontend_url else [],
+    allow_origin_regex=frontend_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -21,21 +21,25 @@ const Login: React.FC = () => {
       return;
     }
 
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "omit",
-      body: JSON.stringify({ username: login, password }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify({ username: login, password }),
+      });
 
-    if (!res.ok) {
-      toast.error("Login inválido. Verifique suas credenciais.");
-      return;
+      if (!res.ok) {
+        toast.error("Login inválido. Verifique suas credenciais.");
+        return;
+      }
+
+      const data = await res.json();
+      toast.success(`Login bem-sucedido! Papel: ${data.role ?? "não definido"}`);
+      navigate("/teste");
+    } catch {
+      toast.error("Não foi possível conectar ao servidor. Verifique o endereço do backend.");
     }
-
-    const data = await res.json();
-    toast.success(`Login bem-sucedido! Papel: ${data.role ?? "não definido"}`);
-    navigate("/teste");
   };
 
   return (
