@@ -103,7 +103,7 @@ const ClientsPage: React.FC = () => {
   const total = data?.count ?? 0;
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden p-4">
+    <div className="relative min-h-screen w-full overflow-hidden p-4 text-black">
       {/* FULLSCREEN GRADIENT BACKDROP */}
       <div
         className="fixed inset-0 -z-10"
@@ -174,8 +174,8 @@ const ClientsPage: React.FC = () => {
             />
           ))}
           {total === 0 && (
-            <div className="text-sm text-white/80">
-              Nenhum cliente cadastrado ainda. Clique em “Cadastrar Cliente” para começar.
+            <div className="text-sm text-black/80">
+              Nenhum cliente cadastrado ainda. Clique em "Cadastrar Cliente" para começar.
             </div>
           )}
         </div>
