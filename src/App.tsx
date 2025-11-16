@@ -7,6 +7,8 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Teste from "./pages/Teste";
 import AdminAddUser from "./pages/AdminAddUser";
+import Home from "./pages/Home";
+import AppLayout from "./components/AppLayout";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +22,12 @@ const App = () => (
           <Route path="/" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/login" element={<Login />} />
-          <Route path="/teste" element={<Teste />} />
-          <Route path="/admin/add-user" element={<AdminAddUser />} />
+          {/* Rotas com layout (menu responsivo) */}
+          <Route element={<AppLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/teste" element={<Teste />} />
+            <Route path="/admin/add-user" element={<AdminAddUser />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

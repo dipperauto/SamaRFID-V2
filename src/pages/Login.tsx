@@ -59,7 +59,7 @@ const Login: React.FC = () => {
 
       const data = await res.json();
       toast.success(`Login bem-sucedido! Papel: ${data.role ?? "não definido"}`);
-      navigate("/teste");
+      navigate("/home");
     } catch {
       toast.error("Não foi possível conectar ao servidor. Verifique o endereço do backend.");
     }
