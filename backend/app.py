@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
 from storage import get_user, add_user
@@ -44,7 +45,7 @@ def auth_login(payload: LoginRequest):
 
 
 @app.post("/users/register", response_model=AddUserResponse)
-def users_register(payload: AddUserRequest, x_admin_token: str | None = Header(None, alias="x-admin-token")):
+def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
     if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     try:
@@ -56,7 +57,7 @@ def users_register(payload: AddUserRequest, x_admin_token: str | None = Header(N
 
 
 @app.post("/auth/hash", response_model=HashPasswordResponse)
-def auth_hash(payload: LoginRequest, x_admin_token: str | None = Header(None, alias="x-admin-token")):
+def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
     if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     hashed = hash_password(payload.password)

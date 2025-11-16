@@ -21,7 +21,7 @@ class AddUserRequest(BaseModel):
 
 class AddUserResponse(BaseModel):
     success: bool
-    message: str | None = None
+    message: Optional[str] = None
 
 
 class HashPasswordResponse(BaseModel):
