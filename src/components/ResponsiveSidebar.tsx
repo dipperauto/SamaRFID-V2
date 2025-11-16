@@ -4,7 +4,8 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, TestTube, UserPlus, Menu } from "lucide-react";
+import { Home, TestTube, UserPlus, Menu, LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 type NavItem = {
   to: string;
@@ -21,10 +22,25 @@ const navItems: NavItem[] = [
 const ResponsiveSidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
   const onItemClick = (to: string) => {
     navigate(to);
     setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    const res = await fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (res.ok) {
+      toast.success("Você saiu da sua conta.");
+    } else {
+      toast.error("Falha ao sair. Tente novamente.");
+    }
+    setMobileOpen(false);
+    navigate("/login");
   };
 
   return (
@@ -59,6 +75,13 @@ const ResponsiveSidebar: React.FC = () => {
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               ))}
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-red-300"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-sm font-medium">Sair</span>
+              </button>
             </div>
           </SheetContent>
         </Sheet>
@@ -89,6 +112,18 @@ const ResponsiveSidebar: React.FC = () => {
               </NavLink>
             ))}
           </nav>
+
+          <div className="px-2 py-2 border-t border-white/25">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors text-red-300 hover:bg-white/10"
+            >
+              <span className="shrink-0">
+                <LogOut className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-medium block">Sair</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>
