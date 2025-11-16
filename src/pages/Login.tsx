@@ -12,13 +12,29 @@ const Login: React.FC = () => {
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!login || !password) {
       toast.error("Preencha login e senha.");
       return;
     }
-    toast.success("Login bem-sucedido!");
+
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "omit",
+      body: JSON.stringify({ username: login, password }),
+    });
+
+    if (!res.ok) {
+      toast.error("Login inválido. Verifique suas credenciais.");
+      return;
+    }
+
+    const data = await res.json();
+    toast.success(`Login bem-sucedido! Papel: ${data.role ?? "não definido"}`);
     navigate("/teste");
   };
 
