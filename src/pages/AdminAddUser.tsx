@@ -8,6 +8,7 @@ import { Label } from "../components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { toast } from "sonner";
 import BackendStatus from "../components/BackendStatus";
+import PhotoCropper from "../components/PhotoCropper";
 
 const AdminAddUser: React.FC = () => {
   const navigate = useNavigate();
@@ -16,14 +17,15 @@ const AdminAddUser: React.FC = () => {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [role, setRole] = React.useState<string>("administrador");
+  const [fullName, setFullName] = React.useState<string>("");
+  const [profilePhotoBase64, setProfilePhotoBase64] = React.useState<string | null>(null);
   const [adminToken, setAdminToken] = React.useState("");
 
-  // Novo: estados para diagnóstico do token
+  // Diagnóstico do token
   const [backendTokenPreview, setBackendTokenPreview] = React.useState<string | null>(null);
   const [adminConfigured, setAdminConfigured] = React.useState<boolean>(false);
   const [inputTokenPreview, setInputTokenPreview] = React.useState<string | null>(null);
 
-  // Novo: buscar preview do token do backend
   React.useEffect(() => {
     const check = async () => {
       try {
@@ -40,7 +42,6 @@ const AdminAddUser: React.FC = () => {
     check();
   }, [API_URL]);
 
-  // Novo: calcular preview SHA-256 do token digitado
   async function sha256Preview(s: string): Promise<string> {
     const enc = new TextEncoder().encode(s);
     const buf = await crypto.subtle.digest("SHA-256", enc);
@@ -62,11 +63,17 @@ const AdminAddUser: React.FC = () => {
     run();
   }, [adminToken]);
 
+  const isValidEmail = (v: string) => /\S+@\S+\.\S+/.test(v);
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const token = adminToken.trim();
-    if (!username || !password || !role || token.length === 0) {
-      toast.error("Preencha todos os campos e o token de administrador.");
+    if (!username || !password || !role || !fullName || token.length === 0) {
+      toast.error("Preencha todos os campos obrigatórios e o token de administrador.");
+      return;
+    }
+    if (!isValidEmail(username)) {
+      toast.error("Usuário deve ser um e-mail válido.");
       return;
     }
     const res = await fetch(`${API_URL}/users/register`, {
@@ -75,7 +82,13 @@ const AdminAddUser: React.FC = () => {
         "Content-Type": "application/json",
         "x-admin-token": token,
       },
-      body: JSON.stringify({ username, password, role }),
+      body: JSON.stringify({
+        username,
+        password,
+        role,
+        full_name: fullName,
+        profile_photo_base64: profilePhotoBase64,
+      }),
     });
     if (!res.ok) {
       const detail = await res.json().catch(() => null);
@@ -86,16 +99,21 @@ const AdminAddUser: React.FC = () => {
       }
       return;
     }
+    const data = await res.json().catch(() => ({}));
     toast.success("Usuário cadastrado com sucesso!");
+    if (data?.profile_photo_path) {
+      toast.message("Foto salva", { description: `Armazenada em: ${data.profile_photo_path}` });
+    }
     setUsername("");
     setPassword("");
     setRole("administrador");
+    setFullName("");
+    setProfilePhotoBase64(null);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white p-4">
       <div className="w-full max-w-md space-y-4">
-        {/* Novo: status do backend */}
         <BackendStatus />
 
         <div className="w-full bg-white border rounded-xl shadow-sm p-6 space-y-6">
@@ -113,7 +131,6 @@ const AdminAddUser: React.FC = () => {
                 onChange={(e) => setAdminToken(e.target.value)}
                 placeholder="ADMIN_TOKEN"
               />
-              {/* Novo: diagnóstico do token */}
               {adminConfigured ? (
                 <div className="text-xs text-gray-500">
                   Token do backend (SHA-256, prefixo): <span className="font-mono">{backendTokenPreview ?? "?"}</span>{" "}
@@ -135,8 +152,13 @@ const AdminAddUser: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex.: joao" />
+              <Label htmlFor="username">E-mail (Usuário)</Label>
+              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex.: joao@empresa.com" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nome Completo</Label>
+              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="ex.: João da Silva" />
             </div>
 
             <div className="space-y-2">
@@ -156,6 +178,11 @@ const AdminAddUser: React.FC = () => {
                   <SelectItem value="operador">Operador</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Foto de Perfil (opcional)</Label>
+              <PhotoCropper onChange={setProfilePhotoBase64} />
             </div>
 
             <div className="flex items-center justify-between pt-2">

@@ -94,8 +94,14 @@ def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Heade
     if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     try:
-        add_user(payload.username, payload.password, payload.role)
-        return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.")
+        photo_path = add_user(
+            payload.username,
+            payload.password,
+            payload.role,
+            payload.full_name,
+            payload.profile_photo_base64,
+        )
+        return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.", profile_photo_path=photo_path)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
