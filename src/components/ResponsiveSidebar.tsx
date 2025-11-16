@@ -92,8 +92,8 @@ const ResponsiveSidebar: React.FC = () => {
         className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 z-40 w-64`}
       >
         <div className="flex flex-col w-full h-full text-white">
-          <div className="flex items-center justify-between px-3 py-3 border-b border-white/25">
-            <img src="/logo.png" alt="Logo da empresa" className="h-8 w-auto" />
+          <div className="flex items-center justify-center px-4 py-4 border-b border-white/25">
+            <img src="/logo.png" alt="Logo da empresa" className="h-10 w-auto" />
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
