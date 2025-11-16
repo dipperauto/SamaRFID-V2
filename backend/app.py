@@ -1,10 +1,10 @@
 import os
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 
-from .models import LoginRequest, LoginResponse
-from .storage import get_user
-from .security import verify_password
+from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
+from storage import get_user, add_user
+from security import verify_password, hash_password
 
 app = FastAPI(title="Backend Dyad - Auth")
 
@@ -20,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 
 @app.get("/health")
 def health():
@@ -40,6 +41,26 @@ def auth_login(payload: LoginRequest):
             detail="Credenciais inválidas.",
         )
     return LoginResponse(success=True, role=user["role"])
+
+
+@app.post("/users/register", response_model=AddUserResponse)
+def users_register(payload: AddUserRequest, x_admin_token: str | None = Header(None, alias="x-admin-token")):
+    if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
+    try:
+        add_user(payload.username, payload.password, payload.role)
+        return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.")
+    except ValueError as e:
+        # Usuário já existe
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+@app.post("/auth/hash", response_model=HashPasswordResponse)
+def auth_hash(payload: LoginRequest, x_admin_token: str | None = Header(None, alias="x-admin-token")):
+    if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
+    hashed = hash_password(payload.password)
+    return HashPasswordResponse(hash=hashed)
 
 
 if __name__ == "__main__":

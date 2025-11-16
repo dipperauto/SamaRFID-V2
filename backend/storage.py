@@ -2,7 +2,7 @@ import csv
 import os
 from typing import Optional, Dict
 
-from .security import hash_password
+from security import hash_password
 
 USERS_CSV_PATH = os.environ.get(
     "USERS_CSV_PATH",
