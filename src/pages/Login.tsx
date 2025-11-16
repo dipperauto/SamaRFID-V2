@@ -44,7 +44,7 @@ const Login: React.FC = () => {
             <img
               src="/logo.png"
               alt="Logo"
-              className="h-20 w-auto mb-2 drop-shadow"
+              className="h-20 w-auto mb-6 drop-shadow"
             />
             <h1 className="text-2xl font-semibold text-white/90 tracking-tight">
               Bem-vindo
