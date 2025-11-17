@@ -73,6 +73,50 @@ const KanbanPage: React.FC = () => {
     const toListId = destination.droppableId;
     const toIndex = destination.index;
 
+    // Atualização otimista para evitar flicker
+    queryClient.setQueryData<KanbanBoard>(["kanban"], (prev) => {
+      if (!prev) return prev;
+      const cards = [...prev.cards];
+      const movingIndex = cards.findIndex((c) => c.id === draggableId);
+      if (movingIndex === -1) return prev;
+      const sourceListId = source.droppableId;
+      const moving = { ...cards[movingIndex], listId: toListId };
+
+      const sourceCards = cards
+        .filter((c) => c.listId === sourceListId && c.id !== draggableId)
+        .sort((a, b) => a.position - b.position);
+
+      const destCards = cards
+        .filter((c) => c.listId === toListId && c.id !== draggableId)
+        .sort((a, b) => a.position - b.position);
+
+      destCards.splice(toIndex, 0, { ...moving });
+
+      sourceCards.forEach((c, i) => (c.position = i));
+      destCards.forEach((c, i) => {
+        c.position = i;
+        if (c.id === moving.id) c.listId = toListId;
+      });
+
+      const updated = cards.map((c) => {
+        if (c.id === draggableId) {
+          const placed = destCards.find((dc) => dc.id === c.id);
+          return placed ?? c;
+        }
+        if (c.listId === sourceListId) {
+          const s = sourceCards.find((sc) => sc.id === c.id);
+          return s ?? c;
+        }
+        if (c.listId === toListId) {
+          const d = destCards.find((dc) => dc.id === c.id);
+          return d ?? c;
+        }
+        return c;
+      });
+
+      return { ...prev, cards: updated };
+    });
+
     const res = await fetch(`${API_URL}/kanban/cards/${encodeURIComponent(draggableId)}`, {
       method: "PUT",
       credentials: "include",
@@ -82,10 +126,10 @@ const KanbanPage: React.FC = () => {
     if (!res.ok) {
       const detail = await res.json().catch(() => null);
       toast.error(detail?.detail ?? "Falha ao mover card.");
+      await refetch(); // reverte caso o backend falhe
       return;
     }
-    await refetch();
-    queryClient.invalidateQueries({ queryKey: ["kanban"] });
+    // sucesso: não refetch/invalidate aqui para evitar flicker
   };
 
   const createList = async () => {
