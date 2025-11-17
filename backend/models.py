@@ -10,6 +10,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     success: bool
     role: Optional[str] = None
+    allowed_pages: Optional[List[str]] = None
     message: Optional[str] = None
 
 
@@ -19,6 +20,15 @@ class AddUserRequest(BaseModel):
     role: str = Field(min_length=1)
     full_name: str = Field(min_length=1)
     profile_photo_base64: Optional[str] = None  # data URL (ex.: data:image/png;base64,xxx)
+    allowed_pages: Optional[List[str]] = None
+
+
+class UpdateUserRequest(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+    profile_photo_base64: Optional[str] = None
+    allowed_pages: Optional[List[str]] = None
 
 
 class AddUserResponse(BaseModel):
@@ -29,6 +39,19 @@ class AddUserResponse(BaseModel):
 
 class HashPasswordResponse(BaseModel):
     hash: str
+
+
+class User(BaseModel):
+    username: str
+    full_name: str
+    role: str
+    profile_photo_path: Optional[str] = None
+    allowed_pages: List[str] = []
+
+
+class ListUsersResponse(BaseModel):
+    count: int
+    users: List[User]
 
 
 class Client(BaseModel):

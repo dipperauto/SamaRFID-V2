@@ -10,6 +10,7 @@ import AdminAddUser from "./pages/AdminAddUser";
 import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
 import ClientsPage from "./pages/Clients";
+import UsersPage from "./pages/Users";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/teste" element={<Teste />} />
             <Route path="/admin/add-user" element={<AdminAddUser />} />
             <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/users" element={<UsersPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

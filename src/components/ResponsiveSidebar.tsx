@@ -6,24 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Home, TestTube, UserPlus, Menu, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
-
-type NavItem = {
-  to: string;
-  label: string;
-  icon: React.ReactNode;
-};
-
-const navItems: NavItem[] = [
-  { to: "/home", label: "Home", icon: <Home className="h-4 w-4" /> },
-  { to: "/teste", label: "Teste", icon: <TestTube className="h-4 w-4" /> },
-  { to: "/clients", label: "Clientes", icon: <Users className="h-4 w-4" /> },
-  { to: "/admin/add-user", label: "Adicionar Usuário", icon: <UserPlus className="h-4 w-4" /> },
-];
+import { PAGES } from "@/utils/pages";
 
 const ResponsiveSidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const [allowedPages, setAllowedPages] = React.useState<string[] | null>(null);
+
+  React.useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
+        if (!res.ok) {
+          setAllowedPages([]);
+          return;
+        }
+        const data = await res.json();
+        setAllowedPages(data?.allowed_pages ?? []);
+      } catch {
+        setAllowedPages([]);
+      }
+    };
+    run();
+  }, [API_URL]);
 
   const onItemClick = (to: string) => {
     navigate(to);
@@ -66,13 +72,17 @@ const ResponsiveSidebar: React.FC = () => {
               <SheetTitle className="text-white">Menu</SheetTitle>
             </SheetHeader>
             <div className="px-4 pb-4 space-y-2">
-              {navItems.map((item) => (
+              {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (
                 <button
-                  key={item.to}
-                  onClick={() => onItemClick(item.to)}
+                  key={item.path}
+                  onClick={() => onItemClick(item.path)}
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-white/90"
                 >
-                  {item.icon}
+                  {item.icon === "home" && <Home className="h-4 w-4" />}
+                  {item.icon === "test" && <TestTube className="h-4 w-4" />}
+                  {item.icon === "clients" && <Users className="h-4 w-4" />}
+                  {item.icon === "adminAddUser" && <UserPlus className="h-4 w-4" />}
+                  {item.icon === "users" && <Users className="h-4 w-4" />}
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               ))}
@@ -98,17 +108,23 @@ const ResponsiveSidebar: React.FC = () => {
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
-            {navItems.map((item) => (
+            {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (
               <NavLink
-                key={item.to}
-                to={item.to}
+                key={item.path}
+                to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
                     isActive ? "bg-white/10 text-white" : "text-white/85 hover:bg-white/10"
                   }`
                 }
               >
-                <span className="shrink-0">{item.icon}</span>
+                <span className="shrink-0">
+                  {item.icon === "home" && <Home className="h-4 w-4" />}
+                  {item.icon === "test" && <TestTube className="h-4 w-4" />}
+                  {item.icon === "clients" && <Users className="h-4 w-4" />}
+                  {item.icon === "adminAddUser" && <UserPlus className="h-4 w-4" />}
+                  {item.icon === "users" && <Users className="h-4 w-4" />}
+                </span>
                 <span className="text-sm font-medium block">{item.label}</span>
               </NavLink>
             ))}

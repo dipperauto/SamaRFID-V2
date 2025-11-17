@@ -1,7 +1,7 @@
 import csv
 import os
 import base64
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from security import hash_password
 
@@ -11,7 +11,7 @@ USERS_CSV_PATH = os.environ.get(
 )
 
 MEDIA_USERS_DIR = os.path.join(os.path.dirname(__file__), "media", "users")
-CSV_FIELDS = ["username", "password_hash", "role", "full_name", "profile_photo_path"]
+CSV_FIELDS = ["username", "password_hash", "role", "full_name", "profile_photo_path", "allowed_pages"]
 
 
 def _ensure_csv():
@@ -48,6 +48,7 @@ def _ensure_csv():
                     "role": row.get("role", ""),
                     "full_name": row.get("full_name", ""),
                     "profile_photo_path": row.get("profile_photo_path", ""),
+                    "allowed_pages": row.get("allowed_pages", ""),
                 }
                 writer.writerow(new_row)
 
@@ -84,6 +85,19 @@ def _save_profile_photo(username: str, photo_base64: Optional[str]) -> Optional[
     return rel_path
 
 
+def _parse_pages(raw: str) -> List[str]:
+    raw = (raw or "").strip()
+    if not raw:
+        return []
+    return [p for p in raw.split(",") if p]
+
+
+def _serialize_pages(pages: Optional[List[str]]) -> str:
+    if not pages:
+        return ""
+    return ",".join(sorted(set(pages)))
+
+
 def get_user(username: str) -> Optional[Dict[str, str]]:
     _ensure_csv()
     with open(USERS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
@@ -96,14 +110,33 @@ def get_user(username: str) -> Optional[Dict[str, str]]:
                     "role": row.get("role", ""),
                     "full_name": row.get("full_name", ""),
                     "profile_photo_path": row.get("profile_photo_path", ""),
+                    "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
                 }
     return None
 
 
-def add_user(username: str, password: str, role: str, full_name: str, profile_photo_base64: Optional[str] = None) -> Optional[str]:
+def get_all_users() -> List[Dict[str, str]]:
+    _ensure_csv()
+    out: List[Dict[str, str]] = []
+    with open(USERS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            out.append({
+                "username": row.get("username", ""),
+                "password_hash": row.get("password_hash", ""),
+                "role": row.get("role", ""),
+                "full_name": row.get("full_name", ""),
+                "profile_photo_path": row.get("profile_photo_path", ""),
+                "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
+            })
+    return out
+
+
+def add_user(username: str, password: str, role: str, full_name: str, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None) -> Optional[str]:
     """
     Adiciona usuário com a senha HASHEADA (não armazenamos senha em texto puro).
     Salva opcionalmente uma foto de perfil em backend/media/users e grava o caminho relativo no CSV.
+    Também salva as páginas permitidas (allowed_pages).
     """
     _ensure_csv()
     # Evita duplicatas
@@ -120,5 +153,50 @@ def add_user(username: str, password: str, role: str, full_name: str, profile_ph
             "role": role,
             "full_name": full_name,
             "profile_photo_path": photo_path or "",
+            "allowed_pages": _serialize_pages(allowed_pages),
         })
     return photo_path
+
+
+def update_user(username: str, full_name: Optional[str] = None, role: Optional[str] = None, password: Optional[str] = None, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None) -> Optional[Dict[str, str]]:
+    """
+    Atualiza dados do usuário. Retorna o registro atualizado ou None se não encontrado.
+    """
+    _ensure_csv()
+    updated = None
+    rows = []
+    with open(USERS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("username") == username:
+                if full_name is not None:
+                    row["full_name"] = full_name
+                if role is not None:
+                    row["role"] = role
+                if password is not None and password.strip():
+                    row["password_hash"] = hash_password(password)
+                if profile_photo_base64 is not None:
+                    photo_path = _save_profile_photo(username, profile_photo_base64)
+                    row["profile_photo_path"] = photo_path or ""
+                if allowed_pages is not None:
+                    row["allowed_pages"] = _serialize_pages(allowed_pages)
+                updated = {
+                    "username": row.get("username", ""),
+                    "password_hash": row.get("password_hash", ""),
+                    "role": row.get("role", ""),
+                    "full_name": row.get("full_name", ""),
+                    "profile_photo_path": row.get("profile_photo_path", ""),
+                    "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
+                }
+            rows.append(row)
+
+    if updated is None:
+        return None
+
+    with open(USERS_CSV_PATH, "w", newline="", encoding="utf-8") as fw:
+        writer = csv.DictWriter(fw, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+    return updated

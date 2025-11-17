@@ -4,18 +4,28 @@ import React from "react";
 import ResponsiveSidebar from "./ResponsiveSidebar";
 import { Outlet } from "react-router-dom";
 import { Navigate, useLocation } from "react-router-dom";
+import { pathToKey, PAGES } from "@/utils/pages";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const [checked, setChecked] = React.useState(false);
   const [authed, setAuthed] = React.useState(false);
+  const [allowedPages, setAllowedPages] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     const check = async () => {
       setChecked(false);
       const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
-      setAuthed(res.ok);
+      if (!res.ok) {
+        setAuthed(false);
+        setAllowedPages([]);
+        setChecked(true);
+        return;
+      }
+      const data = await res.json();
+      setAuthed(true);
+      setAllowedPages(data?.allowed_pages ?? []);
       setChecked(true);
     };
     check();
@@ -31,6 +41,13 @@ const AppLayout: React.FC = () => {
 
   if (!authed) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  // Bloqueio por permissão de página
+  const currentKey = pathToKey(location.pathname);
+  if (currentKey && !allowedPages.includes(currentKey)) {
+    const fallback = PAGES.find((p) => allowedPages.includes(p.key))?.path || "/home";
+    return <Navigate to={fallback} replace />;
   }
 
   return (

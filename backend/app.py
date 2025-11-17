@@ -2,14 +2,14 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional
+from typing import Optional, List
 from hashlib import sha256
 import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse
-from storage import get_user, add_user
+from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse, User, ListUsersResponse, UpdateUserRequest
+from storage import get_user, add_user, get_all_users, update_user
 from security import verify_password, hash_password
 from models import (
     Client,
@@ -97,12 +97,15 @@ SESSION_TTL = int(os.environ.get("SESSION_TTL", "86400"))
 LIMIT_BYTES = 50 * 1024 * 1024  # 50 MB por cliente
 
 
+# ----- Helpers de sessão e permissões -----
+
 def _make_session_token(username: str, role: Optional[str]) -> str:
     exp = int((datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL)).timestamp())
+    payload_role = role or ""
     nonce = secrets.token_hex(8)
-    payload = f"{username}|{role or ''}|{exp}|{nonce}"
+    payload = f"{username}|{payload_role}|{exp}|{nonce}"
     sig = hmac.new(SESSION_SECRET.encode(), payload.encode(), sha256).hexdigest()
-    return f"v1|{payload}|{sig}"
+    return f"v1|{username}|{payload_role}|{exp}|{nonce}|{sig}"
 
 def _verify_session_token(token: str) -> Optional[dict]:
     try:
@@ -117,13 +120,32 @@ def _verify_session_token(token: str) -> Optional[dict]:
         exp = int(exp_str)
         if exp < int(datetime.now(timezone.utc).timestamp()):
             return None
-        from storage import get_user
         user = get_user(username)
         if not user:
             return None
         return {"username": username, "role": role or user.get("role") or ""}
     except Exception:
         return None
+
+def default_allowed_pages(role: Optional[str]) -> List[str]:
+    # keys: "home","teste","clients","admin:add-user","users"
+    if role == "administrador":
+        return ["home", "teste", "clients", "admin:add-user", "users"]
+    return ["home", "teste", "clients"]
+
+def _require_admin(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    data = _verify_session_token(token)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida ou expirada.")
+    if (data.get("role") or "").lower() != "administrador":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a administradores.")
+    return data
+
+
+# ----- Health e Token -----
 
 @app.get("/health")
 def health():
@@ -133,6 +155,9 @@ def health():
 def token_check():
     masked = sha256(ADMIN_TOKEN.encode()).hexdigest()[:8] if ADMIN_TOKEN else None
     return {"adminConfigured": bool(ADMIN_TOKEN), "tokenPreview": masked}
+
+
+# ----- Auth -----
 
 @app.post("/auth/login", response_model=LoginResponse)
 def auth_login(payload: LoginRequest, response: Response):
@@ -158,7 +183,8 @@ def auth_login(payload: LoginRequest, response: Response):
         domain=COOKIE_DOMAIN,
         path="/",
     )
-    return LoginResponse(success=True, role=user["role"])
+    allowed = user.get("allowed_pages") or default_allowed_pages(user.get("role"))
+    return LoginResponse(success=True, role=user["role"], allowed_pages=allowed)
 
 @app.get("/auth/me", response_model=LoginResponse)
 def auth_me(request: Request):
@@ -168,25 +194,86 @@ def auth_me(request: Request):
     data = _verify_session_token(token)
     if not data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida ou expirada.")
-    return LoginResponse(success=True, role=data.get("role"))
+    user = get_user(data["username"])
+    allowed = (user or {}).get("allowed_pages") or default_allowed_pages((user or {}).get("role"))
+    return LoginResponse(success=True, role=data.get("role"), allowed_pages=allowed)
 
 @app.post("/auth/logout")
 def auth_logout(response: Response, request: Request):
     response.delete_cookie(key="session", domain=COOKIE_DOMAIN, path="/")
     return {"success": True}
 
+
+# ----- Usuários (admin via sessão) -----
+
+@app.get("/users", response_model=ListUsersResponse)
+def users_list(request: Request):
+    _require_admin(request)
+    raw = get_all_users()
+    users: list[User] = []
+    for u in raw:
+        users.append(
+            User(
+                username=u.get("username", ""),
+                full_name=u.get("full_name", ""),
+                role=u.get("role", ""),
+                profile_photo_path=u.get("profile_photo_path") or None,
+                allowed_pages=u.get("allowed_pages") or [],
+            )
+        )
+    return ListUsersResponse(count=len(users), users=users)
+
+@app.put("/users/{username}", response_model=AddUserResponse)
+def users_update(username: str, payload: UpdateUserRequest, request: Request):
+    _require_admin(request)
+    updated = update_user(
+        username,
+        full_name=payload.full_name,
+        role=payload.role,
+        password=payload.password,
+        profile_photo_base64=payload.profile_photo_base64,
+        allowed_pages=payload.allowed_pages,
+    )
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    return AddUserResponse(success=True, message="Usuário atualizado com sucesso.", profile_photo_path=updated.get("profile_photo_path") or None)
+
+@app.post("/users/register-session", response_model=AddUserResponse)
+def users_register_session(payload: AddUserRequest, request: Request):
+    admin = _require_admin(request)
+    role = payload.role
+    pages = payload.allowed_pages or default_allowed_pages(role)
+    try:
+        photo_path = add_user(
+            payload.username,
+            payload.password,
+            role,
+            payload.full_name,
+            payload.profile_photo_base64,
+            pages,
+        )
+        return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.", profile_photo_path=photo_path)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+# ----- Usuários (token legado) -----
+
 @app.post("/users/register", response_model=AddUserResponse)
 def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
     token = (x_admin_token or "").strip()
     if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
+    role = payload.role
+    pages = payload.allowed_pages or default_allowed_pages(role)
     try:
         photo_path = add_user(
             payload.username,
             payload.password,
-            payload.role,
+            role,
             payload.full_name,
             payload.profile_photo_base64,
+            pages,
         )
         return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.", profile_photo_path=photo_path)
     except ValueError as e:
@@ -199,6 +286,9 @@ def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     hashed = hash_password(payload.password)
     return HashPasswordResponse(hash=hashed)
+
+
+# ----- Clientes (mantidos) -----
 
 @app.get("/clients", response_model=ListClientsResponse)
 def clients_list(request: Request):
