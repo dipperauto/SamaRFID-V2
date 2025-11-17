@@ -71,7 +71,7 @@ const Login: React.FC = () => {
     >
       {/* Card com formulário de login */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-white/40 bg-white/70 p-6 shadow-xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/25 bg-black/40 p-6 shadow-2xl backdrop-blur-xl">
           <div className="mb-6 flex flex-col items-center">
             <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
             <Badge variant="outline" className="mt-2">Acesso</Badge>
