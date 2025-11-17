@@ -150,9 +150,12 @@ const ClientsPage: React.FC = () => {
       <div className="relative z-10 space-y-4">
         <Card className="rounded-3xl border border-white/25 bg-black/40 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Clientes</CardTitle>
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-xl md:text-2xl">Clientes</CardTitle>
+
+              {/* Grupo direito (desktop) + empilhado (mobile) */}
+              <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
+                {/* Busca desktop */}
                 <div className="relative hidden md:block">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
                   <Input
@@ -162,13 +165,19 @@ const ClientsPage: React.FC = () => {
                     className="w-64 pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Switch desktop */}
+                <div className="hidden md:flex items-center gap-2">
                   <span className="text-sm text-white/80">Modo edição</span>
                   <Switch checked={editMode} onCheckedChange={setEditMode} />
                 </div>
+
+                {/* Botão - full width no mobile */}
                 <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                   <DialogTrigger asChild>
-                    <Button className="bg-white/20 text-white hover:bg-white/25">Cadastrar Cliente</Button>
+                    <Button className="w-full md:w-auto bg-white/20 text-white hover:bg-white/25">
+                      Cadastrar Cliente
+                    </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-3xl rounded-2xl bg-black/35 border border-white/25 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
@@ -183,6 +192,23 @@ const ClientsPage: React.FC = () => {
                     />
                   </DialogContent>
                 </Dialog>
+              </div>
+
+              {/* Busca mobile */}
+              <div className="relative md:hidden">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Pesquisar por nome, documento, telefone..."
+                  className="w-full pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
+                />
+              </div>
+
+              {/* Switch mobile */}
+              <div className="flex items-center gap-2 md:hidden">
+                <span className="text-sm text-white/80">Modo edição</span>
+                <Switch checked={editMode} onCheckedChange={setEditMode} />
               </div>
             </div>
           </CardHeader>
