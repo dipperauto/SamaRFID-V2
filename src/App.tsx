@@ -12,6 +12,7 @@ import AppLayout from "./components/AppLayout";
 import ClientsPage from "./pages/Clients";
 import UsersPage from "./pages/Users";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import KanbanPage from "./pages/Kanban";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/admin/add-user" element={<AdminAddUser />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/kanban" element={<KanbanPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

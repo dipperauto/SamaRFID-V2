@@ -31,6 +31,8 @@ from storage_clients import (
     save_client_file,
     delete_client_file,
 )
+from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
+from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -128,10 +130,10 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 def default_allowed_pages(role: Optional[str]) -> List[str]:
-    # keys: "home","teste","clients","admin:add-user","users"
+    # keys: "home","teste","clients","admin:add-user","users","kanban"
     if role == "administrador":
-        return ["home", "teste", "clients", "admin:add-user", "users"]
-    return ["home", "teste", "clients"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban"]
+    return ["home", "teste", "clients", "kanban"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -436,3 +438,80 @@ def clients_file_delete(client_id: int, filename: str, request: Request):
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado.")
     return DeleteClientFileResponse(success=True, message="Arquivo removido com sucesso.")
+
+
+# ----- Kanban (autenticado) -----
+
+@app.get("/kanban", response_model=KanbanBoard)
+def kanban_get(request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    board = get_board()
+    # valida estrutura
+    return KanbanBoard(
+        lists=[KanbanList(**l) for l in board.get("lists", [])],
+        cards=[KanbanCard(**c) for c in board.get("cards", [])],
+    )
+
+@app.post("/kanban/lists", response_model=KanbanList)
+def kanban_create_list(payload: CreateListRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    new_list = create_list(payload.title)
+    return KanbanList(**new_list)
+
+@app.put("/kanban/lists/{list_id}", response_model=KanbanList)
+def kanban_update_list(list_id: str, payload: UpdateListRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    updated = update_list(list_id, title=payload.title, order=payload.order)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista não encontrada.")
+    return KanbanList(**updated)
+
+@app.delete("/kanban/lists/{list_id}")
+def kanban_delete_list(list_id: str, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_list(list_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lista não encontrada.")
+    return {"success": True}
+
+@app.post("/kanban/cards", response_model=KanbanCard)
+def kanban_create_card(payload: CreateCardRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    new_card = create_card(
+        payload.listId,
+        payload.title,
+        payload.description,
+        payload.assignees,
+        payload.dueDate,
+        payload.color,
+    )
+    return KanbanCard(**new_card)
+
+@app.put("/kanban/cards/{card_id}", response_model=KanbanCard)
+def kanban_update_card(card_id: str, payload: UpdateCardRequest, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    updated = update_card(
+        card_id,
+        title=payload.title,
+        description=payload.description,
+        assignees=payload.assignees,
+        dueDate=payload.dueDate,
+        color=payload.color,
+        listId=payload.listId,
+        position=payload.position,
+    )
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card não encontrado.")
+    return KanbanCard(**updated)

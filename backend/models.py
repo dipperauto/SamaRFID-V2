@@ -134,3 +134,48 @@ class UploadClientFileResponse(BaseModel):
 class DeleteClientFileResponse(BaseModel):
     success: bool
     message: Optional[str] = None
+
+# ---------- Kanban ----------
+
+class KanbanList(BaseModel):
+    id: str
+    title: str
+    order: int
+
+class KanbanCard(BaseModel):
+    id: str
+    listId: str
+    title: str
+    description: Optional[str] = None
+    assignees: list[str] = []
+    dueDate: Optional[str] = None
+    color: Optional[str] = None
+    position: int
+
+class KanbanBoard(BaseModel):
+    lists: list[KanbanList]
+    cards: list[KanbanCard]
+
+class CreateListRequest(BaseModel):
+    title: str
+
+class UpdateListRequest(BaseModel):
+    title: Optional[str] = None
+    order: Optional[int] = None
+
+class CreateCardRequest(BaseModel):
+    listId: str
+    title: str
+    description: Optional[str] = None
+    assignees: Optional[list[str]] = None
+    dueDate: Optional[str] = None
+    color: Optional[str] = None
+
+class UpdateCardRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    assignees: Optional[list[str]] = None
+    dueDate: Optional[str] = None
+    color: Optional[str] = None
+    listId: Optional[str] = None
+    position: Optional[int] = None

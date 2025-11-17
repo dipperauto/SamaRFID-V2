@@ -11,6 +11,7 @@ export const PAGES: AppPage[] = [
   { key: "clients", label: "Clientes", path: "/clients", icon: "clients" },
   { key: "admin:add-user", label: "Adicionar Usuário", path: "/admin/add-user", icon: "adminAddUser" },
   { key: "users", label: "Usuários", path: "/users", icon: "users" },
+  { key: "kanban", label: "Kanban", path: "/kanban", icon: "clients" },
 ];
 
 export function pathToKey(pathname: string): string | null {
