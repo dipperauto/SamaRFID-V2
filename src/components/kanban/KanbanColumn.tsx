@@ -24,7 +24,7 @@ const KanbanColumn: React.FC<Props> = ({ list, cards, onNewCard, onCardClick, on
           <Button
             variant="outline"
             size="sm"
-            className="border-white/30 bg-white text-black hover:bg-white/90"
+            className="border-white/30 text-white hover:bg-white/10"
             onClick={() => onNewCard(list.id)}
           >
             Novo
@@ -40,12 +40,28 @@ const KanbanColumn: React.FC<Props> = ({ list, cards, onNewCard, onCardClick, on
         </div>
       </div>
 
-      <Droppable droppableId={list.id} type="CARD">
+      <Droppable droppableId={list.id} type="CARD"
+        renderClone={(provided, snapshot, rubric) => {
+          const card = cards.find(c => c.id === rubric.draggableId);
+          if (!card) return null;
+          return (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              {...provided.dragHandleProps}
+              style={{ ...(provided.draggableProps.style || {}), zIndex: 1000 }}
+              className="pointer-events-none"
+            >
+              <KanbanCardView card={card} />
+            </div>
+          );
+        }}
+      >
         {(provided) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-3 overflow-visible min-h-4"
           >
             {cards
               .sort((a, b) => a.position - b.position)
@@ -56,8 +72,8 @@ const KanbanColumn: React.FC<Props> = ({ list, cards, onNewCard, onCardClick, on
                       ref={dragProvided.innerRef}
                       {...dragProvided.draggableProps}
                       {...dragProvided.dragHandleProps}
-                      style={dragProvided.draggableProps.style}
-                      className={`transition-transform ${snapshot.isDragging ? "scale-[1.02]" : ""}`}
+                      style={{ ...(dragProvided.draggableProps.style || {}), zIndex: snapshot.isDragging ? 1 : "auto" }}
+                      className={snapshot.isDragging ? "" : ""}
                     >
                       <KanbanCardView
                         card={card}
