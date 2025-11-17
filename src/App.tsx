@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
 import ClientsPage from "./pages/Clients";
 import UsersPage from "./pages/Users";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      {/* Fundo animado global */}
+      <AnimatedBackground />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />

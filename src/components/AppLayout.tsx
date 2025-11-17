@@ -33,7 +33,7 @@ const AppLayout: React.FC = () => {
 
   if (!checked) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <div className="text-sm text-slate-600">Verificando sessão…</div>
       </div>
     );
@@ -51,7 +51,7 @@ const AppLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-50">
+    <div className="min-h-screen w-full">
       <ResponsiveSidebar />
       <main className="relative min-h-screen w-full lg:pl-64">
         {/* Top spacing for mobile button area */}
