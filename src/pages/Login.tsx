@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -71,15 +70,14 @@ const Login: React.FC = () => {
     >
       {/* Card com formulário de login */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-white/25 bg-black/40 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/15 bg-black/70 p-6 shadow-2xl backdrop-blur-xl">
           <div className="mb-6 flex flex-col items-center">
             <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
-            <Badge variant="outline" className="mt-2">Acesso</Badge>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login">Login</Label>
+              <Label htmlFor="login" className="text-white">Login</Label>
               <Input
                 id="login"
                 value={login}
@@ -90,7 +88,7 @@ const Login: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-white">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -104,7 +102,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-900"
+                  className="absolute inset-y-0 right-2 flex items-center text-gray-300 hover:text-white"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
