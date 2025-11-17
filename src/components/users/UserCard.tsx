@@ -25,9 +25,10 @@ type Props = {
 
 const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = false }) => {
   const photoUrl = React.useMemo(() => {
-    const p = user.profile_photo_path || "";
-    if (!p) return null;
-    // Converte caminhos salvos como 'media/users/...' para 'static/users/...'
+    const pRaw = user.profile_photo_path || "";
+    if (!pRaw) return null;
+    // Normaliza separadores de path para web
+    const p = pRaw.replace(/\\/g, "/");
     const webPath =
       p.startsWith("static/") ? p :
       p.startsWith("media/") ? p.replace(/^media\//, "static/") :
