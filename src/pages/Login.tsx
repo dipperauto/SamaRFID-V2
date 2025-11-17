@@ -140,16 +140,15 @@ const Login: React.FC = () => {
             </Button>
           </form>
         </div>
+      </div>
 
-        <div className="absolute bottom-3 right-3 z-20 text-[10px] text-white/70 space-y-0.5 text-right">
-          <div>Backend: {API_URL}</div>
-          <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
-          <div>
-            Token admin:{" "}
-            {health && !healthErr ? (health?.adminConfigured ? "Configurado" : "Não configurado") : "—"}
-          </div>
-          {healthErr && <div className="text-red-200">Erro: {healthErr}</div>}
+      <div className="absolute bottom-3 right-3 z-20 text-[10px] text-black space-y-0.5 text-right">
+        <div>Backend: {API_URL}</div>
+        <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
+        <div>
+          Token admin: {health && !healthErr ? (health?.adminConfigured ? "Configurado" : "Não configurado") : "—"}
         </div>
+        {healthErr && <div className="text-red-600">Erro: {healthErr}</div>}
       </div>
     </div>
   );
