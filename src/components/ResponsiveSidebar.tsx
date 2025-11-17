@@ -93,7 +93,6 @@ const ResponsiveSidebar: React.FC = () => {
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm font-medium">Sair</span>
               </button>
-              <p className="mt-2 text-xs text-white">Dipper Automation 2025 ©</p>
             </div>
           </SheetContent>
         </Sheet>
