@@ -42,6 +42,8 @@ class Client(BaseModel):
     bank_data: Optional[str] = None
     municipal_registration: Optional[str] = None
     state_registration: Optional[str] = None
+    corporate_name: Optional[str] = None  # Razão Social
+    trade_name: Optional[str] = None      # Nome Fantasia
     notes: Optional[str] = None
 
 
@@ -55,6 +57,8 @@ class AddClientRequest(BaseModel):
     bank_data: Optional[str] = None
     municipal_registration: Optional[str] = None
     state_registration: Optional[str] = None
+    corporate_name: Optional[str] = None
+    trade_name: Optional[str] = None
     notes: Optional[str] = None  # até 50 linhas (validado no front)
 
 
@@ -68,6 +72,8 @@ class UpdateClientRequest(BaseModel):
     bank_data: Optional[str] = None
     municipal_registration: Optional[str] = None
     state_registration: Optional[str] = None
+    corporate_name: Optional[str] = None
+    trade_name: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -80,3 +86,28 @@ class AddClientResponse(BaseModel):
 class ListClientsResponse(BaseModel):
     count: int
     clients: List[Client]
+
+
+# ---------- Anexos ----------
+
+class ClientFile(BaseModel):
+    name: str
+    url: str
+    size_bytes: int
+
+
+class ListClientFilesResponse(BaseModel):
+    files: List[ClientFile]
+    total_bytes: int
+    limit_bytes: int
+
+
+class UploadClientFileResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    file: Optional[ClientFile] = None
+
+
+class DeleteClientFileResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None

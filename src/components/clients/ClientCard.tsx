@@ -18,6 +18,8 @@ export type Client = {
   bank_data?: string | null;
   municipal_registration?: string | null;
   state_registration?: string | null;
+  corporate_name?: string | null; // Razão Social
+  trade_name?: string | null;      // Nome Fantasia
   notes?: string | null;
 };
 
@@ -74,7 +76,7 @@ const ClientCard: React.FC<Props> = ({ client, apiUrl, onView, onEdit, editMode 
                 Ver
               </Button>
               {editMode && onEdit && (
-                <Button variant="outline" onClick={() => onEdit(client)} className="border-white/30 text-white hover:bg-white/10">
+                <Button variant="outline" onClick={() => onEdit(client)} className="border-white/30 bg-white text-black hover:bg-white/90">
                   Editar
                 </Button>
               )}

@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, status, Header, Response, Request
+from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Optional
@@ -17,8 +17,20 @@ from models import (
     UpdateClientRequest,
     AddClientResponse,
     ListClientsResponse,
+    ClientFile,
+    ListClientFilesResponse,
+    UploadClientFileResponse,
+    DeleteClientFileResponse,
 )
-from storage_clients import get_all_clients, add_client, update_client
+from storage_clients import (
+    get_all_clients,
+    add_client,
+    update_client,
+    list_client_files,
+    total_client_files_size_bytes,
+    save_client_file,
+    delete_client_file,
+)
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -35,20 +47,16 @@ def load_env_file(path: str, override: bool = True):
                 key, value = line.split("=", 1)
                 key = key.strip()
                 value = value.strip().strip('"').strip("'")
-                # Agora: opcionalmente sobrescreve variáveis já existentes
                 if key:
                     if override or key not in os.environ or not os.environ.get(key):
                         os.environ[key] = value
     except Exception:
-        # Let errors bubble in normal flow; env loading is best-effort
         pass
 
 def load_env_files(paths, override: bool = True):
     for p in paths:
         load_env_file(p, override=override)
 
-# Load .env before reading variables
-# UPDATED: tentar múltiplos caminhos e sobrescrever para garantir aplicação do ADMIN_TOKEN
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 load_env_files(
     [
@@ -61,8 +69,7 @@ load_env_files(
 
 app = FastAPI(title="Backend Dyad - Auth")
 
-# CORS: permite o frontend acessar este backend
-frontend_url = os.environ.get("FRONTEND_URL")  # pode ser vazio
+frontend_url = os.environ.get("FRONTEND_URL")
 frontend_origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
 app.add_middleware(
     CORSMiddleware,
@@ -73,7 +80,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Servir arquivos estáticos (fotos de perfil etc.)
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "media")),
@@ -82,12 +88,14 @@ app.mount(
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 
-# Configuração de cookie/sessão
 SESSION_SECRET = os.environ.get("SESSION_SECRET", ADMIN_TOKEN or "dev-secret-change-me").strip()
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes")
-COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower()  # 'lax' por padrão; use 'none' + secure em domínios diferentes
+COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower()
 COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN", "").strip() or None
-SESSION_TTL = int(os.environ.get("SESSION_TTL", "86400"))  # 24h por padrão
+SESSION_TTL = int(os.environ.get("SESSION_TTL", "86400"))
+
+LIMIT_BYTES = 50 * 1024 * 1024  # 50 MB por cliente
+
 
 def _make_session_token(username: str, role: Optional[str]) -> str:
     exp = int((datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL)).timestamp())
@@ -109,7 +117,6 @@ def _verify_session_token(token: str) -> Optional[dict]:
         exp = int(exp_str)
         if exp < int(datetime.now(timezone.utc).timestamp()):
             return None
-        # garante que usuário ainda existe
         from storage import get_user
         user = get_user(username)
         if not user:
@@ -140,7 +147,6 @@ def auth_login(payload: LoginRequest, response: Response):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas.",
         )
-    # cria cookie de sessão HttpOnly
     token = _make_session_token(user["username"], user.get("role"))
     response.set_cookie(
         key="session",
@@ -148,12 +154,11 @@ def auth_login(payload: LoginRequest, response: Response):
         max_age=SESSION_TTL,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite=COOKIE_SAMESITE,  # 'lax' funciona bem em localhost; para domínios diferentes use 'none' + secure
+        samesite=COOKIE_SAMESITE,
         domain=COOKIE_DOMAIN,
         path="/",
     )
     return LoginResponse(success=True, role=user["role"])
-
 
 @app.get("/auth/me", response_model=LoginResponse)
 def auth_me(request: Request):
@@ -165,13 +170,10 @@ def auth_me(request: Request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida ou expirada.")
     return LoginResponse(success=True, role=data.get("role"))
 
-
 @app.post("/auth/logout")
 def auth_logout(response: Response, request: Request):
-    # Remove cookie de sessão
     response.delete_cookie(key="session", domain=COOKIE_DOMAIN, path="/")
     return {"success": True}
-
 
 @app.post("/users/register", response_model=AddUserResponse)
 def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
@@ -190,7 +192,6 @@ def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Heade
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-
 @app.post("/auth/hash", response_model=HashPasswordResponse)
 def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
     token = (x_admin_token or "").strip()
@@ -198,7 +199,6 @@ def auth_hash(payload: LoginRequest, x_admin_token: Optional[str] = Header(None,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de administrador inválido.")
     hashed = hash_password(payload.password)
     return HashPasswordResponse(hash=hashed)
-
 
 @app.get("/clients", response_model=ListClientsResponse)
 def clients_list(request: Request):
@@ -220,6 +220,8 @@ def clients_list(request: Request):
                 bank_data=row.get("bank_data") or None,
                 municipal_registration=row.get("municipal_registration") or None,
                 state_registration=row.get("state_registration") or None,
+                corporate_name=row.get("corporate_name") or None,
+                trade_name=row.get("trade_name") or None,
                 notes=row.get("notes") or None,
             )
         )
@@ -240,6 +242,8 @@ def clients_register(payload: AddClientRequest, request: Request):
         payload.bank_data,
         payload.municipal_registration,
         payload.state_registration,
+        payload.corporate_name,
+        payload.trade_name,
         payload.notes,
     )
     client = Client(
@@ -253,6 +257,8 @@ def clients_register(payload: AddClientRequest, request: Request):
         bank_data=created.get("bank_data") or None,
         municipal_registration=created.get("municipal_registration") or None,
         state_registration=created.get("state_registration") or None,
+        corporate_name=created.get("corporate_name") or None,
+        trade_name=created.get("trade_name") or None,
         notes=created.get("notes") or None,
     )
     return AddClientResponse(success=True, message="Cliente cadastrado com sucesso.", client=client)
@@ -273,6 +279,8 @@ def clients_update(client_id: int, payload: UpdateClientRequest, request: Reques
         payload.bank_data,
         payload.municipal_registration,
         payload.state_registration,
+        payload.corporate_name,
+        payload.trade_name,
         payload.notes,
     )
     if not updated:
@@ -288,15 +296,53 @@ def clients_update(client_id: int, payload: UpdateClientRequest, request: Reques
         bank_data=updated.get("bank_data") or None,
         municipal_registration=updated.get("municipal_registration") or None,
         state_registration=updated.get("state_registration") or None,
+        corporate_name=updated.get("corporate_name") or None,
+        trade_name=updated.get("trade_name") or None,
         notes=updated.get("notes") or None,
     )
-    return AddClientResponse(success=True, message="Cliente atualizado com sucesso.", client=client)
+    return AddClientResponse(success=True, message="Cliente atualizado com sucesso!", client=client)
 
+# ---------- Anexos por cliente ----------
 
-if __name__ == "__main__":
-    # Execução local opcional
-    host = os.environ.get("BACKEND_HOST", "0.0.0.0")
-    port = int(os.environ.get("BACKEND_PORT", "8000"))
-    import uvicorn
+@app.get("/clients/{client_id}/files", response_model=ListClientFilesResponse)
+def clients_files_list(client_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    files_raw = list_client_files(client_id)
+    files = [
+        ClientFile(name=f["name"], url=f["url"], size_bytes=int(f["size_bytes"]))
+        for f in files_raw
+    ]
+    total = total_client_files_size_bytes(client_id)
+    return ListClientFilesResponse(files=files, total_bytes=total, limit_bytes=LIMIT_BYTES)
 
-    uvicorn.run("app:app", host=host, port=port, reload=True)
+@app.post("/clients/{client_id}/files", response_model=UploadClientFileResponse)
+async def clients_file_upload(client_id: int, request: Request, file: UploadFile = File(...)):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    total = total_client_files_size_bytes(client_id)
+    content = await file.read()
+    new_size = len(content)
+    if total + new_size > LIMIT_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Limite de 50MB por cliente excedido."
+        )
+    name, size_bytes, url = save_client_file(client_id, file.filename, content)
+    return UploadClientFileResponse(
+        success=True,
+        message="Arquivo anexado com sucesso.",
+        file=ClientFile(name=name, url=url, size_bytes=size_bytes),
+    )
+
+@app.delete("/clients/{client_id}/files/{filename}", response_model=DeleteClientFileResponse)
+def clients_file_delete(client_id: int, filename: str, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_client_file(client_id, filename)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado.")
+    return DeleteClientFileResponse(success=True, message="Arquivo removido com sucesso.")

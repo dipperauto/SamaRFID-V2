@@ -1,14 +1,17 @@
 import csv
 import os
 import base64
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 
 CLIENTS_CSV_PATH = os.environ.get(
     "CLIENTS_CSV_PATH",
     os.path.join(os.path.dirname(__file__), "clients.csv"),
 )
 
-MEDIA_CLIENTS_DIR = os.path.join(os.path.dirname(__file__), "media", "clients")
+MEDIA_ROOT = os.path.join(os.path.dirname(__file__), "media")
+MEDIA_CLIENTS_DIR = os.path.join(MEDIA_ROOT, "clients")  # fotos de perfil
+MEDIA_CLIENTS_FILES_DIR = os.path.join(MEDIA_ROOT, "clients_files")  # anexos
+
 CSV_FIELDS = [
     "id",
     "full_name",
@@ -20,6 +23,8 @@ CSV_FIELDS = [
     "bank_data",
     "municipal_registration",
     "state_registration",
+    "corporate_name",  # Razão Social
+    "trade_name",      # Nome Fantasia
     "notes",
 ]
 
@@ -59,13 +64,15 @@ def _ensure_csv():
                     "bank_data": row.get("bank_data", ""),
                     "municipal_registration": row.get("municipal_registration", ""),
                     "state_registration": row.get("state_registration", ""),
+                    "corporate_name": row.get("corporate_name", ""),
+                    "trade_name": row.get("trade_name", ""),
                     "notes": row.get("notes", ""),
                 }
                 writer.writerow(new_row)
 
 
 def _safe_filename(name: str) -> str:
-    return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in name)
+    return "".join(ch if ch.isalnum() or ch in ("-", "_", ".", " ") else "_" for ch in name).strip().replace(" ", "_")
 
 
 def _next_id() -> int:
@@ -106,7 +113,7 @@ def _save_profile_photo(basename_hint: str, photo_base64: Optional[str]) -> Opti
     with open(file_path, "wb") as imgf:
         imgf.write(base64.b64decode(data_part))
     # retorna caminho acessível via /static
-    rel_path_from_media = os.path.relpath(file_path, os.path.join(os.path.dirname(__file__), "media"))
+    rel_path_from_media = os.path.relpath(file_path, MEDIA_ROOT)
     return f"static/{rel_path_from_media.replace(os.sep, '/')}"
 
 
@@ -127,6 +134,8 @@ def get_all_clients() -> List[Dict[str, str]]:
                 "bank_data": row.get("bank_data", ""),
                 "municipal_registration": row.get("municipal_registration", ""),
                 "state_registration": row.get("state_registration", ""),
+                "corporate_name": row.get("corporate_name", ""),
+                "trade_name": row.get("trade_name", ""),
                 "notes": row.get("notes", ""),
             })
     return result
@@ -142,6 +151,8 @@ def add_client(
     bank_data: Optional[str] = None,
     municipal_registration: Optional[str] = None,
     state_registration: Optional[str] = None,
+    corporate_name: Optional[str] = None,
+    trade_name: Optional[str] = None,
     notes: Optional[str] = None,
 ) -> Dict[str, str]:
     _ensure_csv()
@@ -160,6 +171,8 @@ def add_client(
             "bank_data": bank_data or "",
             "municipal_registration": municipal_registration or "",
             "state_registration": state_registration or "",
+            "corporate_name": corporate_name or "",
+            "trade_name": trade_name or "",
             "notes": notes or "",
         })
     return {
@@ -173,6 +186,8 @@ def add_client(
         "bank_data": bank_data or "",
         "municipal_registration": municipal_registration or "",
         "state_registration": state_registration or "",
+        "corporate_name": corporate_name or "",
+        "trade_name": trade_name or "",
         "notes": notes or "",
     }
 
@@ -188,6 +203,8 @@ def update_client(
     bank_data: Optional[str] = None,
     municipal_registration: Optional[str] = None,
     state_registration: Optional[str] = None,
+    corporate_name: Optional[str] = None,
+    trade_name: Optional[str] = None,
     notes: Optional[str] = None,
 ) -> Optional[Dict[str, str]]:
     _ensure_csv()
@@ -197,7 +214,6 @@ def update_client(
         reader = csv.DictReader(f)
         for row in reader:
             if row.get("id") == str(client_id):
-                # atualiza com novos valores (mantém antigos se não enviados)
                 new_photo_path = row.get("profile_photo_path", "")
                 if profile_photo_base64:
                     new_photo_path = _save_profile_photo(f"client_{client_id}", profile_photo_base64) or new_photo_path
@@ -212,6 +228,8 @@ def update_client(
                     "bank_data": bank_data if bank_data is not None else row.get("bank_data", ""),
                     "municipal_registration": municipal_registration if municipal_registration is not None else row.get("municipal_registration", ""),
                     "state_registration": state_registration if state_registration is not None else row.get("state_registration", ""),
+                    "corporate_name": corporate_name if corporate_name is not None else row.get("corporate_name", ""),
+                    "trade_name": trade_name if trade_name is not None else row.get("trade_name", ""),
                     "notes": notes if notes is not None else row.get("notes", ""),
                 }
                 rows.append(new_row)
@@ -226,3 +244,62 @@ def update_client(
         for row in rows:
             writer.writerow(row)
     return updated
+
+
+# ---------- Anexos por cliente (limite 50 MB por cliente) ----------
+
+def _client_files_dir(client_id: int) -> str:
+    path = os.path.join(MEDIA_CLIENTS_FILES_DIR, str(client_id))
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def list_client_files(client_id: int) -> List[Dict[str, str]]:
+    base_dir = _client_files_dir(client_id)
+    files = []
+    for name in os.listdir(base_dir):
+        file_path = os.path.join(base_dir, name)
+        if not os.path.isfile(file_path):
+            continue
+        size = os.path.getsize(file_path)
+        # caminho relativo para /static
+        rel_path_from_media = os.path.relpath(file_path, MEDIA_ROOT)
+        files.append({
+            "name": name,
+            "url": f"static/{rel_path_from_media.replace(os.sep, '/')}",
+            "size_bytes": str(size),
+        })
+    return files
+
+
+def total_client_files_size_bytes(client_id: int) -> int:
+    base_dir = _client_files_dir(client_id)
+    total = 0
+    for name in os.listdir(base_dir):
+        file_path = os.path.join(base_dir, name)
+        if os.path.isfile(file_path):
+            total += os.path.getsize(file_path)
+    return total
+
+
+def save_client_file(client_id: int, filename: str, content: bytes) -> Tuple[str, int, str]:
+    """
+    Salva um arquivo para o cliente e retorna (name, size_bytes, static_url).
+    """
+    base_dir = _client_files_dir(client_id)
+    safe_name = _safe_filename(filename)
+    full_path = os.path.join(base_dir, safe_name)
+    with open(full_path, "wb") as f:
+        f.write(content)
+    rel_path_from_media = os.path.relpath(full_path, MEDIA_ROOT)
+    return safe_name, os.path.getsize(full_path), f"static/{rel_path_from_media.replace(os.sep, '/')}"
+
+
+def delete_client_file(client_id: int, filename: str) -> bool:
+    base_dir = _client_files_dir(client_id)
+    safe_name = _safe_filename(filename)
+    full_path = os.path.join(base_dir, safe_name)
+    if os.path.isfile(full_path):
+        os.remove(full_path)
+        return True
+    return False

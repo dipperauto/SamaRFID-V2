@@ -185,56 +185,70 @@ const ClientsPage: React.FC = () => {
       </div>
 
       {/* View Dialog */}
-      <Dialog open={openView} onOpenChange={(o) => !o ? setSelected(null) : null}>
+      <Dialog open={openView} onOpenChange={(o) => { setOpenView(o); if (!o) setSelected(null); }}>
         <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cliente</DialogTitle>
           </DialogHeader>
           {selected && (
-            <ClientForm
-              initial={{
-                full_name: selected.full_name,
-                doc: selected.doc,
-                address: selected.address,
-                phone: selected.phone,
-                pix_key: selected.pix_key || "",
-                bank_data: selected.bank_data || "",
-                municipal_registration: selected.municipal_registration || "",
-                state_registration: selected.state_registration || "",
-                notes: selected.notes || "",
-                profile_photo_base64: null, // visualização não recarrega foto base64
-              }}
-              readOnly
-              onSubmit={() => {}}
-              onCancel={() => setOpenView(false)}
-            />
+            <>
+              <ClientForm
+                initial={{
+                  full_name: selected.full_name,
+                  doc: selected.doc,
+                  address: selected.address,
+                  phone: selected.phone,
+                  pix_key: selected.pix_key || "",
+                  bank_data: selected.bank_data || "",
+                  municipal_registration: selected.municipal_registration || "",
+                  state_registration: selected.state_registration || "",
+                  corporate_name: selected.corporate_name || "",
+                  trade_name: selected.trade_name || "",
+                  notes: selected.notes || "",
+                  profile_photo_base64: null,
+                }}
+                readOnly
+                onSubmit={() => {}}
+                onCancel={() => setOpenView(false)}
+              />
+              <div className="mt-4">
+                <ClientAttachments clientId={selected.id} apiUrl={API_URL} />
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={openEdit} onOpenChange={(o) => !o ? setSelected(null) : null}>
+      <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setSelected(null); }}>
         <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
           {selected && (
-            <ClientForm
-              initial={{
-                full_name: selected.full_name,
-                doc: selected.doc,
-                address: selected.address,
-                phone: selected.phone,
-                pix_key: selected.pix_key || "",
-                bank_data: selected.bank_data || "",
-                municipal_registration: selected.municipal_registration || "",
-                state_registration: selected.state_registration || "",
-                notes: selected.notes || "",
-                profile_photo_base64: null,
-              }}
-              onSubmit={handleEdit}
-              onCancel={() => setOpenEdit(false)}
-            />
+            <>
+              <ClientForm
+                initial={{
+                  full_name: selected.full_name,
+                  doc: selected.doc,
+                  address: selected.address,
+                  phone: selected.phone,
+                  pix_key: selected.pix_key || "",
+                  bank_data: selected.bank_data || "",
+                  municipal_registration: selected.municipal_registration || "",
+                  state_registration: selected.state_registration || "",
+                  corporate_name: selected.corporate_name || "",
+                  trade_name: selected.trade_name || "",
+                  notes: selected.notes || "",
+                  profile_photo_base64: null,
+                }}
+                onSubmit={handleEdit}
+                onCancel={() => setOpenEdit(false)}
+              />
+              <div className="mt-4">
+                <ClientAttachments clientId={selected.id} apiUrl={API_URL} editable />
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

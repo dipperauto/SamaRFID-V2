@@ -16,6 +16,8 @@ export type ClientFormValues = {
   bank_data?: string | null;
   municipal_registration?: string | null;
   state_registration?: string | null;
+  corporate_name?: string | null; // Razão Social
+  trade_name?: string | null;      // Nome Fantasia
   notes?: string | null;
   profile_photo_base64?: string | null;
 };
@@ -37,6 +39,8 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
     bank_data: initial?.bank_data ?? "",
     municipal_registration: initial?.municipal_registration ?? "",
     state_registration: initial?.state_registration ?? "",
+    corporate_name: initial?.corporate_name ?? "",
+    trade_name: initial?.trade_name ?? "",
     notes: initial?.notes ?? "",
     profile_photo_base64: initial?.profile_photo_base64 ?? null,
   });
@@ -135,6 +139,24 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
             disabled={readOnly}
             onChange={(e) => setField("state_registration", e.target.value)}
             placeholder="Número da inscrição estadual"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Razão Social (opcional)</Label>
+          <Input
+            value={values.corporate_name || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("corporate_name", e.target.value)}
+            placeholder="Razão Social"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Nome Fantasia (opcional)</Label>
+          <Input
+            value={values.trade_name || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("trade_name", e.target.value)}
+            placeholder="Nome Fantasia"
           />
         </div>
       </div>
