@@ -39,9 +39,9 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
   return (
     <Card className="rounded-2xl border border-white/25 bg-black/40 shadow-xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
       <CardContent className="p-4">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <div className="shrink-0">
-            <Avatar className="w-16 h-16 ring-1 ring-white/30">
+            <Avatar className="w-14 h-14 sm:w-16 sm:h-16 ring-1 ring-white/30">
               {photoUrl ? (
                 <AvatarImage src={photoUrl} alt={user.full_name} />
               ) : (
@@ -53,20 +53,28 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-semibold truncate">{user.full_name}</div>
+              <div className="font-semibold truncate text-base sm:text-lg">{user.full_name}</div>
               <Badge variant="outline" className="bg-white/10 text-white">{user.role}</Badge>
             </div>
-            <div className="text-white/80 text-sm mt-1 truncate">E-mail: {user.username}</div>
-            <div className="text-white/70 text-xs mt-1 line-clamp-1">
+            <div className="text-white/80 text-xs sm:text-sm mt-1 truncate">E-mail: {user.username}</div>
+            <div className="text-white/70 text-[11px] sm:text-xs mt-1 line-clamp-2">
               Páginas: {user.allowed_pages.length > 0 ? user.allowed_pages.join(", ") : "—"}
             </div>
 
-            <div className="flex items-center gap-2 mt-4">
-              <Button variant="secondary" onClick={() => onView(user)} className="bg-white/20 text-white hover:bg-white/25">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4">
+              <Button
+                variant="secondary"
+                onClick={() => onView(user)}
+                className="w-full sm:w-auto bg-white/20 text-white hover:bg-white/25"
+              >
                 Ver
               </Button>
               {editMode && onEdit && (
-                <Button variant="outline" onClick={() => onEdit(user)} className="border-white/30 bg-white text-black hover:bg-white/90">
+                <Button
+                  variant="outline"
+                  onClick={() => onEdit(user)}
+                  className="w-full sm:w-auto border-white/30 bg-white text-black hover:bg-white/90"
+                >
                   Editar
                 </Button>
               )}
