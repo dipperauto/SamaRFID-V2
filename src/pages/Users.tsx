@@ -167,7 +167,7 @@ const UsersPage: React.FC = () => {
       <div className="pointer-events-none fixed -bottom-24 -right-24 h-[520px] w-[520px] rounded-full bg-white/50 blur-3xl" />
 
       <div className="relative z-10 space-y-4">
-        <Card className="rounded-3xl border border-white/25 bg黑/40 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
+        <Card className="rounded-3xl border border-white/25 bg-black/40 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Usuários</CardTitle>
