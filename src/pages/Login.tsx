@@ -89,31 +89,6 @@ const Login: React.FC = () => {
               alt="Logo"
               className="h-20 w-auto drop-shadow"
             />
-            <div className="mt-3 w-full">
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-                <span className="text-white/80">Backend:</span>
-                <Badge variant="outline" className="bg-white/10 text-white">{API_URL}</Badge>
-                <span className="text-white/80">Conexão:</span>
-                {health && !healthErr ? (
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100">OK</Badge>
-                ) : (
-                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Indisponível</Badge>
-                )}
-                <span className="text-white/80">Token admin:</span>
-                {health && !healthErr ? (
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {health?.adminConfigured ? "Configurado" : "Não configurado"}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="bg-white/20 text-white">—</Badge>
-                )}
-              </div>
-              {healthErr && (
-                <div className="mt-2 text-[10px] text-red-200 text-center">
-                  Erro: {healthErr}. Se o backend estiver desligado, pode haver outro serviço respondendo em {API_URL} ou sua variável VITE_BACKEND_URL aponta para outro servidor.
-                </div>
-              )}
-            </div>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
@@ -166,9 +141,15 @@ const Login: React.FC = () => {
           </form>
         </div>
 
-        <p className="mt-4 text-center text-white/70 text-xs">
-          Dica: use qualquer login e senha — é apenas demonstração.
-        </p>
+        <div className="absolute bottom-3 right-3 z-20 text-[10px] text-white/70 space-y-0.5 text-right">
+          <div>Backend: {API_URL}</div>
+          <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
+          <div>
+            Token admin:{" "}
+            {health && !healthErr ? (health?.adminConfigured ? "Configurado" : "Não configurado") : "—"}
+          </div>
+          {healthErr && <div className="text-red-200">Erro: {healthErr}</div>}
+        </div>
       </div>
     </div>
   );
