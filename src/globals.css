@@ -99,3 +99,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Barra de rolagem discreta para conteúdos de Dialog */
+.dialog-scroll {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.dialog-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.dialog-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dialog-scroll::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+  border: 2px solid transparent; /* separa o thumb do conteúdo */
+  background-clip: padding-box;
+}
+.dialog-scroll:hover {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+}
+.dialog-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.4);
+}
