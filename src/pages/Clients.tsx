@@ -135,7 +135,7 @@ const ClientsPage: React.FC = () => {
                   <DialogTrigger asChild>
                     <Button className="bg-white/20 text-white hover:bg-white/25">Cadastrar Cliente</Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-gradient-to-b from-black/85 via-black/80 to-black/70 border border-white/20 ring-1 ring-white/10 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
+                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-black/35 border border-white/25 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Novo Cliente</DialogTitle>
                       <DialogDescription className="text-white/70">
@@ -186,7 +186,7 @@ const ClientsPage: React.FC = () => {
 
       {/* View Dialog */}
       <Dialog open={openView} onOpenChange={(o) => !o ? setSelected(null) : null}>
-        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cliente</DialogTitle>
           </DialogHeader>
@@ -214,7 +214,7 @@ const ClientsPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={(o) => !o ? setSelected(null) : null}>
-        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
