@@ -66,13 +66,13 @@ const Login: React.FC = () => {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-4"
+      className="relative min-h-screen w-full overflow-hidden flex items-center justify-center py-8 px-4"
     >
       {/* Card com formulário de login */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-white/15 bg-black/70 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/15 bg-black/70 py-8 px-6 shadow-2xl backdrop-blur-xl">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
-            <img src="/logo.png" alt="Logo" className="h-24 md:h-28 w-auto" />
+            <img src="/logo.png" alt="Logo" className="h-20 md:h-24 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
