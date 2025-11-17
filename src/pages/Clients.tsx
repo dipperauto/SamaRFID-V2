@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Switch } from "@/components/ui/switch";
 import ClientForm, { ClientFormValues } from "@/components/clients/ClientForm";
 import ClientCard, { Client } from "@/components/clients/ClientCard";
+import ClientAttachments from "@/components/clients/ClientAttachments";
 
 type ClientsResponse = {
   count: number;
