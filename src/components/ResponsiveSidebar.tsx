@@ -131,6 +131,8 @@ const ResponsiveSidebar: React.FC = () => {
             ))}
           </nav>
 
+          <p className="px-3 pb-2 text-xs text-white">Dipper Automation 2025 ©</p>
+
           <div className="px-2 py-2 border-t border-white/25">
             <button
               onClick={handleLogout}
@@ -141,7 +143,6 @@ const ResponsiveSidebar: React.FC = () => {
               </span>
               <span className="text-sm font-medium block">Sair</span>
             </button>
-            <p className="mt-2 px-3 text-xs text-white">Dipper Automation 2025 ©</p>
           </div>
         </div>
       </aside>
