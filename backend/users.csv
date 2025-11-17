@@ -1,2 +1,2 @@
 username,password_hash,role,full_name,profile_photo_path,allowed_pages
-jose@dipperauto.com,pbkdf2_sha256$310000$e19d27306cb82800e6f8fc874ba7a5f3$54dc0ee8c13851f5dd26cd61133f375fa86b00dd7bc9c757897ade5d5202e38b,administrador,José Barros,media\users\jose_dipperauto_com.png,
+jose@dipperauto.com,pbkdf2_sha256$310000$e19d27306cb82800e6f8fc874ba7a5f3$54dc0ee8c13851f5dd26cd61133f375fa86b00dd7bc9c757897ade5d5202e38b,administrador,José Barros,media\users\jose_dipperauto_com.png,"admin:add-user,home,clients,users"

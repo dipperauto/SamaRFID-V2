@@ -98,12 +98,12 @@ const UserForm: React.FC<Props> = ({ initial, readOnly = false, isEdit = false, 
         <div className="space-y-2 md:col-span-2">
           <Label>Papel</Label>
           <Select value={values.role} onValueChange={(v) => setField("role", v)} disabled={readOnly}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-white text-black">
               <SelectValue placeholder="Selecione o papel" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="administrador">Administrador</SelectItem>
-              <SelectItem value="usuario">Usuário</SelectItem>
+            <SelectContent className="bg-white text-black">
+              <SelectItem value="administrador" className="text-black">Administrador</SelectItem>
+              <SelectItem value="usuario" className="text黑">Usuário</SelectItem>
             </SelectContent>
           </Select>
         </div>
