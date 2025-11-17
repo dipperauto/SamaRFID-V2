@@ -24,7 +24,7 @@ const KanbanColumn: React.FC<Props> = ({ list, cards, onNewCard, onCardClick, on
           <Button
             variant="outline"
             size="sm"
-            className="border-white/30 text-gray-300 hover:bg-white/10"
+            className="border-white/30 text-gray-400 hover:bg-white/10"
             onClick={() => onNewCard(list.id)}
           >
             Novo

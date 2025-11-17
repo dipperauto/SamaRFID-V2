@@ -24,6 +24,49 @@ const colorStyles = (color?: string | null) => {
   return "";
 };
 
+// Funções utilitárias para tingir o fundo com versão escurecida da cor escolhida
+const hexToRgb = (hex: string) => {
+  const h = hex.replace("#", "");
+  if (h.length === 3) {
+    const r = parseInt(h[0] + h[0], 16);
+    const g = parseInt(h[1] + h[1], 16);
+    const b = parseInt(h[2] + h[2], 16);
+    return { r, g, b };
+  }
+  if (h.length === 6) {
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return { r, g, b };
+  }
+  return null;
+};
+
+const darkenRgb = (rgb: { r: number; g: number; b: number }, amount = 0.3) => {
+  // mistura com preto para escurecer
+  const a = Math.min(Math.max(amount, 0), 1);
+  return {
+    r: Math.round(rgb.r * (1 - a)),
+    g: Math.round(rgb.g * (1 - a)),
+    b: Math.round(rgb.b * (1 - a)),
+  };
+};
+
+const rgba = (rgb: { r: number; g: number; b: number }, alpha = 0.12) =>
+  `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+
+const getTintStyle = (color?: string | null): React.CSSProperties | undefined => {
+  if (!color || color === "liquid_glass") return undefined;
+  if (!color.startsWith("#")) return undefined;
+  const rgb = hexToRgb(color);
+  if (!rgb) return undefined;
+  const dark = darkenRgb(rgb, 0.35);
+  return {
+    borderColor: color,
+    backgroundColor: rgba(dark, 0.12),
+  };
+};
+
 const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
   const hasAssignees = card.assignees?.length > 0;
   const borderClass = colorStyles(card.color);
@@ -35,18 +78,16 @@ const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
     return diff > 0 && diff <= 24 * 60 * 60 * 1000;
   })();
 
+  const style = card.color === "liquid_glass" ? undefined : getTintStyle(card.color);
+
   return (
     <Card
       onClick={onClick}
       className={cn(
-        "relative cursor-pointer rounded-xl border bg-black/50 text-white ring-1 ring-white/20 backdrop-blur-xl hover:bg-black/60 transition-colors",
+        "relative cursor-pointer rounded-xl border bg-white/5 text-white ring-1 ring-white/20 backdrop-blur-xl hover:bg-white/10 transition-colors",
         borderClass,
       )}
-      style={
-        card.color && card.color !== "liquid_glass" && card.color.startsWith("#")
-          ? { borderColor: card.color }
-          : undefined
-      }
+      style={style}
     >
       {/* Delete button */}
       <Button
