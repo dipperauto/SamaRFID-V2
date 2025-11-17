@@ -109,6 +109,8 @@ def update_card(
     if not card:
         return None
 
+    old_list_id = card["listId"]
+
     # mover de lista/posição
     if listId is not None:
         card["listId"] = listId
@@ -126,10 +128,24 @@ def update_card(
     if color is not None:
         card["color"] = color
 
-    # reindex das duas listas envolvidas
-    if listId is not None:
+    # reindex das listas envolvidas
+    if listId is not None and old_list_id != listId:
+        _reindex_positions(data, old_list_id)
         _reindex_positions(data, listId)
-    _reindex_positions(data, card["listId"])
+    else:
+        _reindex_positions(data, card["listId"])
 
     _save(data)
     return card
+
+def delete_card(card_id: str) -> bool:
+    data = _load()
+    target = next((c for c in data["cards"] if c["id"] == card_id), None)
+    if not target:
+        return False
+    list_id = target["listId"]
+    before = len(data["cards"])
+    data["cards"] = [c for c in data["cards"] if c["id"] != card_id]
+    _reindex_positions(data, list_id)
+    _save(data)
+    return len(data["cards"]) < before

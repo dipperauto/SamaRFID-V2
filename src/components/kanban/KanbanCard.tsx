@@ -4,12 +4,14 @@ import React from "react";
 import { KanbanCard as CardType } from "./types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users } from "lucide-react";
+import { CalendarDays, Users, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
   card: CardType;
   onClick?: () => void;
+  onDelete?: (id: string) => void;
 };
 
 const colorStyles = (color?: string | null) => {
@@ -22,15 +24,22 @@ const colorStyles = (color?: string | null) => {
   return "";
 };
 
-const KanbanCard: React.FC<Props> = ({ card, onClick }) => {
+const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
   const hasAssignees = card.assignees?.length > 0;
   const borderClass = colorStyles(card.color);
+  const isNearDue = (() => {
+    if (!card.dueDate) return false;
+    const due = new Date(card.dueDate).getTime();
+    const now = Date.now();
+    const diff = due - now;
+    return diff > 0 && diff <= 24 * 60 * 60 * 1000;
+  })();
 
   return (
     <Card
       onClick={onClick}
       className={cn(
-        "cursor-pointer rounded-xl border bg-black/50 text-white ring-1 ring-white/20 backdrop-blur-xl hover:bg-black/60 transition-colors",
+        "relative cursor-pointer rounded-xl border bg-black/50 text-white ring-1 ring-white/20 backdrop-blur-xl hover:bg-black/60 transition-colors",
         borderClass,
       )}
       style={
@@ -39,6 +48,19 @@ const KanbanCard: React.FC<Props> = ({ card, onClick }) => {
           : undefined
       }
     >
+      {/* Delete button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-2 top-2 text-red-300 hover:text-red-400 hover:bg-red-500/10"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete?.(card.id);
+        }}
+      >
+        <Trash className="h-4 w-4" />
+      </Button>
+
       <CardContent className="p-3">
         <div className="font-medium">{card.title}</div>
         {card.description ? (
@@ -47,7 +69,7 @@ const KanbanCard: React.FC<Props> = ({ card, onClick }) => {
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {card.dueDate ? (
-            <Badge className="bg-white/15 text-white hover:bg-white/20">
+            <Badge className={cn(isNearDue ? "bg-red-500/30 text-red-200 hover:bg-red-500/35" : "bg-white/15 text-white hover:bg-white/20")}>
               <CalendarDays className="mr-1 h-3 w-3" />
               {new Date(card.dueDate).toLocaleDateString()}
             </Badge>

@@ -32,7 +32,7 @@ from storage_clients import (
     delete_client_file,
 )
 from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
-from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card
+from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -515,3 +515,13 @@ def kanban_update_card(card_id: str, payload: UpdateCardRequest, request: Reques
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card não encontrado.")
     return KanbanCard(**updated)
+
+@app.delete("/kanban/cards/{card_id}")
+def kanban_delete_card(card_id: str, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_card(card_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card não encontrado.")
+    return {"success": True}

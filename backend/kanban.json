@@ -1,0 +1,28 @@
+{
+  "lists": [
+    {
+      "id": "list_1763349768683",
+      "title": "Teste",
+      "order": 1
+    },
+    {
+      "id": "list_1763349792627",
+      "title": "B",
+      "order": 2
+    }
+  ],
+  "cards": [
+    {
+      "id": "card_1763349775890",
+      "listId": "list_1763349768683",
+      "title": "aaa",
+      "description": "",
+      "assignees": [
+        "jose@dipperauto.com"
+      ],
+      "dueDate": "2025-11-03T00:00:00.000Z",
+      "color": "#22c55e",
+      "position": 0
+    }
+  ]
+}

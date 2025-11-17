@@ -109,6 +109,36 @@ const KanbanPage: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["kanban"] });
   };
 
+  const deleteList = async (listId: string) => {
+    const res = await fetch(`${API_URL}/kanban/lists/${encodeURIComponent(listId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao excluir lista.");
+      return;
+    }
+    toast.success("Lista excluída!");
+    await refetch();
+    queryClient.invalidateQueries({ queryKey: ["kanban"] });
+  };
+
+  const deleteCard = async (cardId: string) => {
+    const res = await fetch(`${API_URL}/kanban/cards/${encodeURIComponent(cardId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao excluir card.");
+      return;
+    }
+    toast.success("Card excluído!");
+    await refetch();
+    queryClient.invalidateQueries({ queryKey: ["kanban"] });
+  };
+
   const openNewCard = (listId: string) => {
     setNewCardListId(listId);
     setEditingCard(null);
@@ -248,6 +278,8 @@ const KanbanPage: React.FC = () => {
                   cards={listCards(list.id)}
                   onNewCard={openNewCard}
                   onCardClick={openEditCard}
+                  onDeleteList={deleteList}
+                  onDeleteCard={deleteCard}
                 />
               ))}
           </div>
