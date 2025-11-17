@@ -69,6 +69,58 @@ const Login: React.FC = () => {
     <div
       className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-4"
     >
+      {/* Card com formulário de login */}
+      <div className="relative z-10 w-full max-w-md">
+        <div className="rounded-2xl border border-white/40 bg-white/70 p-6 shadow-xl backdrop-blur-xl">
+          <div className="mb-6 flex flex-col items-center">
+            <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+            <Badge variant="outline" className="mt-2">Acesso</Badge>
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login">Login</Label>
+              <Input
+                id="login"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                placeholder="Seu usuário"
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Sua senha"
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-900"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <LogIn className="mr-2 h-4 w-4" />
+              Entrar
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* Debug técnico no canto da página */}
       <div className="absolute bottom-3 right-3 z-20 text-[10px] text-black space-y-0.5 text-right">
         <div>Backend: {API_URL}</div>
         <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
