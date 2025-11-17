@@ -24,7 +24,16 @@ type Props = {
 };
 
 const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = false }) => {
-  const photoUrl = user.profile_photo_path ? `${apiUrl}/${user.profile_photo_path}` : null;
+  const photoUrl = React.useMemo(() => {
+    const p = user.profile_photo_path || "";
+    if (!p) return null;
+    // Converte caminhos salvos como 'media/users/...' para 'static/users/...'
+    const webPath =
+      p.startsWith("static/") ? p :
+      p.startsWith("media/") ? p.replace(/^media\//, "static/") :
+      `static/${p.replace(/^\//, "")}`;
+    return `${apiUrl}/${webPath}`;
+  }, [user.profile_photo_path, apiUrl]);
 
   return (
     <Card className="rounded-2xl border border-white/25 bg-black/40 shadow-xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
