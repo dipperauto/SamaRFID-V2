@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import ClientForm, { ClientFormValues } from "@/components/clients/ClientForm";
 import ClientCard, { Client } from "@/components/clients/ClientCard";
 import ClientAttachments from "@/components/clients/ClientAttachments";
@@ -37,6 +39,7 @@ const ClientsPage: React.FC = () => {
   const [openEdit, setOpenEdit] = React.useState(false);
   const [selected, setSelected] = React.useState<Client | null>(null);
   const [editMode, setEditMode] = React.useState(false);
+  const [search, setSearch] = React.useState("");
 
   const handleCreate = async (values: ClientFormValues) => {
     const required = [values.full_name, values.doc, values.address, values.phone].every(Boolean);
@@ -103,6 +106,28 @@ const ClientsPage: React.FC = () => {
 
   const total = data?.count ?? 0;
 
+  const clients = React.useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const list = data?.clients ?? [];
+    if (!term) return list;
+    return list.filter((c) => {
+      const fields = [
+        c.full_name,
+        c.doc,
+        c.phone,
+        c.address,
+        c.pix_key || "",
+        c.bank_data || "",
+        c.municipal_registration || "",
+        c.state_registration || "",
+        c.corporate_name || "",
+        c.trade_name || "",
+        c.notes || "",
+      ].join(" ").toLowerCase();
+      return fields.includes(term);
+    });
+  }, [data, search]);
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden p-4 text-black">
       {/* FULLSCREEN GRADIENT BACKDROP */}
@@ -128,6 +153,15 @@ const ClientsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle>Clientes</CardTitle>
               <div className="flex items-center gap-3">
+                <div className="relative hidden md:block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Pesquisar por nome, documento, telefone..."
+                    className="w-64 pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-white/80">Modo edição</span>
                   <Switch checked={editMode} onCheckedChange={setEditMode} />
@@ -157,6 +191,9 @@ const ClientsPage: React.FC = () => {
               <span className="text-white/80 text-sm">Indicadores:</span>
               <Badge variant="outline" className="bg-white/10 text-white">Total: {total}</Badge>
               <Badge className="bg-white/20 text-white hover:bg-white/25">
+                Encontrados: {clients.length}
+              </Badge>
+              <Badge className="bg-white/20 text-white hover:bg-white/25">
                 Com Pix: {data?.clients.filter((c) => !!c.pix_key).length ?? 0}
               </Badge>
               <Badge className="bg-white/20 text-white hover:bg-white/25">
@@ -167,7 +204,7 @@ const ClientsPage: React.FC = () => {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {data?.clients.map((c) => (
+          {clients.map((c) => (
             <ClientCard
               key={c.id}
               client={c}
@@ -177,9 +214,11 @@ const ClientsPage: React.FC = () => {
               editMode={editMode}
             />
           ))}
-          {total === 0 && (
+          {clients.length === 0 && (
             <div className="text-sm text-black/80">
-              Nenhum cliente cadastrado ainda. Clique em "Cadastrar Cliente" para começar.
+              {search
+                ? "Nenhum cliente encontrado para a pesquisa."
+                : 'Nenhum cliente cadastrado ainda. Clique em "Cadastrar Cliente" para começar.'}
             </div>
           )}
         </div>
