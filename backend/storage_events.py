@@ -1,6 +1,7 @@
 import csv
 import os
 import base64
+import uuid
 from typing import Optional, Dict, List, Tuple
 from datetime import datetime
 
@@ -93,10 +94,11 @@ def _save_event_photo(event_id: int, photo_base64: Optional[str]) -> Optional[st
                 ext = "png"
         except Exception:
             ext = "png"
-    file_path = os.path.join(MEDIA_EVENTS_DIR, f"event_{event_id}.{ext}")
+    # gerar nome único para evitar conflito/uso de cache antigo
+    unique = datetime.utcnow().strftime("%Y%m%d%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    file_path = os.path.join(MEDIA_EVENTS_DIR, f"event_{event_id}_{unique}.{ext}")
     with open(file_path, "wb") as imgf:
         imgf.write(base64.b64decode(data_part))
-    # retorna caminho relativo ao backend (servido via /static)
     rel_path = os.path.relpath(file_path, os.path.dirname(__file__))
     return rel_path
 
@@ -261,6 +263,7 @@ def delete_event(event_id: int) -> bool:
     _ensure_csv()
     rows = []
     deleted = False
+    photo_to_delete = None
     with open(EVENTS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -270,6 +273,7 @@ def delete_event(event_id: int) -> bool:
                 rid = 0
             if rid == event_id:
                 deleted = True
+                photo_to_delete = row.get("photo_path") or None
                 continue
             rows.append(row)
     if not deleted:
@@ -279,4 +283,9 @@ def delete_event(event_id: int) -> bool:
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+    # remover arquivo da foto, se existir
+    if photo_to_delete:
+        abs_path = os.path.join(os.path.dirname(__file__), photo_to_delete)
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
     return True
