@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import Cropper from "react-easy-crop";
 import PoseOverlay from "@/components/PoseOverlay";
@@ -19,7 +19,6 @@ type ProcessOut = {
   dimensions: { width: number; height: number };
 };
 
-// ADD: tipos e estados para LUTs
 type LutPreset = {
   id: number;
   name: string;
@@ -36,13 +35,12 @@ const ParametrosPage: React.FC = () => {
   const [originalUrl, setOriginalUrl] = React.useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = React.useState<string | null>(null);
 
-  // ADD: estados de LUTs (antes usados sem declaração)
   const [presets, setPresets] = React.useState<LutPreset[]>([]);
   const [lutName, setLutName] = React.useState<string>("");
   const [lutDesc, setLutDesc] = React.useState<string>("");
   const [processedRelPath, setProcessedRelPath] = React.useState<string | null>(null);
 
-  // Ajustes
+  // Ajustes (valores)
   const [brightness, setBrightness] = React.useState(0);
   const [exposure, setExposure] = React.useState(0); // -2..2
   const [gamma, setGamma] = React.useState(1);
@@ -55,17 +53,48 @@ const ParametrosPage: React.FC = () => {
   const [vignette, setVignette] = React.useState(0);
   const [contrast, setContrast] = React.useState(0);
 
+  // Modo ferramenta única
+  type ControlKey =
+    | "brightness"
+    | "exposure"
+    | "gamma"
+    | "shadows"
+    | "highlights"
+    | "curves"
+    | "temperature"
+    | "saturation"
+    | "vibrance"
+    | "vignette"
+    | "contrast";
+  const [selectedControl, setSelectedControl] = React.useState<ControlKey>("brightness");
+
+  const controls = [
+    { key: "brightness", label: "Brilho", min: -100, max: 100, step: 1, get: () => brightness, set: (v: number) => setBrightness(v) },
+    { key: "exposure", label: "Exposição", min: -2, max: 2, step: 0.1, get: () => exposure, set: (v: number) => setExposure(v) },
+    { key: "gamma", label: "Gamma", min: 0.5, max: 2, step: 0.05, get: () => gamma, set: (v: number) => setGamma(v) },
+    { key: "shadows", label: "Sombras", min: -100, max: 100, step: 1, get: () => shadows, set: (v: number) => setShadows(v) },
+    { key: "highlights", label: "Highlights", min: -100, max: 100, step: 1, get: () => highlights, set: (v: number) => setHighlights(v) },
+    { key: "curves", label: "Curvas (S-curve)", min: 0, max: 1, step: 0.02, get: () => curves, set: (v: number) => setCurves(v) },
+    { key: "temperature", label: "Temperatura", min: -100, max: 100, step: 1, get: () => temperature, set: (v: number) => setTemperature(v) },
+    { key: "saturation", label: "Saturação", min: -100, max: 100, step: 1, get: () => saturation, set: (v: number) => setSaturation(v) },
+    { key: "vibrance", label: "Vibração", min: -100, max: 100, step: 1, get: () => vibrance, set: (v: number) => setVibrance(v) },
+    { key: "vignette", label: "Vinheta", min: 0, max: 1, step: 0.02, get: () => vignette, set: (v: number) => setVignette(v) },
+    { key: "contrast", label: "Contraste", min: -100, max: 100, step: 1, get: () => contrast, set: (v: number) => setContrast(v) },
+  ] as const;
+
   // Crop
   const [cropMode, setCropMode] = React.useState<"none" | "normal" | "face">("none");
   const [crop, setCrop] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
   const [croppedRect, setCroppedRect] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [cropAspect, setCropAspect] = React.useState(16 / 9);
-  const [faceAnchor, setFaceAnchor] = React.useState<"center" | "eyes" | "nose" | "mouth">("center");
+  const [faceAnchor, setFaceAnchor] = React.useState<string>("center");
   const [faceScale, setFaceScale] = React.useState(1.0);
   const [poseLandmarks, setPoseLandmarks] = React.useState<{ name: string; x: number; y: number; visibility?: number }[] | null>(null);
 
   const [isProcessing, setIsProcessing] = React.useState<boolean>(false);
+
+  const uploadRef = React.useRef<HTMLInputElement | null>(null);
 
   const onFile = async (f: File) => {
     const form = new FormData();
@@ -83,6 +112,7 @@ const ParametrosPage: React.FC = () => {
     setImageId(data.image_id);
     setOriginalUrl(`${API_URL}/${data.original_url}`);
     setProcessedUrl(`${API_URL}/${data.original_url}`); // inicial
+    setProcessedRelPath(null);
   };
 
   const onCropComplete = (_area: any, pixels: { width: number; height: number; x: number; y: number }) => {
@@ -129,11 +159,10 @@ const ParametrosPage: React.FC = () => {
     }
     const out: ProcessOut = await res.json();
     setProcessedUrl(`${API_URL}/${out.processed_url}`);
-    setProcessedRelPath(out.processed_url); // guarda caminho relativo para thumbnail do LUT
+    setProcessedRelPath(out.processed_url); // caminho relativo para thumbnail do LUT
     setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
 
-  // Buscar LUTs do usuário ao carregar a página
   React.useEffect(() => {
     const fetchPresets = async () => {
       try {
@@ -148,7 +177,6 @@ const ParametrosPage: React.FC = () => {
     fetchPresets();
   }, [API_URL]);
 
-  // Salvar LUT atual
   const saveCurrentLUT = async () => {
     if (!lutName.trim()) {
       toast.error("Informe um nome para o LUT.");
@@ -202,7 +230,6 @@ const ParametrosPage: React.FC = () => {
     }
   };
 
-  // Aplicar LUT (carrega parâmetros e reprocessa)
   const applyLUT = async (p: LutPreset) => {
     const params = p.params || {};
     setBrightness(Number(params.brightness ?? 0));
@@ -221,16 +248,15 @@ const ParametrosPage: React.FC = () => {
     if (mode) setCropMode(mode);
     if (mode === "normal") {
       setCropAspect(Number(cropParams.aspect ?? cropAspect));
-      // rect aplicado no backend; manter UI
+      // rect aplicado no backend
     } else if (mode === "face") {
       setCropAspect(Number(cropParams.aspect ?? cropAspect));
       setFaceScale(Number(cropParams.scale ?? faceScale));
-      if (cropParams.anchor) setFaceAnchor(cropParams.anchor);
+      if (cropParams.anchor) setFaceAnchor(String(cropParams.anchor));
     }
-    await process();
+    await process(); // aplica imediatamente
   };
 
-  // Excluir LUT
   const deleteLUT = async (id: number) => {
     const res = await fetch(`${API_URL}/luts/${id}`, {
       method: "DELETE",
@@ -244,7 +270,6 @@ const ParametrosPage: React.FC = () => {
     setPresets((prev) => prev.filter((x) => x.id !== id));
   };
 
-  // Atualizar busca da pose: buscar assim que houver imageId (independente do modo de crop)
   React.useEffect(() => {
     const fetchPose = async () => {
       if (!imageId) return;
@@ -256,17 +281,19 @@ const ParametrosPage: React.FC = () => {
     fetchPose();
   }, [imageId, API_URL]);
 
-  const uploadRef = React.useRef<HTMLInputElement | null>(null);
+  const currentControl = controls.find((c) => c.key === selectedControl)!;
 
   return (
     <div className="min-h-screen w-full p-4">
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         <Card className="rounded-2xl border bg-[#efeae3]/85 ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900">
           <CardHeader>
             <CardTitle>Parâmetros • Editor de Fotos</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 relative">
+          <CardContent className="space-y-6 relative">
             {isProcessing && <LoadingOverlay message="Processando imagem..." />}
+
+            {/* Barra superior: upload + aplicar */}
             <div className="flex flex-wrap items-center gap-3">
               <Input
                 type="file"
@@ -287,63 +314,73 @@ const ParametrosPage: React.FC = () => {
               </Button>
             </div>
 
-            {imageId && (
-              <Tabs defaultValue="ajustes">
-                <TabsList>
-                  <TabsTrigger value="ajustes">Ajustes</TabsTrigger>
-                  <TabsTrigger value="crop">Crop</TabsTrigger>
-                </TabsList>
+            {/* Preview sempre em evidência */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-slate-700 mb-1">Original</div>
+                <div className="rounded-md overflow-hidden border bg-white">
+                  {originalUrl ? (
+                    <img src={originalUrl} alt="Original" className="w-full h-auto" />
+                  ) : (
+                    <div className="h-64 flex items-center justify-center text-slate-500">Envie uma imagem para começar</div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-700 mb-1">Processado</div>
+                <div className="rounded-md overflow-hidden border bg-white">
+                  {processedUrl ? (
+                    <img src={processedUrl} alt="Processado" className="w-full h-auto" />
+                  ) : (
+                    <div className="h-64 flex items-center justify-center text-slate-500">Aguarde o processamento</div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-                <TabsContent value="ajustes" className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Brilho</Label>
-                      <input type="range" min={-100} max={100} value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} />
+            {/* Área principal: ajustes (ferramenta única) + LUTs */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Ferramentas de ajuste (2 colunas) */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="rounded-xl border bg-white/70 p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {controls.map((c) => (
+                      <Button
+                        key={c.key}
+                        variant={selectedControl === c.key ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setSelectedControl(c.key as ControlKey)}
+                        className={selectedControl === c.key ? "" : "text-slate-700"}
+                      >
+                        {c.label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-base font-medium">{currentControl.label}</Label>
+                      <span className="text-sm text-slate-600">
+                        {currentControl.get().toFixed(typeof currentControl.step === "number" && currentControl.step < 1 ? 2 : 0)}
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Exposição</Label>
-                      <input type="range" min={-2} max={2} step={0.1} value={exposure} onChange={(e) => setExposure(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Gamma</Label>
-                      <input type="range" min={0.5} max={2} step={0.05} value={gamma} onChange={(e) => setGamma(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Sombras</Label>
-                      <input type="range" min={-100} max={100} value={shadows} onChange={(e) => setShadows(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Highlights</Label>
-                      <input type="range" min={-100} max={100} value={highlights} onChange={(e) => setHighlights(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Curvas (S-curve)</Label>
-                      <input type="range" min={0} max={1} step={0.02} value={curves} onChange={(e) => setCurves(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Temperatura</Label>
-                      <input type="range" min={-100} max={100} value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Saturação</Label>
-                      <input type="range" min={-100} max={100} value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Vibração</Label>
-                      <input type="range" min={-100} max={100} value={vibrance} onChange={(e) => setVibrance(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Vinheta</Label>
-                      <input type="range" min={0} max={1} step={0.02} value={vignette} onChange={(e) => setVignette(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Contraste</Label>
-                      <input type="range" min={-100} max={100} value={contrast} onChange={(e) => setContrast(Number(e.target.value))} />
+                    <Slider
+                      value={[currentControl.get()]}
+                      min={currentControl.min}
+                      max={currentControl.max}
+                      step={currentControl.step}
+                      onValueChange={(vals) => currentControl.set(vals[0])}
+                      className="w-full"
+                    />
+                    <div className="mt-2 flex justify-between text-xs text-slate-500">
+                      <span>{currentControl.min}</span>
+                      <span>{currentControl.max}</span>
                     </div>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="crop" className="space-y-3">
+                {/* Seção de Crop */}
+                <div className="rounded-xl border bg-white/70 p-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <Button variant={cropMode === "none" ? "default" : "outline"} onClick={() => setCropMode("none")}>Sem crop</Button>
                     <Button variant={cropMode === "normal" ? "default" : "outline"} onClick={() => setCropMode("normal")}>Normal</Button>
@@ -352,7 +389,7 @@ const ParametrosPage: React.FC = () => {
 
                   {cropMode === "normal" && (
                     <>
-                      <div className="relative w-full max-w-2xl h-64 bg-black/5 rounded-md overflow-hidden border">
+                      <div className="relative w-full h-64 bg-black/5 rounded-md overflow-hidden border">
                         {originalUrl && (
                           <Cropper
                             image={originalUrl}
@@ -366,16 +403,15 @@ const ParametrosPage: React.FC = () => {
                           />
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-3 max-w-2xl">
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label>Zoom (1x–2x)</Label>
-                          <input
-                            type="range"
+                          <Slider
+                            value={[zoom]}
                             min={1}
                             max={2}
                             step={0.01}
-                            value={zoom}
-                            onChange={(e) => setZoom(Number(e.target.value))}
+                            onValueChange={(vals) => setZoom(vals[0])}
                           />
                         </div>
                         <div className="space-y-1">
@@ -398,7 +434,7 @@ const ParametrosPage: React.FC = () => {
                   )}
 
                   {cropMode === "face" && (
-                    <div className="space-y-3 max-w-2xl">
+                    <div className="space-y-3">
                       {originalUrl && (
                         <>
                           {poseLandmarks && poseLandmarks.length > 0 ? (
@@ -406,7 +442,7 @@ const ParametrosPage: React.FC = () => {
                               imageSrc={originalUrl}
                               landmarks={poseLandmarks}
                               selectedAnchor={faceAnchor}
-                              onSelectAnchor={(name) => setFaceAnchor(name as any)}
+                              onSelectAnchor={(name) => setFaceAnchor(String(name))}
                             />
                           ) : (
                             <div className="relative w-full">
@@ -438,7 +474,7 @@ const ParametrosPage: React.FC = () => {
                           <Label>Âncora</Label>
                           <select
                             value={faceAnchor}
-                            onChange={(e) => setFaceAnchor(e.target.value as any)}
+                            onChange={(e) => setFaceAnchor(e.target.value)}
                             className="border rounded-md px-2 py-1"
                           >
                             {poseLandmarks && poseLandmarks.length > 0 ? (
@@ -461,13 +497,12 @@ const ParametrosPage: React.FC = () => {
                         </div>
                         <div className="space-y-1">
                           <Label>Escala (1x–2x)</Label>
-                          <input
-                            type="range"
+                          <Slider
+                            value={[faceScale]}
                             min={1}
                             max={2}
                             step={0.01}
-                            value={faceScale}
-                            onChange={(e) => setFaceScale(Number(e.target.value))}
+                            onValueChange={(vals) => setFaceScale(vals[0])}
                           />
                         </div>
                         <p className="text-xs text-slate-700 md:col-span-3">
@@ -476,92 +511,69 @@ const ParametrosPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </TabsContent>
-              </Tabs>
-            )}
-
-            {/* Seção: Salvar LUT */}
-            <div className="mt-6 border-t pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Salvar LUT (preset)</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-1">
-                  <Label>Nome</Label>
-                  <Input value={lutName} onChange={(e) => setLutName(e.target.value)} placeholder="Ex.: Retrato quente" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Descrição</Label>
-                  <textarea
-                    className="w-full border rounded-md px-3 py-2 text-sm"
-                    rows={3}
-                    value={lutDesc}
-                    onChange={(e) => setLutDesc(e.target.value)}
-                    placeholder="Anote detalhes (temperatura, contraste, aspecto, etc.)"
-                  />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="default" disabled={!imageId} onClick={saveCurrentLUT}>
-                  Salvar LUT com esta foto como thumbnail
-                </Button>
-                <span className="text-xs text-slate-600">
-                  Dica: clique em "Aplicar alterações" antes, para garantir que a miniatura represente o resultado atual.
-                </span>
-              </div>
-            </div>
 
-            {/* Lista de LUTs do usuário */}
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Meus LUTs</h3>
-              {presets.length === 0 ? (
-                <div className="text-sm text-slate-600">Nenhum LUT salvo ainda.</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {presets.map((p) => (
-                    <div key={p.id} className="border rounded-md overflow-hidden bg-white">
-                      {p.thumb_url ? (
-                        <img
-                          src={`${API_URL}/${p.thumb_url}`}
-                          alt={p.name}
-                          className="w-full h-40 object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-40 bg-slate-100 flex items-center justify-center text-slate-500 text-sm">
-                          Sem thumbnail
+              {/* LUTs: salvar e aplicar separados */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="rounded-xl border bg-white/70 p-4 space-y-3">
+                  <h3 className="text-lg font-semibold">Salvar LUT</h3>
+                  <div className="space-y-2">
+                    <Label>Nome</Label>
+                    <Input value={lutName} onChange={(e) => setLutName(e.target.value)} placeholder="Ex.: Retrato quente" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <textarea
+                      className="w-full border rounded-md px-3 py-2 text-sm"
+                      rows={3}
+                      value={lutDesc}
+                      onChange={(e) => setLutDesc(e.target.value)}
+                      placeholder="Anote detalhes (temperatura, contraste, aspecto, etc.)"
+                    />
+                  </div>
+                  <Button variant="default" disabled={!imageId} onClick={saveCurrentLUT} className="w-full">
+                    Salvar LUT com esta foto como thumbnail
+                  </Button>
+                  <p className="text-xs text-slate-600">
+                    Dica: clique em "Aplicar alterações" antes para garantir que a miniatura represente o resultado atual.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border bg-white/70 p-4">
+                  <h3 className="text-lg font-semibold mb-3">Meus LUTs</h3>
+                  {presets.length === 0 ? (
+                    <div className="text-sm text-slate-600">Nenhum LUT salvo ainda.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {presets.map((p) => (
+                        <div key={p.id} className="border rounded-md overflow-hidden bg-white">
+                          {p.thumb_url ? (
+                            <img
+                              src={`${API_URL}/${p.thumb_url}`}
+                              alt={p.name}
+                              className="w-full h-28 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-500 text-sm">
+                              Sem thumbnail
+                            </div>
+                          )}
+                          <div className="p-3 space-y-2">
+                            <div className="font-medium">{p.name}</div>
+                            {p.description && <div className="text-xs text-slate-600 line-clamp-3">{p.description}</div>}
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" className="flex-1" onClick={() => applyLUT(p)}>Aplicar</Button>
+                              <Button size="sm" variant="outline" onClick={() => deleteLUT(p.id)}>Excluir</Button>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                      <div className="p-3 space-y-2">
-                        <div className="font-medium">{p.name}</div>
-                        {p.description && <div className="text-sm text-slate-600 line-clamp-3">{p.description}</div>}
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" onClick={() => applyLUT(p)}>Aplicar</Button>
-                          <Button size="sm" variant="outline" onClick={() => deleteLUT(p.id)}>Excluir</Button>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Preview lado a lado */}
-            {originalUrl && processedUrl && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-slate-700 mb-1">Original</div>
-                  <div className="rounded-md overflow-hidden border bg-white">
-                    <img src={originalUrl} alt="Original" className="w-full h-auto" />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-700 mb-1">Processado</div>
-                  <div className="rounded-md overflow-hidden border bg-white">
-                    <img src={processedUrl} alt="Processado" className="w-full h-auto" />
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
