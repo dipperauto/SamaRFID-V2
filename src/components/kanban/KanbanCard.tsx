@@ -17,8 +17,8 @@ type Props = {
 const colorStyles = (color?: string | null) => {
   if (!color) return "border-white/20";
   if (color === "liquid_glass") {
-    // efeito sutil "glass"
-    return "border-sky-300/50 bg-white/5";
+    // efeito sutil "glass" claro
+    return "border-[#efeae3]/70 bg-[#efeae3]/40";
   }
   // se hex ou nome, aplica como borda via style inline
   return "";
@@ -78,13 +78,17 @@ const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
     return diff > 0 && diff <= 24 * 60 * 60 * 1000;
   })();
 
-  const style = card.color === "liquid_glass" ? undefined : getTintStyle(card.color);
+  const isLiquid = card.color === "liquid_glass";
+  const style = isLiquid ? undefined : getTintStyle(card.color);
 
   return (
     <Card
       onClick={onClick}
       className={cn(
-        "relative cursor-pointer rounded-xl border bg-white/5 text-white ring-1 ring-white/20 backdrop-blur-xl hover:bg-white/10 transition-colors",
+        "relative cursor-pointer rounded-xl border backdrop-blur-xl transition-colors",
+        isLiquid
+          ? "bg-[#efeae3]/60 text-slate-800 ring-[#efeae3]/50 hover:bg-[#efeae3]/70"
+          : "bg-white/70 text-slate-800 ring-black/5 hover:bg-white/80",
         borderClass,
       )}
       style={style}
@@ -122,7 +126,7 @@ const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
             </Badge>
           ) : null}
           {card.color === "liquid_glass" ? (
-            <Badge className="bg-sky-300/20 text-sky-100 hover:bg-sky-300/25">Liquid Glass</Badge>
+            <Badge className="bg-[#f77821]/15 text-[#f77821] hover:bg-[#f77821]/20">Liquid Glass</Badge>
           ) : null}
         </div>
       </CardContent>

@@ -70,7 +70,7 @@ const CardEditDialog: React.FC<Props> = ({ open, onOpenChange, initial, users, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl backdrop-saturate-200 shadow-2xl text-white">
+      <DialogContent className="sm:max-w-2xl bg-[#efeae3]/70 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl shadow-xl text-slate-900">
         <DialogHeader>
           <DialogTitle>{initial?.id ? "Editar Card" : "Novo Card"}</DialogTitle>
         </DialogHeader>
@@ -95,13 +95,13 @@ const CardEditDialog: React.FC<Props> = ({ open, onOpenChange, initial, users, o
             <Label>Responsáveis</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {users.map((u) => (
-                <label key={u} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white">
+                <label key={u} className="flex items-center gap-2 rounded-md border border-[#efeae3]/60 bg-white/60 px-3 py-2 text-slate-800 hover:bg-white/70">
                   <Checkbox checked={assignees.includes(u)} onCheckedChange={(c) => toggleUser(u, !!c)} />
                   <span className="text-sm">{u}</span>
                 </label>
               ))}
               {users.length === 0 && (
-                <div className="text-xs text-white/70">Nenhuma lista de usuários disponível.</div>
+                <div className="text-xs text-slate-600">Nenhuma lista de usuários disponível.</div>
               )}
             </div>
           </div>
@@ -120,7 +120,7 @@ const CardEditDialog: React.FC<Props> = ({ open, onOpenChange, initial, users, o
                     type="button"
                     onClick={() => setColor(c.key as any)}
                     className={`rounded-md px-3 py-1 text-sm border ${
-                      (color ?? null) === c.key ? "bg-white text-black border-white" : "bg-white/10 text-white border-white/20 hover:bg-white/15"
+                      (color ?? null) === c.key ? "bg-white text-black border-white" : "bg-white text-slate-800 border-[#efeae3]/60 hover:bg-white/90"
                     }`}
                     style={typeof c.key === "string" && c.key.startsWith("#") ? { borderColor: c.key } : undefined}
                   >
@@ -135,11 +135,11 @@ const CardEditDialog: React.FC<Props> = ({ open, onOpenChange, initial, users, o
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-white/30 bg-white text-black hover:bg-white/90"
+              className="border-[#efeae3] bg-white text-black hover:bg-white/90"
             >
               Cancelar
             </Button>
-            <Button onClick={submit}>Salvar</Button>
+            <Button onClick={submit} className="bg-[#f77821] hover:bg-[#e86f1a] text-white">Salvar</Button>
           </div>
         </div>
       </DialogContent>

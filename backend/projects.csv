@@ -1,0 +1,2 @@
+id,name,description,client_id,client_name,status,discount_percent,items_json,total_value,discounted_total_value
+1,Teste de Projeto,aaa,1,José Ricardo Barros da Silva,Executando,20.0,"[{""description"": ""aaaa"", ""unit_price"": 20.0, ""quantity"": 3.0, ""total"": 60.0, ""discounted_total"": 48.0}]",60.0,48.0
