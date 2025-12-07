@@ -45,12 +45,12 @@ def _apply_adjustments(
     brightness [-100..100]
     exposure [-2..2] (multiplicador)
     gamma [0.5..2.0]
-    shadows [-100..100] (levanta sombras)
-    highlights [-100..100] (baixa altas)
+    shadows [-100..100] (ajuste em áreas escuras)
+    highlights [-100..100] (ajuste em áreas claras)
     curves_strength [0..1] (S-curve)
-    temperature [-100..100] (balance azul/amarelo)
+    temperature [-100..100]
     saturation [-100..100]
-    vibrance [-100..100] (afeta mais os tons menos saturados)
+    vibrance [-100..100]
     vignette [0..1]
     contrast [-100..100]
     """
@@ -75,16 +75,19 @@ def _apply_adjustments(
     if brightness != 0.0:
         arr_norm = np.clip(arr_norm + (brightness / 255.0), 0.0, 1.0)
 
-    # Shadows/Highlights
+    # Shadows/Highlights — compressão em direção aos médios (melhor resposta visual)
     shadows = float(params.get("shadows", 0.0))  # -100..100
     highlights = float(params.get("highlights", 0.0))  # -100..100
     if shadows != 0.0 or highlights != 0.0:
-        lum = np.dot(arr_norm[..., :3], np.array([0.299, 0.587, 0.114]))
+        lum = np.dot(arr_norm[..., :3], np.array([0.299, 0.587, 0.114], dtype=np.float32))
         shadow_mask = (lum < 0.5).astype(np.float32)
         highlight_mask = (lum >= 0.5).astype(np.float32)
-        arr_norm += (shadow_mask[..., None] * (shadows / 255.0))
-        arr_norm -= (highlight_mask[..., None] * (highlights / 255.0))
-        arr_norm = np.clip(arr_norm, 0.0, 1.0)
+        s_gain = shadows / 100.0
+        h_gain = highlights / 100.0
+        # Levanta/abaixa sombras aproximando de 0.5
+        arr_norm = np.clip(arr_norm + shadow_mask[..., None] * s_gain * (0.5 - arr_norm), 0.0, 1.0)
+        # Reduz/aumenta highlights aproximando de 0.5
+        arr_norm = np.clip(arr_norm - highlight_mask[..., None] * h_gain * (arr_norm - 0.5), 0.0, 1.0)
 
     # Curves (S-curve)
     curves_strength = float(params.get("curves_strength", 0.0))
@@ -118,7 +121,7 @@ def _apply_adjustments(
         rgb_out = bgr_out[..., ::-1].astype(np.float32) / 255.0
         arr_norm = np.clip(rgb_out, 0.0, 1.0)
     elif saturation != 0.0 or vibrance != 0.0:
-        # Fallback: conversão por coresys (mais lenta)
+        # Fallback: conversão por colorsys (mais lenta)
         import colorsys
         rgb = arr_norm.reshape(-1, 3)
         hsv = np.zeros_like(rgb)
@@ -140,16 +143,19 @@ def _apply_adjustments(
         k = 1.0 + (contrast / 100.0)
         arr_norm = np.clip((arr_norm - 0.5) * k + 0.5, 0.0, 1.0)
 
-    # Vignette
+    # Vignette — máscara elíptica que respeita proporção da imagem
     vignette = float(params.get("vignette", 0.0))
     if vignette > 0.0:
         yy, xx = np.mgrid[0:h, 0:w]
         cx, cy = w / 2.0, h / 2.0
-        r = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
-        r_norm = r / np.sqrt(cx ** 2 + cy ** 2)
-        mask = 1.0 - vignette * (r_norm ** 2)
+        rx = (xx - cx) / max(cx, 1e-6)
+        ry = (yy - cy) / max(cy, 1e-6)
+        dist = np.sqrt(rx**2 + ry**2)
+        dist = np.clip(dist, 0.0, 1.0)
+        # força e suavização com potência 2
+        mask = 1.0 - vignette * (dist ** 2)
+        mask = np.clip(mask, 0.0, 1.0)
         arr_norm *= mask[..., None]
-        arr_norm = np.clip(arr_norm, 0.0, 1.0)
 
     return _from_array((arr_norm * 255.0))
 

@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import Cropper from "react-easy-crop";
 import PoseOverlay from "@/components/PoseOverlay";
 import LoadingOverlay from "@/components/LoadingOverlay";
@@ -132,30 +130,19 @@ const ParametrosPage: React.FC = () => {
     setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
 
-  // BUSCAR POSE quando imagem carregar ou ao ativar 'face'
+  // Atualizar busca da pose: buscar assim que houver imageId (independente do modo de crop)
   React.useEffect(() => {
     const fetchPose = async () => {
-      if (!imageId || cropMode !== "face") return;
+      if (!imageId) return;
       const res = await fetch(`${API_URL}/image-editor/pose/${imageId}`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       setPoseLandmarks(Array.isArray(data.landmarks) ? data.landmarks : []);
     };
     fetchPose();
-  }, [imageId, cropMode, API_URL]);
+  }, [imageId, API_URL]);
 
   const uploadRef = React.useRef<HTMLInputElement | null>(null);
-
-  const histData = React.useMemo(() => {
-    if (!hist) return [];
-    const len = Math.max(hist.r.length, hist.g.length, hist.b.length);
-    return Array.from({ length: len }).map((_, i) => ({
-      x: i,
-      r: hist.r[i] ?? 0,
-      g: hist.g[i] ?? 0,
-      b: hist.b[i] ?? 0,
-    }));
-  }, [hist]);
 
   return (
     <div className="min-h-screen w-full p-4">
@@ -196,8 +183,6 @@ const ParametrosPage: React.FC = () => {
                 <TabsList>
                   <TabsTrigger value="ajustes">Ajustes</TabsTrigger>
                   <TabsTrigger value="crop">Crop</TabsTrigger>
-                  <TabsTrigger value="hist">Histogramas</TabsTrigger>
-                  <TabsTrigger value="meta">Metadados</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="ajustes" className="space-y-3">
@@ -255,6 +240,7 @@ const ParametrosPage: React.FC = () => {
                     <Button variant={cropMode === "normal" ? "default" : "outline"} onClick={() => setCropMode("normal")}>Normal</Button>
                     <Button variant={cropMode === "face" ? "default" : "outline"} onClick={() => setCropMode("face")}>Dinâmico (rosto)</Button>
                   </div>
+
                   {cropMode === "normal" && (
                     <>
                       <div className="relative w-full max-w-2xl h-64 bg-black/5 rounded-md overflow-hidden border">
@@ -280,33 +266,57 @@ const ParametrosPage: React.FC = () => {
                           <Label>Aspect</Label>
                           <select value={cropAspect} onChange={(e) => setCropAspect(Number(e.target.value))} className="border rounded-md px-2 py-1">
                             <option value={1}>1:1</option>
-                            <option value={16/9}>16:9</option>
-                            <option value={4/3}>4:3</option>
-                            <option value={3/2}>3:2</option>
+                            <option value={21/9}>21:9 (landscape)</option>
+                            <option value={16/9}>16:9 (landscape)</option>
+                            <option value={16/10}>16:10 (landscape)</option>
+                            <option value={3/2}>3:2 (landscape)</option>
+                            <option value={4/3}>4:3 (landscape)</option>
+                            <option value={9/16}>9:16 (portrait)</option>
+                            <option value={2/3}>2:3 (portrait)</option>
+                            <option value={3/4}>3:4 (portrait)</option>
+                            <option value={4/5}>4:5 (portrait)</option>
                           </select>
                         </div>
                       </div>
                     </>
                   )}
+
                   {cropMode === "face" && (
                     <div className="space-y-3 max-w-2xl">
-                      {/* Overlay do esqueleto com pontos clicáveis */}
-                      {originalUrl && poseLandmarks && poseLandmarks.length > 0 && (
-                        <PoseOverlay
-                          imageSrc={originalUrl}
-                          landmarks={poseLandmarks}
-                          selectedAnchor={faceAnchor}
-                          onSelectAnchor={(name) => setFaceAnchor(name as any)}
-                        />
+                      {/* Overlay do esqueleto com pontos clicáveis (com fallback quando não há pose) */}
+                      {originalUrl && (
+                        <>
+                          {poseLandmarks && poseLandmarks.length > 0 ? (
+                            <PoseOverlay
+                              imageSrc={originalUrl}
+                              landmarks={poseLandmarks}
+                              selectedAnchor={faceAnchor}
+                              onSelectAnchor={(name) => setFaceAnchor(name as any)}
+                            />
+                          ) : (
+                            <div className="relative w-full">
+                              <img src={originalUrl} alt="Imagem" className="w-full h-auto rounded-md border" />
+                              <div className="mt-2 text-xs text-slate-700">
+                                Nenhuma pose disponível. Selecione uma âncora de rosto abaixo (fallback).
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <Label>Aspect</Label>
                           <select value={cropAspect} onChange={(e) => setCropAspect(Number(e.target.value))} className="border rounded-md px-2 py-1">
                             <option value={1}>1:1</option>
-                            <option value={16/9}>16:9</option>
-                            <option value={4/3}>4:3</option>
-                            <option value={3/2}>3:2</option>
+                            <option value={21/9}>21:9 (landscape)</option>
+                            <option value={16/9}>16:9 (landscape)</option>
+                            <option value={16/10}>16:10 (landscape)</option>
+                            <option value={3/2}>3:2 (landscape)</option>
+                            <option value={4/3}>4:3 (landscape)</option>
+                            <option value={9/16}>9:16 (portrait)</option>
+                            <option value={2/3}>2:3 (portrait)</option>
+                            <option value={3/4}>3:4 (portrait)</option>
+                            <option value={4/5}>4:5 (portrait)</option>
                           </select>
                         </div>
                         <div className="space-y-1">
@@ -344,46 +354,6 @@ const ParametrosPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="hist" className="space-y-3">
-                  <ChartContainer
-                    config={{
-                      r: { label: "R", color: "#ef4444" },
-                      g: { label: "G", color: "#22c55e" },
-                      b: { label: "B", color: "#3b82f6" },
-                    }}
-                    className="w-full h-64"
-                  >
-                    <LineChart data={histData}>
-                      <XAxis dataKey="x" hide />
-                      <YAxis hide />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="r" stroke="#ef4444" dot={false} strokeWidth={1} />
-                      <Line type="monotone" dataKey="g" stroke="#22c55e" dot={false} strokeWidth={1} />
-                      <Line type="monotone" dataKey="b" stroke="#3b82f6" dot={false} strokeWidth={1} />
-                    </LineChart>
-                  </ChartContainer>
-                  <ChartLegendContent payload={[
-                    { dataKey: "r", color: "#ef4444", value: "R" },
-                    { dataKey: "g", color: "#22c55e", value: "G" },
-                    { dataKey: "b", color: "#3b82f6", value: "B" },
-                  ]} />
-                </TabsContent>
-
-                <TabsContent value="meta" className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {meta && Object.keys(meta).length > 0 ? (
-                      Object.entries(meta).map(([k, v]) => (
-                        <div key={k} className="rounded-md border bg-white/70 px-3 py-2">
-                          <div className="text-xs text-slate-600">{k}</div>
-                          <div className="text-sm font-medium text-slate-900">{String(v)}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-slate-700">Sem metadados disponíveis.</div>
-                    )}
-                  </div>
                 </TabsContent>
               </Tabs>
             )}
