@@ -306,41 +306,42 @@ const ParametrosPage: React.FC = () => {
                   if (f) onFile(f);
                 }}
               />
-              <Button
-                variant="outline"
-                onClick={() => process()}
-                disabled={!imageId || isProcessing}
-                className="ml-auto"
-              >
-                {isProcessing ? "Processando..." : "Aplicar alterações (debug)"}
-              </Button>
             </div>
 
             {/* Preview sempre em evidência */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <Label className="text-sm text-slate-700">Visualização</Label>
-                <ToggleGroup
-                  type="single"
-                  value={previewMode}
-                  onValueChange={(val) => val && setPreviewMode(val as "original" | "processed")}
-                  className="bg-white/70 border rounded-md p-1"
-                >
-                  <ToggleGroupItem
-                    value="processed"
-                    aria-label="Ver imagem editada"
-                    className="px-3 py-1.5"
+                <div className="flex items-center gap-2">
+                  <ToggleGroup
+                    type="single"
+                    value={previewMode}
+                    onValueChange={(val) => val && setPreviewMode(val as "original" | "processed")}
+                    className="bg-white/70 border rounded-md p-1"
                   >
-                    Editado
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="original"
-                    aria-label="Ver imagem original"
-                    className="px-3 py-1.5"
+                    <ToggleGroupItem
+                      value="processed"
+                      aria-label="Ver imagem editada"
+                      className="px-3 py-1.5"
+                    >
+                      Editado
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="original"
+                      aria-label="Ver imagem original"
+                      className="px-3 py-1.5"
+                    >
+                      Original
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Button
+                    variant="outline"
+                    onClick={() => process()}
+                    disabled={!imageId || isProcessing}
                   >
-                    Original
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                    {isProcessing ? "Processando..." : "Aplicar alterações"}
+                  </Button>
+                </div>
               </div>
 
               <div className="flex justify-center">
