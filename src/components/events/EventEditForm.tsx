@@ -64,21 +64,33 @@ const EventEditForm: React.FC<Props> = ({ event, onUpdated }) => {
   );
 
   const searchUsers = React.useCallback(async (term: string) => {
+    const q = term.trim();
+    if (!q) {
+      setSearching(false);
+      setResults([]);
+      return;
+    }
     setSearching(true);
     try {
-      const res = await fetch(`${API_URL}/users/search-public?q=${encodeURIComponent(term)}`, {
+      const res = await fetch(`${API_URL}/users/search-public?q=${encodeURIComponent(q)}`, {
         credentials: "include",
       });
       const data = await res.json();
-      setResults(data?.users ?? []);
+      setResults((data?.users ?? []).slice(0, 3));
     } finally {
       setSearching(false);
     }
   }, [API_URL]);
 
   React.useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
     const t = setTimeout(() => {
-      searchUsers(query);
+      searchUsers(q);
     }, 250);
     return () => clearTimeout(t);
   }, [query, searchUsers]);
@@ -176,34 +188,36 @@ const EventEditForm: React.FC<Props> = ({ event, onUpdated }) => {
           ))}
           {selected.length === 0 && <span className="text-sm text-slate-700">Nenhum fotógrafo selecionado.</span>}
         </div>
-        <div className="space-y-2">
-          <div className="text-xs text-slate-700">Resultados {searching ? "(buscando...)" : ""}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {results.map((u) => (
-              <button
-                key={u.username}
-                type="button"
-                onClick={() => addUser(u)}
-                className="flex items-center gap-3 rounded-lg border border-[#efeae3] bg-white/60 hover:bg-white/80 px-3 py-2 text-left"
-              >
-                <Avatar className="h-8 w-8">
-                  {u.profile_photo_path ? (
-                    <AvatarImage src={normalizeStatic(u.profile_photo_path, API_URL)} alt={u.full_name} />
-                  ) : (
-                    <AvatarFallback>📷</AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{u.full_name}</div>
-                  <div className="text-xs text-slate-700 truncate">{u.username}</div>
-                </div>
-              </button>
-            ))}
-            {results.length === 0 && (
-              <div className="text-sm text-slate-700">Sem resultados.</div>
-            )}
+        {query.trim() ? (
+          <div className="space-y-2">
+            <div className="text-xs text-slate-700">Resultados {searching ? "(buscando...)" : ""}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {results.map((u) => (
+                <button
+                  key={u.username}
+                  type="button"
+                  onClick={() => addUser(u)}
+                  className="flex items-center gap-3 rounded-lg border border-[#efeae3] bg-white/60 hover:bg-white/80 px-3 py-2 text-left"
+                >
+                  <Avatar className="h-8 w-8">
+                    {u.profile_photo_path ? (
+                      <AvatarImage src={normalizeStatic(u.profile_photo_path, API_URL)} alt={u.full_name} />
+                    ) : (
+                      <AvatarFallback>📷</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{u.full_name}</div>
+                    <div className="text-xs text-slate-700 truncate">{u.username}</div>
+                  </div>
+                </button>
+              ))}
+              {!searching && results.length === 0 && (
+                <div className="text-sm text-slate-700">Sem resultados.</div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       <div className="space-y-2">
