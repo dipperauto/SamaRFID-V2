@@ -1,5 +1,4 @@
-# File contents excluded from context
-
 Pillow
 numpy
 opencv-python
+mediapipe

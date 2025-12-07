@@ -35,6 +35,7 @@ from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, Updat
 from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
 from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse, UpdateEventRequest, DeleteEventResponse
 from storage_image_editor import save_original, process_image, get_metadata, get_histogram_and_sharpness
+from storage_image_editor import get_pose_landmarks
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -721,3 +722,11 @@ def image_editor_histogram(image_id: str, request: Request):
     if not data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     return get_histogram_and_sharpness(image_id)
+
+@app.get("/image-editor/pose/{image_id}")
+def image_editor_pose(image_id: str, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    return get_pose_landmarks(image_id)

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import Cropper from "react-easy-crop";
+import PoseOverlay from "@/components/PoseOverlay";
 
 type Hist = { r: number[]; g: number[]; b: number[] };
 type ProcessOut = {
@@ -54,6 +55,7 @@ const ParametrosPage: React.FC = () => {
   const [cropAspect, setCropAspect] = React.useState(16 / 9);
   const [faceAnchor, setFaceAnchor] = React.useState<"center" | "eyes" | "nose" | "mouth">("center");
   const [faceScale, setFaceScale] = React.useState(1.0);
+  const [poseLandmarks, setPoseLandmarks] = React.useState<{ name: string; x: number; y: number; visibility?: number }[] | null>(null);
 
   const onFile = async (f: File) => {
     const form = new FormData();
@@ -124,9 +126,21 @@ const ParametrosPage: React.FC = () => {
     setSharp(out.sharpness);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
 
-  // debounce do processamento
+  // BUSCAR POSE quando imagem carregar ou ao ativar 'face'
   React.useEffect(() => {
-    const t = setTimeout(() => { process(); }, 180);
+    const fetchPose = async () => {
+      if (!imageId || cropMode !== "face") return;
+      const res = await fetch(`${API_URL}/image-editor/pose/${imageId}`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPoseLandmarks(Array.isArray(data.landmarks) ? data.landmarks : []);
+    };
+    fetchPose();
+  }, [imageId, cropMode, API_URL]);
+
+  // reduzir debounce para ~120ms
+  React.useEffect(() => {
+    const t = setTimeout(() => { process(); }, 120);
     return () => clearTimeout(t);
   }, [process]);
 
@@ -266,32 +280,59 @@ const ParametrosPage: React.FC = () => {
                     </>
                   )}
                   {cropMode === "face" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl">
-                      <div className="space-y-1">
-                        <Label>Aspect</Label>
-                        <select value={cropAspect} onChange={(e) => setCropAspect(Number(e.target.value))} className="border rounded-md px-2 py-1">
-                          <option value={1}>1:1</option>
-                          <option value={16/9}>16:9</option>
-                          <option value={4/3}>4:3</option>
-                          <option value={3/2}>3:2</option>
-                        </select>
+                    <div className="space-y-3 max-w-2xl">
+                      {/* Overlay do esqueleto com pontos clicáveis */}
+                      {originalUrl && poseLandmarks && poseLandmarks.length > 0 && (
+                        <PoseOverlay
+                          imageSrc={originalUrl}
+                          landmarks={poseLandmarks}
+                          selectedAnchor={faceAnchor}
+                          onSelectAnchor={(name) => setFaceAnchor(name as any)}
+                        />
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <Label>Aspect</Label>
+                          <select value={cropAspect} onChange={(e) => setCropAspect(Number(e.target.value))} className="border rounded-md px-2 py-1">
+                            <option value={1}>1:1</option>
+                            <option value={16/9}>16:9</option>
+                            <option value={4/3}>4:3</option>
+                            <option value={3/2}>3:2</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Âncora</Label>
+                          <select
+                            value={faceAnchor}
+                            onChange={(e) => setFaceAnchor(e.target.value as any)}
+                            className="border rounded-md px-2 py-1"
+                          >
+                            {poseLandmarks && poseLandmarks.length > 0 ? (
+                              <>
+                                <option value="shoulders_center">Centro dos ombros</option>
+                                <option value="hips_center">Centro dos quadris</option>
+                                {poseLandmarks.map((lm) => (
+                                  <option key={lm.name} value={lm.name}>{lm.name}</option>
+                                ))}
+                              </>
+                            ) : (
+                              <>
+                                <option value="center">Centro</option>
+                                <option value="eyes">Olhos</option>
+                                <option value="nose">Nariz</option>
+                                <option value="mouth">Boca</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Escala</Label>
+                          <input type="range" min={0.6} max={1.8} step={0.02} value={faceScale} onChange={(e) => setFaceScale(Number(e.target.value))} />
+                        </div>
+                        <p className="text-xs text-slate-700 md:col-span-3">
+                          O crop dinâmico ancora no ponto selecionado do esqueleto. Clique nos pontos para escolher a âncora. Se não houver pose disponível, usa detecção facial como fallback.
+                        </p>
                       </div>
-                      <div className="space-y-1">
-                        <Label>Âncora</Label>
-                        <select value={faceAnchor} onChange={(e) => setFaceAnchor(e.target.value as any)} className="border rounded-md px-2 py-1">
-                          <option value="center">Centro</option>
-                          <option value="eyes">Olhos</option>
-                          <option value="nose">Nariz</option>
-                          <option value="mouth">Boca</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Escala</Label>
-                        <input type="range" min={0.6} max={1.8} step={0.02} value={faceScale} onChange={(e) => setFaceScale(Number(e.target.value))} />
-                      </div>
-                      <p className="text-xs text-slate-700 md:col-span-3">
-                        Observação: o crop dinâmico detecta e ancora no rosto com IA (Haar cascade). Se não houver face, mantém a imagem original.
-                      </p>
                     </div>
                   )}
                 </TabsContent>
