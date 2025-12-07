@@ -306,6 +306,14 @@ const ParametrosPage: React.FC = () => {
                   if (f) onFile(f);
                 }}
               />
+              <Button
+                variant="outline"
+                onClick={() => process()}
+                disabled={!imageId || isProcessing}
+                className="ml-auto"
+              >
+                {isProcessing ? "Processando..." : "Aplicar alterações (debug)"}
+              </Button>
             </div>
 
             {/* Preview sempre em evidência */}
@@ -578,11 +586,8 @@ const ParametrosPage: React.FC = () => {
                     />
                   </div>
                   <Button variant="default" disabled={!imageId} onClick={saveCurrentLUT} className="w-full">
-                    Salvar LUT com esta foto como thumbnail
+                    Salvar LUT
                   </Button>
-                  <p className="text-xs text-slate-600">
-                    Dica: clique em "Aplicar alterações" antes para garantir que a miniatura represente o resultado atual.
-                  </p>
                 </div>
 
                 <div className="rounded-xl border bg-white/70 p-4">
