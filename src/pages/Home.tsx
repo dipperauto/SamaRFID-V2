@@ -17,7 +17,9 @@ const Home: React.FC = () => {
       <div className="relative z-10 w-full max-w-3xl">
         <Card className="rounded-3xl border border-[#efeae3] bg-[#efeae3]/80 shadow-2xl ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900">
           <CardHeader>
-            <CardTitle className="text-slate-900">Blink Fotos</CardTitle>
+            <CardTitle className="text-slate-900">
+              Bem-vindo ao <span className="text-[#f26716] font-semibold">BLINK</span> FOTOS
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
