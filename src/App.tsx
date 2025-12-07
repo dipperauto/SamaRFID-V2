@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
 import UsersPage from "./pages/Users";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
       {/* Fundo animado global */}
       <AnimatedBackground />
       <BrowserRouter>
+        <PageTransitionOverlay />
         <Routes>
           <Route path="/" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
