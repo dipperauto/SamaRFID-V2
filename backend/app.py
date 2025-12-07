@@ -560,8 +560,8 @@ def users_search_public(request: Request, q: Optional[str] = None):
     users: list[PublicUser] = []
     for u in raw:
         role = (u.get("role", "") or "").lower()
-        # apenas fotógrafos visíveis para convites
-        if role not in ("fotografo", "fotógrafo"):
+        # compat: considerar 'usuario' e 'usuário' também
+        if role not in ("fotografo", "fotógrafo", "usuario", "usuário"):
             continue
         uname = u.get("username", "")
         fname = u.get("full_name", "")
