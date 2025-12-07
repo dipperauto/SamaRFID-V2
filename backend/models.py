@@ -213,6 +213,18 @@ class AddEventRequest(BaseModel):
     photographers: List[str] = []
     photo_base64: Optional[str] = None
 
+class UpdateEventRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    photographers: Optional[List[str]] = None
+    photo_base64: Optional[str] = None
+
 class ListEventsResponse(BaseModel):
     count: int
     events: List[Event]
+
+class DeleteEventResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None

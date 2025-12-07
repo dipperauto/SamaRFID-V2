@@ -165,3 +165,118 @@ def get_events_for_user(username: str) -> List[Dict]:
                     "photographers": members,
                 })
     return out
+
+def get_event_by_id(event_id: int) -> Optional[Dict]:
+    _ensure_csv()
+    import json as _json
+    with open(EVENTS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                rid = int(row.get("id", "0") or "0")
+            except Exception:
+                continue
+            if rid == event_id:
+                try:
+                    members = _json.loads(row.get("photographers_json", "[]"))
+                except Exception:
+                    members = []
+                return {
+                    "id": rid,
+                    "name": row.get("name", ""),
+                    "description": row.get("description", ""),
+                    "start_date": row.get("start_date", ""),
+                    "end_date": row.get("end_date", ""),
+                    "owner_username": row.get("owner_username", ""),
+                    "photo_path": row.get("photo_path") or None,
+                    "photographers": members,
+                }
+    return None
+
+def update_event(
+    event_id: int,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    photographers: Optional[List[str]] = None,
+    photo_base64: Optional[str] = None,
+) -> Optional[Dict]:
+    _ensure_csv()
+    import json as _json
+    updated_row = None
+    rows = []
+    with open(EVENTS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+
+    for row in rows:
+        try:
+            rid = int(row.get("id", "0") or "0")
+        except Exception:
+            rid = 0
+        if rid == event_id:
+            # merge updates
+            row["name"] = name if name is not None else row.get("name", "")
+            row["description"] = description if description is not None else row.get("description", "")
+            row["start_date"] = start_date if start_date is not None else row.get("start_date", "")
+            row["end_date"] = end_date if end_date is not None else row.get("end_date", "")
+            if photographers is not None:
+                row["photographers_json"] = _json.dumps(photographers, ensure_ascii=False)
+            # photo update
+            if photo_base64 is not None:
+                # salva nova e substitui path
+                new_path = _save_event_photo(event_id, photo_base64)
+                row["photo_path"] = new_path or ""
+            updated_row = row
+            break
+
+    if not updated_row:
+        return None
+
+    with open(EVENTS_CSV_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+    # retorno normalizado
+    try:
+        members = _json.loads(updated_row.get("photographers_json", "[]"))
+    except Exception:
+        members = []
+    return {
+        "id": event_id,
+        "name": updated_row.get("name", ""),
+        "description": updated_row.get("description", ""),
+        "start_date": updated_row.get("start_date", ""),
+        "end_date": updated_row.get("end_date", ""),
+        "owner_username": updated_row.get("owner_username", ""),
+        "photo_path": updated_row.get("photo_path") or None,
+        "photographers": members,
+    }
+
+def delete_event(event_id: int) -> bool:
+    _ensure_csv()
+    rows = []
+    deleted = False
+    with open(EVENTS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                rid = int(row.get("id", "0") or "0")
+            except Exception:
+                rid = 0
+            if rid == event_id:
+                deleted = True
+                continue
+            rows.append(row)
+    if not deleted:
+        return False
+    with open(EVENTS_CSV_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+    return True
