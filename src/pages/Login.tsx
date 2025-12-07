@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -68,16 +69,17 @@ const Login: React.FC = () => {
     <div
       className="relative min-h-screen w-full overflow-hidden flex items-center justify-center py-8 px-4"
     >
+      <AnimatedBackground />
       {/* Card com formulário de login */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-white/15 bg-black/70 py-8 px-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 py-8 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
             <img src="/logo.png" alt="Logo" className="h-20 md:h-24 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login" className="text-white">Login</Label>
+              <Label htmlFor="login" className="text-slate-700">Login</Label>
               <Input
                 id="login"
                 value={login}
@@ -88,7 +90,7 @@ const Login: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">Senha</Label>
+              <Label htmlFor="password" className="text-slate-700">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -102,7 +104,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-2 flex items-center text-gray-300 hover:text-white"
+                  className="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-800"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -110,7 +112,7 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button type="submit" className="w-full bg-[#f26716] hover:bg-[#e46014] text-white">
               <LogIn className="mr-2 h-4 w-4" />
               Entrar
             </Button>
