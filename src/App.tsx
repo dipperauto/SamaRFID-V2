@@ -12,6 +12,7 @@ import EventsPage from "./pages/Events";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 import ParametrosPage from "./pages/Parametros";
+import EventGalleryPage from "./pages/EventGallery";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/users" element={<UsersPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/parametros" element={<ParametrosPage />} />
+            <Route path="/events/:eventId/gallery" element={<EventGalleryPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

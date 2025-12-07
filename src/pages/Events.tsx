@@ -7,7 +7,8 @@ import EventCreateForm from "@/components/events/EventCreateForm";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Images } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EventEditForm from "@/components/events/EventEditForm";
 
 type EventItem = {
@@ -55,6 +56,7 @@ const EventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = React.useState<EventItem | null>(null);
   const [currentUsername, setCurrentUsername] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<EventItem | null>(null);
+  const navigate = useNavigate();
 
   const loadMe = React.useCallback(async () => {
     try {
@@ -127,6 +129,7 @@ const EventsPage: React.FC = () => {
                 const s = statusForEvent(ev);
                 const cover = normalizeStatic(ev.photo_path || undefined, API_URL);
                 const isOwner = currentUsername && ev.owner_username === currentUsername;
+                const isMember = (currentUsername && (ev.owner_username === currentUsername || ev.photographers.includes(currentUsername))) || false;
                 return (
                   <Card key={ev.id} className="rounded-xl bg-white/70 border border-[#efeae3]">
                     <CardContent className="p-0">
@@ -164,6 +167,17 @@ const EventsPage: React.FC = () => {
                               onClick={() => setDeleteTarget(ev)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                            </Button>
+                          </div>
+                        )}
+                        {isMember && (
+                          <div className="pt-3">
+                            <Button
+                              variant="default"
+                              onClick={() => navigate(`/events/${ev.id}/gallery`)}
+                              className="bg-black/80 text-white hover:bg-black"
+                            >
+                              <Images className="h-4 w-4 mr-2" /> Galeria
                             </Button>
                           </div>
                         )}

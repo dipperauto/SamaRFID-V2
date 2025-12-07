@@ -39,6 +39,9 @@ from storage_image_editor import get_pose_landmarks
 # ADD: LUTs
 from models import LUTPreset, ListLUTsResponse, AddLUTRequest, AddLUTResponse, DeleteLUTResponse
 from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
+# NOVO: galeria por evento
+from storage_events import get_event_by_id
+from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -164,6 +167,20 @@ def _require_admin(request: Request):
     if (data.get("role") or "").lower() != "administrador":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a administradores.")
     return data
+
+# helper: requer membro do evento (owner ou fotógrafo)
+def _require_event_member(request: Request, event_id: int) -> dict:
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ev = get_event_by_id(event_id)
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    username = data["username"]
+    if username != ev["owner_username"] and username not in (ev.get("photographers") or []):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito aos participantes do evento.")
+    return {"username": username, "event": ev}
 
 
 # ----- Health e Token -----
@@ -685,6 +702,51 @@ def events_delete(event_id: int, request: Request):
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
     return DeleteEventResponse(success=True, message="Evento excluído com sucesso.")
+
+# ----- Galeria por Evento (apenas membros) -----
+
+@app.get("/events/{event_id}/gallery")
+def events_gallery_list(event_id: int, request: Request):
+    _require_event_member(request, event_id)
+    return list_gallery_for_event(event_id)
+
+@app.post("/events/{event_id}/gallery/upload")
+async def events_gallery_upload(event_id: int, request: Request, files: List[UploadFile] = File(...)):
+    member = _require_event_member(request, event_id)
+    contents: List[Tuple[str, bytes]] = []
+    for f in files:
+        data = await f.read()
+        contents.append((f.filename, data))
+    created = add_images_to_event(event_id, member["username"], contents)
+    # retorna apenas ids e contagem
+    return {"count": len(created), "image_ids": [c["id"] for c in created]}
+
+@app.post("/events/{event_id}/gallery/apply-lut")
+def events_gallery_apply_lut(event_id: int, payload: dict, request: Request):
+    _require_event_member(request, event_id)
+    image_ids = list(payload.get("image_ids") or [])
+    lut_id = payload.get("lut_id")
+    params: dict = {}
+    if lut_id is not None:
+        preset = get_lut_by_id(int(lut_id))
+        if not preset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LUT não encontrado.")
+        params = dict(preset.get("params") or {})
+    processed = apply_lut_for_event_images(event_id, image_ids, params, lut_id if lut_id is not None else None)
+    return {"processed": processed}
+
+@app.post("/events/{event_id}/gallery/change-lut")
+def events_gallery_change_lut(event_id: int, payload: dict, request: Request):
+    # alias do apply-lut para ações em massa
+    return events_gallery_apply_lut(event_id, payload, request)
+
+@app.delete("/events/{event_id}/gallery")
+def events_gallery_delete(event_id: int, payload: dict, request: Request):
+    _require_event_member(request, event_id)
+    image_ids = list(payload.get("image_ids") or [])
+    deleted = delete_event_images(event_id, image_ids)
+    return {"deleted": deleted}
+
 
 # ----- Editor de Imagem (autenticado) -----
 @app.post("/image-editor/upload")
