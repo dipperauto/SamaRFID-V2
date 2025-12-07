@@ -59,30 +59,24 @@ const ResponsiveSidebar: React.FC = () => {
             <Button
               variant="secondary"
               size="icon"
-              className="shadow-md bg-black/50 text-white hover:bg-black/60 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75"
+              className="shadow-md bg-[#efeae3]/80 text-slate-900 hover:bg-[#efeae3]/70 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="w-full sm:max-w-sm p-0 bg-black/50 border border-white/25 ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white shadow-2xl"
+            className="w-full sm:max-w-sm p-0 bg-[#efeae3]/80 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900 shadow-2xl"
           >
             <SheetHeader className="p-4">
-              <SheetTitle className="text-white">Menu</SheetTitle>
+              <SheetTitle className="text-slate-900">Menu</SheetTitle>
             </SheetHeader>
-            <div className="px-4 -mt-2 pb-3 text-xs text-white/90">
-              <p>
-                Plataforma para fotógrafos compartilharem fotos com o público e clientes, com publicação de fotos de eventos
-                para compra e download em alta resolução. Obrigado por usar nosso sistema — seu trabalho inspira!
-              </p>
-            </div>
             <div className="px-4 pb-4 space-y-2">
               {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (
                 <button
                   key={item.path}
                   onClick={() => onItemClick(item.path)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-white/90"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-black/5 text-slate-800"
                 >
                   {item.icon === "home" && <Home className="h-4 w-4" />}
                   {item.icon === "test" && <TestTube className="h-4 w-4" />}
@@ -94,7 +88,7 @@ const ResponsiveSidebar: React.FC = () => {
               ))}
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-red-300"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-black/5 text-red-600"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm font-medium">Sair</span>
@@ -106,18 +100,11 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-black/50 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 border border-white/25 ring-1 ring-white/20 shadow-2xl transition-[width] duration-200 z-40 w-64`}
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-[#efeae3]/80 backdrop-blur-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 shadow-2xl transition-[width] duration-200 z-40 w-64`}
       >
-        <div className="flex flex-col w-full h-full text-white">
-          <div className="flex items-center justify-center px-4 py-4 border-b border-white/25">
+        <div className="flex flex-col w-full h-full text-slate-900">
+          <div className="flex items-center justify-center px-4 py-4 border-b border-[#efeae3]">
             <img src="/login.png" alt="Blink Fotos" className="h-12 w-auto" />
-          </div>
-
-          <div className="px-4 pt-2 pb-4 text-xs text-white/90">
-            <p>
-              Plataforma para fotógrafos compartilharem fotos com o público e clientes, com publicação de fotos de eventos
-              para compra e download em alta resolução. Obrigado por usar nosso sistema — seu trabalho inspira!
-            </p>
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
@@ -127,7 +114,7 @@ const ResponsiveSidebar: React.FC = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
-                    isActive ? "bg-white/10 text-white" : "text-white/85 hover:bg-white/10"
+                    isActive ? "bg-black/10 text-slate-900" : "text-slate-800 hover:bg-black/5"
                   }`
                 }
               >
@@ -143,12 +130,12 @@ const ResponsiveSidebar: React.FC = () => {
             ))}
           </nav>
 
-          <p className="px-3 pb-2 text-xs text-white">Dipper Automation 2025 ©</p>
+          <p className="px-3 pb-2 text-xs text-slate-700">Dipper Automation 2025 ©</p>
 
-          <div className="px-2 py-2 border-t border-white/25">
+          <div className="px-2 py-2 border-t border-[#efeae3]">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors text-red-300 hover:bg-white/10"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors text-red-600 hover:bg-black/5"
             >
               <span className="shrink-0">
                 <LogOut className="h-4 w-4" />
