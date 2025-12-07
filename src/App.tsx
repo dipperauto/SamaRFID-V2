@@ -14,6 +14,7 @@ import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 import ParametrosPage from "./pages/Parametros";
 import EventGalleryPage from "./pages/EventGallery";
 import PublicFaceSearchPage from "./pages/PublicFaceSearch";
+import PublicCheckoutPage from "./pages/PublicCheckout";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           {/* Página pública (sem layout) */}
           <Route path="/public/events/:eventId/face" element={<PublicFaceSearchPage />} />
+          <Route path="/public/checkout" element={<PublicCheckoutPage />} />
           {/* Rotas com layout (menu responsivo) */}
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />

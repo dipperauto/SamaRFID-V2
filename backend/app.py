@@ -811,12 +811,24 @@ def public_event_info(event_id: int):
             "full_name": u.get("full_name") or uname,
             "profile_photo_url": prof_url,
         })
+    # INCLUIR OWNER também como fotógrafo para exibição pública
+    owner_uname = ev.get("owner_username") or ""
+    if owner_uname and not any(p.get("username") == owner_uname for p in photographers_info):
+        ou = get_user(owner_uname) or {}
+        o_prof_rel = ou.get("profile_photo_path") or ""
+        o_prof_url = _to_static_url(o_prof_rel) if o_prof_rel else ""
+        photographers_info.append({
+            "username": owner_uname,
+            "full_name": ou.get("full_name") or owner_uname,
+            "profile_photo_url": o_prof_url,
+        })
     return {
         "id": ev["id"],
         "name": ev["name"],
         "description": ev["description"],
         "photo_url": photo_url,
         "photographers": photographers_info,
+        "owner_username": owner_uname,
     }
 
 from fastapi import UploadFile, File

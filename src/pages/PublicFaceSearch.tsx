@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ type MatchItem = { id: string; url: string; uploader: string; score: number; upl
 const PublicFaceSearchPage: React.FC = () => {
   const { eventId } = useParams();
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const navigate = useNavigate();
 
   const [info, setInfo] = React.useState<PublicEventInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = React.useState(false);
@@ -288,14 +289,15 @@ const PublicFaceSearchPage: React.FC = () => {
               {matches.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Fotos encontradas ({matches.length})</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2 gap-5">
                     {matches.map((m) => (
                       <div key={m.id} className="group relative rounded-xl overflow-hidden border bg-white shadow-sm">
-                        <AspectRatio ratio={4/3}>
+                        <AspectRatio ratio={16/10}>
                           <img
                             src={`${API_URL}/${m.url}`}
                             alt={m.id}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => { setViewerItem(m); setViewerOpen(true); }}
                           />
                         </AspectRatio>
                         <div className="absolute bottom-2 left-2 text-[12px] px-2 py-0.5 rounded bg-black/60 text-white">
@@ -323,28 +325,14 @@ const PublicFaceSearchPage: React.FC = () => {
                     </div>
                     <Button
                       disabled={!selectedIds.size}
-                      onClick={async () => {
-                        const buyerName = prompt("Nome completo:");
-                        const buyerEmail = prompt("E-mail:");
-                        const buyerCPF = prompt("CPF:");
-                        if (!buyerName || !buyerEmail || !buyerCPF) return;
-                        const payload = {
-                          event_id: Number(eventId),
-                          items: Array.from(selectedIds),
-                          buyer: { name: buyerName, email: buyerEmail, cpf: buyerCPF },
-                          total_brl: totalBRL,
-                        };
-                        const res = await fetch(`${API_URL}/public/purchase`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(payload),
+                      onClick={() => {
+                        const ids = Array.from(selectedIds);
+                        const qs = new URLSearchParams({
+                          eventId: String(eventId),
+                          items: ids.join(","),
+                          total: String(totalBRL.toFixed(2)),
                         });
-                        if (!res.ok) {
-                          alert("Falha ao processar pagamento. Tente novamente.");
-                          return;
-                        }
-                        alert("Pagamento aprovado! As fotos serão enviadas para seu e-mail.");
-                        setSelectedIds(new Set());
+                        navigate(`/public/checkout?${qs.toString()}`);
                       }}
                       className="bg-[#f26716] hover:bg-[#e46014] text-white self-end md:self-auto"
                     >
@@ -358,15 +346,15 @@ const PublicFaceSearchPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Viewer */}
+      {/* Viewer em tela cheia */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
-        <DialogContent className="sm:max-w-3xl rounded-2xl bg-white">
+        <DialogContent className="w-[95vw] sm:max-w-[95vw] h-[95vh] p-0 rounded-2xl bg-white">
           {viewerItem && (
-            <div className="space-y-3">
+            <div className="w-full h-full flex items-center justify-center">
               <img
                 src={`${API_URL}/${viewerItem.url}`}
                 alt={viewerItem.id}
-                className="w-full max-h-[70vh] object-contain rounded-md border"
+                className="w-full h-full object-contain"
               />
             </div>
           )}
