@@ -10,19 +10,19 @@ const AnimatedBackground: React.FC = () => {
         className="fixed inset-0 -z-10"
         style={{
           backgroundImage: `
-            linear-gradient(0deg, rgba(255,255,255,0.70), rgba(255,255,255,0.70)),
+            linear-gradient(0deg, rgba(255,255,255,0.60), rgba(255,255,255,0.60)),
             linear-gradient(135deg, #f0bea1 0%, #f4ad84 100%),
-            radial-gradient(700px 450px at 15% 10%, rgba(244, 173, 132, 0.12), transparent 60%),
-            radial-gradient(800px 500px at 85% 90%, rgba(240, 190, 161, 0.10), transparent 60%)
+            radial-gradient(700px 450px at 15% 10%, rgba(244, 173, 132, 0.16), transparent 60%),
+            radial-gradient(800px 500px at 85% 90%, rgba(240, 190, 161, 0.14), transparent 60%)
           `,
-          backgroundColor: "#fffaf6",
+          backgroundColor: "#fff7f2",
         }}
       />
 
       {/* Blobs decorativos com animação lenta e bem suave */}
-      <div className="pointer-events-none fixed -top-28 -left-28 h-[650px] w-[650px] rounded-full bg-[#f4ad84]/12 blur-3xl bg-orb-anim [animation-duration:90s]" />
-      <div className="pointer-events-none fixed -bottom-24 -right-24 h-[520px] w-[520px] rounded-full bg-[#f0bea1]/10 blur-3xl bg-orb-anim [animation-duration:100s]" />
-      <div className="pointer-events-none fixed top-1/3 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[#f4ad84]/8 blur-3xl bg-orb-anim [animation-duration:110s]" />
+      <div className="pointer-events-none fixed -top-28 -left-28 h-[650px] w-[650px] rounded-full bg-[#f4ad84]/16 blur-3xl bg-orb-anim [animation-duration:90s]" />
+      <div className="pointer-events-none fixed -bottom-24 -right-24 h-[520px] w-[520px] rounded-full bg-[#f0bea1]/14 blur-3xl bg-orb-anim [animation-duration:100s]" />
+      <div className="pointer-events-none fixed top-1/3 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[#f4ad84]/12 blur-3xl bg-orb-anim [animation-duration:110s]" />
     </>
   );
 };
