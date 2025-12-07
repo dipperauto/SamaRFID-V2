@@ -28,10 +28,6 @@ type LutPreset = {
   thumb_url?: string | null;
   created_at: string;
 };
-const [presets, setPresets] = React.useState<LutPreset[]>([]);
-const [lutName, setLutName] = React.useState<string>("");
-const [lutDesc, setLutDesc] = React.useState<string>("");
-const [processedRelPath, setProcessedRelPath] = React.useState<string | null>(null);
 
 const ParametrosPage: React.FC = () => {
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
