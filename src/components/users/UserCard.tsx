@@ -36,6 +36,12 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
     return `${apiUrl}/${webPath}`;
   }, [user.profile_photo_path, apiUrl]);
 
+  const displayRole = React.useMemo(() => {
+    const r = (user.role || "").toLowerCase();
+    if (r === "usuario" || r === "usuário" || r === "fotografo" || r === "fotógrafo") return "fotógrafo";
+    return user.role;
+  }, [user.role]);
+
   return (
     <Card className="rounded-2xl border border-white/25 bg-black/40 shadow-xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
       <CardContent className="p-4">
@@ -54,7 +60,7 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="font-semibold truncate text-base sm:text-lg">{user.full_name}</div>
-              <Badge variant="outline" className="bg-white/10 text-white">{user.role}</Badge>
+              <Badge variant="outline" className="bg-white/10 text-white">{displayRole}</Badge>
             </div>
             <div className="text-white/80 text-xs sm:text-sm mt-1 truncate">E-mail: {user.username}</div>
             <div className="text-white/70 text-[11px] sm:text-xs mt-1 line-clamp-2">

@@ -15,6 +15,12 @@ const ResponsiveSidebar: React.FC = () => {
   const [allowedPages, setAllowedPages] = React.useState<string[] | null>(null);
   const [userInfo, setUserInfo] = React.useState<{ username?: string; full_name?: string; role?: string; photoUrl?: string } | null>(null);
 
+  const displayRole = React.useMemo(() => {
+    const r = (userInfo?.role || "").toLowerCase();
+    if (r === "usuario" || r === "usuário" || r === "fotografo" || r === "fotógrafo") return "fotógrafo";
+    return userInfo?.role || "";
+  }, [userInfo?.role]);
+
   React.useEffect(() => {
     const run = async () => {
       try {
@@ -113,7 +119,7 @@ const ResponsiveSidebar: React.FC = () => {
                       </span>
                     </div>
                     {userInfo.role && (
-                      <div className="text-[11px] text-slate-700 truncate">{userInfo.role}</div>
+                      <div className="text-[11px] text-slate-700 truncate">{displayRole}</div>
                     )}
                   </div>
                 </div>
@@ -171,7 +177,7 @@ const ResponsiveSidebar: React.FC = () => {
                     </span>
                   </div>
                   {userInfo.role && (
-                    <div className="text-[11px] text-slate-700 truncate">{userInfo.role}</div>
+                    <div className="text-[11px] text-slate-700 truncate">{displayRole}</div>
                   )}
                 </div>
               </div>

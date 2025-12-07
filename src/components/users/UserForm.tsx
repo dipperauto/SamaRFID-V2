@@ -31,7 +31,7 @@ const UserForm: React.FC<Props> = ({ initial, readOnly = false, isEdit = false, 
     username: initial?.username ?? "",
     full_name: initial?.full_name ?? "",
     password: initial?.password ?? null,
-    role: initial?.role ?? "usuario",
+    role: (initial?.role === "usuario" ? "fotografo" : (initial?.role ?? "fotografo")),
     allowed_pages: initial?.allowed_pages ?? [],
     profile_photo_base64: initial?.profile_photo_base64 ?? null,
   });
@@ -103,7 +103,7 @@ const UserForm: React.FC<Props> = ({ initial, readOnly = false, isEdit = false, 
             </SelectTrigger>
             <SelectContent className="bg-white text-black">
               <SelectItem value="administrador" className="text-black">Administrador</SelectItem>
-              <SelectItem value="usuario" className="text黑">Usuário</SelectItem>
+              <SelectItem value="fotografo" className="text-black">Fotógrafo</SelectItem>
             </SelectContent>
           </Select>
         </div>
