@@ -221,6 +221,62 @@ def _detect_pose_landmarks(img: Image.Image) -> List[Dict[str, Any]]:
             landmarks.append({"name": name, "x": float(lm.x), "y": float(lm.y), "visibility": float(getattr(lm, "visibility", 0.0))})
         return landmarks
 
+def _max_aspect_rect(w: int, h: int, aspect: float) -> Tuple[int, int]:
+    if aspect <= 0:
+        aspect = 1.0
+    # tenta usar toda a largura, ajustando altura
+    height_from_width = int(round(w / aspect))
+    if height_from_width <= h:
+        return w, height_from_width
+    # senão usa toda a altura, ajustando largura
+    width_from_height = int(round(h * aspect))
+    return width_from_height, h
+
+def _crop_normal(img: Image.Image, rect: Optional[Dict[str, int]]) -> Image.Image:
+    if not rect:
+        return img
+    x = int(rect.get("x", 0))
+    y = int(rect.get("y", 0))
+    w = int(rect.get("w", img.width))
+    h = int(rect.get("h", img.height))
+    x = max(0, min(x, img.width - 1))
+    y = max(0, min(y, img.height - 1))
+    w = max(1, min(w, img.width - x))
+    h = max(1, min(h, img.height - y))
+    return img.crop((x, y, x + w, y + h))
+
+def _crop_face(img: Image.Image, aspect: float = 1.0, scale: float = 1.0, anchor: str = "center") -> Image.Image:
+    """
+    Recorta um retângulo com aspecto 'aspect' centrado na âncora.
+    Escala funciona como zoom: 1.0 = área máxima, 2.0 = área metade (zoom-in).
+    """
+    # Primeiro tenta âncora da pose; se não houver, tenta face; senão, centro
+    pt = _detect_pose_anchor(img, anchor) if anchor else None
+    if pt is None:
+        pt = _detect_face_anchor(img, anchor=anchor)
+    if pt is None:
+        pt = (img.width // 2, img.height // 2)
+    cx, cy = pt
+
+    w, h = img.width, img.height
+    aspect = float(aspect) if aspect > 0 else 1.0
+    # rect máximo que respeita aspecto
+    max_w, max_h = _max_aspect_rect(w, h, aspect)
+
+    # escala como zoom (1..2): maior escala -> menor retângulo
+    s = max(1.0, min(float(scale), 2.0))
+    final_w = max(1, int(round(max_w / s)))
+    final_h = max(1, int(round(max_h / s)))
+
+    # centraliza na âncora
+    x = int(round(cx - final_w / 2))
+    y = int(round(cy - final_h / 2))
+    # clamp dentro da imagem
+    x = max(0, min(x, w - final_w))
+    y = max(0, min(y, h - final_h))
+
+    return img.crop((x, y, x + final_w, y + final_h))
+
 def save_original(file_bytes: bytes, filename: str) -> Dict[str, Any]:
     _ensure_dir(EDITOR_DIR)
     image_id = _gen_id()
@@ -289,38 +345,6 @@ def _detect_pose_anchor(img: Image.Image, anchor: str) -> Optional[Tuple[int, in
         if left and right:
             return (int((left["x"] + right["x"]) * 0.5 * w), int((left["y"] + right["y"]) * 0.5 * h))
     return None
-
-def _crop_normal(img: Image.Image, rect: Optional[Dict[str, int]]) -> Image.Image:
-    if not rect:
-        return img
-    x = int(rect.get("x", 0))
-    y = int(rect.get("y", 0))
-    w = int(rect.get("w", img.width))
-    h = int(rect.get("h", img.height))
-    x = max(0, min(x, img.width - 1))
-    y = max(0, min(y, img.height - 1))
-    w = max(1, min(w, img.width - x))
-    h = max(1, min(h, img.height - y))
-    return img.crop((x, y, x + w, y + h))
-
-def _crop_face(img: Image.Image, aspect: float = 1.0, scale: float = 1.0, anchor: str = "center") -> Image.Image:
-    # Primeiro tenta âncora da pose; se não houver, tenta face; senão, centro
-    pt = _detect_pose_anchor(img, anchor) if anchor else None
-    if pt is None:
-        pt = _detect_face_anchor(img, anchor=anchor)
-    if pt is None:
-        pt = (img.width // 2, img.height // 2)
-    cx, cy = pt
-    base = min(img.width, img.height) * 0.5 * scale
-    if aspect <= 0:
-        aspect = 1.0
-    h = int(base)
-    w = int(base * aspect)
-    x = max(0, cx - w // 2)
-    y = max(0, cy - h // 2)
-    x2 = min(img.width, x + w)
-    y2 = min(img.height, y + h)
-    return img.crop((x, y, x2, y2))
 
 def process_image(image_id: str, params: Dict[str, Any]) -> Dict[str, Any]:
     img_dir = os.path.join(EDITOR_DIR, image_id)

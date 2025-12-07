@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Cropper from "react-easy-crop";
 import PoseOverlay from "@/components/PoseOverlay";
@@ -20,19 +19,12 @@ type ProcessOut = {
   dimensions: { width: number; height: number };
 };
 
-type Meta = Record<string, any>;
-
 const ParametrosPage: React.FC = () => {
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
   const [imageId, setImageId] = React.useState<string | null>(null);
   const [originalUrl, setOriginalUrl] = React.useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = React.useState<string | null>(null);
-
-  const [meta, setMeta] = React.useState<Meta | null>(null);
-  const [hist, setHist] = React.useState<Hist | null>(null);
-  const [sharp, setSharp] = React.useState<number | null>(null);
-  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Ajustes
   const [brightness, setBrightness] = React.useState(0);
@@ -73,12 +65,6 @@ const ParametrosPage: React.FC = () => {
     setImageId(data.image_id);
     setOriginalUrl(`${API_URL}/${data.original_url}`);
     setProcessedUrl(`${API_URL}/${data.original_url}`); // inicial
-    setMeta(data.meta || {});
-    // hist inicial
-    const hres = await fetch(`${API_URL}/image-editor/histogram/${data.image_id}`, { credentials: "include" });
-    const hjson = await hres.json();
-    setHist(hjson.histogram || null);
-    setSharp(hjson.sharpness ?? null);
   };
 
   const onCropComplete = (_area: any, pixels: { width: number; height: number; x: number; y: number }) => {
@@ -125,8 +111,6 @@ const ParametrosPage: React.FC = () => {
     }
     const out: ProcessOut = await res.json();
     setProcessedUrl(`${API_URL}/${out.processed_url}`);
-    setHist(out.histogram);
-    setSharp(out.sharpness);
     setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
 
@@ -163,11 +147,6 @@ const ParametrosPage: React.FC = () => {
                   if (f) onFile(f);
                 }}
               />
-              {processedUrl && (
-                <Badge variant="outline" className="bg-black/5 text-slate-900">
-                  Nitidez: {sharp != null ? sharp.toFixed(2) : "—"}
-                </Badge>
-              )}
               <Button
                 variant="default"
                 onClick={() => process()}
@@ -259,8 +238,15 @@ const ParametrosPage: React.FC = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-3 max-w-2xl">
                         <div className="space-y-1">
-                          <Label>Zoom</Label>
-                          <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
+                          <Label>Zoom (1x–2x)</Label>
+                          <input
+                            type="range"
+                            min={1}
+                            max={2}
+                            step={0.01}
+                            value={zoom}
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                          />
                         </div>
                         <div className="space-y-1">
                           <Label>Aspect</Label>
@@ -283,7 +269,6 @@ const ParametrosPage: React.FC = () => {
 
                   {cropMode === "face" && (
                     <div className="space-y-3 max-w-2xl">
-                      {/* Overlay do esqueleto com pontos clicáveis (com fallback quando não há pose) */}
                       {originalUrl && (
                         <>
                           {poseLandmarks && poseLandmarks.length > 0 ? (
@@ -345,11 +330,18 @@ const ParametrosPage: React.FC = () => {
                           </select>
                         </div>
                         <div className="space-y-1">
-                          <Label>Escala</Label>
-                          <input type="range" min={0.6} max={1.8} step={0.02} value={faceScale} onChange={(e) => setFaceScale(Number(e.target.value))} />
+                          <Label>Escala (1x–2x)</Label>
+                          <input
+                            type="range"
+                            min={1}
+                            max={2}
+                            step={0.01}
+                            value={faceScale}
+                            onChange={(e) => setFaceScale(Number(e.target.value))}
+                          />
                         </div>
                         <p className="text-xs text-slate-700 md:col-span-3">
-                          O crop dinâmico ancora no ponto selecionado do esqueleto. Clique nos pontos para escolher a âncora. Se não houver pose disponível, usa detecção facial como fallback.
+                          Escala funciona como zoom: 1x usa a área máxima; 2x recorta uma área menor centrada na âncora.
                         </p>
                       </div>
                     </div>
