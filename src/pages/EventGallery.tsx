@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import UploaderChip from "@/components/UploaderChip";
 import ProgressOverlay from "@/components/ProgressOverlay";
 import { showError, showSuccess } from "@/utils/toast";
 import { Image as ImageIcon, Trash2, Wand2 } from "lucide-react";
@@ -516,7 +517,7 @@ const EventGalleryPage: React.FC = () => {
                         </div>
                       )}
                       <div className="p-2 flex items-center justify-between">
-                        <Badge variant="outline" className="bg-black/5">{it.uploader}</Badge>
+                        <UploaderChip uploader={it.uploader} photographers={displayPhotographers} apiBase={API_URL} />
                         <Checkbox
                           checked={selectedIds.has(it.id)}
                           onCheckedChange={() => toggleSelect(it.id)}
@@ -555,7 +556,7 @@ const EventGalleryPage: React.FC = () => {
                         </div>
                       )}
                       <div className="p-2 flex items-center justify-between">
-                        <Badge variant="outline" className="bg-black/5">{it.uploader}</Badge>
+                        <UploaderChip uploader={it.uploader} photographers={displayPhotographers} apiBase={API_URL} />
                         <div className="flex items-center gap-2">
                           {it.lut_id != null && <Badge variant="outline">LUT #{it.lut_id}</Badge>}
                           {typeof it.sharpness === "number" && (

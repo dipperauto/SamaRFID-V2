@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import UploaderChip from "@/components/UploaderChip";
 import { Image as ImageIcon, Camera, Loader2, X } from "lucide-react";
 
 type Photographer = { username: string; full_name: string; profile_photo_url?: string };
@@ -289,7 +290,7 @@ const PublicFaceSearchPage: React.FC = () => {
                           R$ {(m.price_brl ?? 0).toFixed(2)} • Score: {m.score.toFixed(2)}
                         </div>
                         <div className="p-3 flex items-center justify-between">
-                          <div className="text-xs text-slate-700 truncate">{m.uploader}</div>
+                          <UploaderChip uploader={m.uploader} photographers={photographersWithOwner} apiBase={API_URL} />
                           <label className="flex items-center gap-2 text-xs">
                             <input
                               type="checkbox"
