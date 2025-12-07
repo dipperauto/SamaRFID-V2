@@ -151,28 +151,30 @@ const PublicFaceSearchPage: React.FC = () => {
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center py-8 px-4">
       <AnimatedBackground />
       <div className="relative z-10 w-full max-w-3xl">
-        <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 py-6 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
-          {/* Header com logo e thumb do evento */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <img src="/login.png" alt="Logo" className="h-12 w-auto" />
-              <div className="text-lg font-semibold">
+        <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 py-7 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
+          {/* Header profissional: logo central, título e thumb maior */}
+          <div className="mb-6">
+            <div className="flex items-center justify-center">
+              <img src="/login.png" alt="Logo" className="h-12 md:h-14 w-auto" />
+            </div>
+            <div className="mt-4 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="text-xl md:text-2xl font-semibold">
                 {info ? info.name : loadingInfo ? "Carregando..." : "Evento"}
               </div>
+              {info?.photo_url && (
+                <div className="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden border bg-white ring-1 ring-black/5">
+                  <AspectRatio ratio={1}>
+                    <img src={`${API_URL}/${info.photo_url}`} alt="Thumb do Evento" className="w-full h-full object-cover" />
+                  </AspectRatio>
+                </div>
+              )}
             </div>
-            {info?.photo_url && (
-              <div className="w-20 h-20 rounded-lg overflow-hidden border bg-white">
-                <AspectRatio ratio={1}>
-                  <img src={`${API_URL}/${info.photo_url}`} alt="Thumb do Evento" className="w-full h-full object-cover" />
-                </AspectRatio>
-              </div>
-            )}
           </div>
 
           {/* Fotógrafos */}
           {info?.photographers?.length ? (
-            <div className="mb-4">
-              <div className="text-sm font-medium mb-2">Fotógrafos</div>
+            <div className="mb-5">
+              <div className="text-sm font-medium mb-2 text-center md:text-left">Fotógrafos</div>
               <div className="flex flex-wrap items-center gap-3">
                 {info.photographers.map((p) => (
                   <div key={p.username} className="flex items-center gap-2">
@@ -190,12 +192,12 @@ const PublicFaceSearchPage: React.FC = () => {
             </div>
           ) : null}
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="text-sm text-slate-700">
               Faça o reconhecimento facial para verificar se há fotos suas neste evento.
             </div>
             {/* Upload e câmera */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
               <Input type="file" accept="image/*" onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
               <Button variant="outline" onClick={startCamera}>
                 <Camera className="h-4 w-4 mr-2" /> Tirar foto
@@ -228,12 +230,12 @@ const PublicFaceSearchPage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <Button disabled={!file} onClick={runSearch} className="bg-[#f26716] hover:bg-[#e46014] text-white">
                 {searching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ImageIcon className="h-4 w-4 mr-2" />}
                 Buscar minhas fotos
               </Button>
-              <div className="w-1/2">
+              <div className="w-full md:w-1/2">
                 {searching || progress > 0 ? <Progress value={progress} /> : null}
               </div>
             </div>
@@ -275,7 +277,7 @@ const PublicFaceSearchPage: React.FC = () => {
                   </div>
 
                   {/* Total e checkout */}
-                  <div className="flex items-center justify-between border-t pt-3">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-t pt-3">
                     <div className="text-sm text-slate-700">
                       Selecionadas: {selectedIds.size} • Total: <span className="font-semibold">R$ {totalBRL.toFixed(2)}</span>
                     </div>
@@ -304,7 +306,7 @@ const PublicFaceSearchPage: React.FC = () => {
                         alert("Pagamento aprovado! As fotos serão enviadas para seu e-mail.");
                         setSelectedIds(new Set());
                       }}
-                      className="bg-[#f26716] hover:bg-[#e46014] text-white"
+                      className="bg-[#f26716] hover:bg-[#e46014] text-white self-end md:self-auto"
                     >
                       Finalizar compra
                     </Button>
