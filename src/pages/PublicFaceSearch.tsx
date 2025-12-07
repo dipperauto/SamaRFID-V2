@@ -300,8 +300,11 @@ const PublicFaceSearchPage: React.FC = () => {
                             onClick={() => { setViewerItem(m); setViewerOpen(true); }}
                           />
                         </AspectRatio>
-                        <div className="absolute bottom-2 left-2 text-[12px] px-2 py-0.5 rounded bg-black/60 text-white">
-                          R$ {(m.price_brl ?? 0).toFixed(2)} • Score: {m.score.toFixed(2)}
+                        <div className="absolute bottom-2 left-2 px-3 py-1.5 rounded-lg bg-black/70 text-white shadow-md">
+                          <div className="text-base md:text-lg font-semibold">
+                            R$ {(m.price_brl ?? 0).toFixed(2)}
+                          </div>
+                          <div className="text-[11px] md:text-xs opacity-85">Score: {m.score.toFixed(2)}</div>
                         </div>
                         <div className="p-3 flex items-center justify-between">
                           <UploaderChip uploader={m.uploader} photographers={photographersWithOwner} apiBase={API_URL} />
@@ -348,13 +351,14 @@ const PublicFaceSearchPage: React.FC = () => {
 
       {/* Viewer em tela cheia */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[95vw] h-[95vh] p-0 rounded-2xl bg-white">
+        <DialogContent className="w-[95vw] sm:max-w-[95vw] h-[95vh] p-0 rounded-2xl bg-black">
           {viewerItem && (
             <div className="w-full h-full flex items-center justify-center">
               <img
                 src={`${API_URL}/${viewerItem.url}`}
                 alt={viewerItem.id}
-                className="w-full h-full object-contain"
+                style={{ maxWidth: "100vw", maxHeight: "100vh" }}
+                className="object-contain"
               />
             </div>
           )}

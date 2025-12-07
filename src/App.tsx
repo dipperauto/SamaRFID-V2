@@ -15,6 +15,7 @@ import ParametrosPage from "./pages/Parametros";
 import EventGalleryPage from "./pages/EventGallery";
 import PublicFaceSearchPage from "./pages/PublicFaceSearch";
 import PublicCheckoutPage from "./pages/PublicCheckout";
+import BalancoPage from "./pages/Balanco";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           {/* Página pública (sem layout) */}
           <Route path="/public/events/:eventId/face" element={<PublicFaceSearchPage />} />
           <Route path="/public/checkout" element={<PublicCheckoutPage />} />
+          <Route path="/balanco" element={<BalancoPage />} />
           {/* Rotas com layout (menu responsivo) */}
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />

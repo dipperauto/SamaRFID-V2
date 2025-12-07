@@ -44,6 +44,7 @@ from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
 # NOVO: galeria por evento
 from storage_events import get_event_by_id
 from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images
+from storage_finance import record_purchase, get_finance_summary, list_finance_purchases
 
 # ADD: importar funções de eventos usadas abaixo
 from storage_events import get_events_for_user, add_event, update_event, delete_event, get_event_by_id
@@ -869,6 +870,15 @@ def public_purchase(payload: dict):
             json.dump({"items": items, "buyer": buyer, "total_brl": total_brl}, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
+    # NOVO: creditar saldo ao dono do evento
+    ev = get_event_by_id(event_id)
+    owner = (ev or {}).get("owner_username") or ""
+    if owner:
+        try:
+            record_purchase(event_id, owner, items, buyer, float(total_brl or 0))
+        except Exception:
+            # silencioso
+            pass
     return {"success": True, "message": "Pagamento aprovado. As fotos serão enviadas para seu e-mail."}
 
 
@@ -959,3 +969,23 @@ def luts_delete(lut_id: int, request: Request):
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LUT não encontrado.")
     return DeleteLUTResponse(success=True, message="LUT removido com sucesso.")
+
+# ----- Finance (autenticado) -----
+@app.get("/finance/summary")
+def finance_summary(request: Request, start: Optional[str] = None, end: Optional[str] = None):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    # sumário do usuário logado (fotógrafo / owner)
+    summary = get_finance_summary(data["username"], start, end)
+    return summary
+
+@app.get("/finance/purchases")
+def finance_purchases(request: Request, start: Optional[str] = None, end: Optional[str] = None):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    lst = list_finance_purchases(data["username"], start, end)
+    return {"count": len(lst), "purchases": lst}
