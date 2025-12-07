@@ -343,7 +343,7 @@ const EventGalleryPage: React.FC = () => {
                           {it.lut_id != null && <Badge variant="outline">LUT #{it.lut_id}</Badge>}
                           {typeof it.sharpness === "number" && (
                             <Badge variant="outline" title="Quanto maior, mais nítida">
-                              Nitidez: {Math.round(it.sharpness)}
+                              Nitidez do sujeito: {Math.round(it.sharpness)}
                             </Badge>
                           )}
                           <Checkbox
@@ -392,7 +392,7 @@ const EventGalleryPage: React.FC = () => {
                     <div className="text-slate-700">{viewerItem.meta?.DateTimeOriginal || "-"}</div>
                   </div>
                   <div className="md:col-span-2">
-                    <div className="font-medium">Nitidez (quanto maior, mais nítida)</div>
+                    <div className="font-medium">Nitidez do sujeito (quanto maior, mais nítida)</div>
                     <div className="text-slate-700">
                       {typeof viewerItem.sharpness === "number" ? Math.round(viewerItem.sharpness) : "-"}
                     </div>

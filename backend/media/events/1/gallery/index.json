@@ -1,3 +1,144 @@
 {
-  "images": []
+  "images": [
+    {
+      "id": "evimg_1765136089016_2064f44e",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089016_2064f44e_Fotos_WhatsApp Image 2025-12-07 at 12.59.54 _1_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089016_2064f44e_20251207193449.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.059334",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 40.264604980622266
+    },
+    {
+      "id": "evimg_1765136089059_85fdf927",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089059_85fdf927_Fotos_WhatsApp Image 2025-12-07 at 12.59.54 _2_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089059_85fdf927_20251207193450.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.085912",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 35.28189295903082
+    },
+    {
+      "id": "evimg_1765136089085_ae5e4334",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089085_ae5e4334_Fotos_WhatsApp Image 2025-12-07 at 12.59.54 _3_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089085_ae5e4334_20251207193451.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.114073",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 22.135539847574883
+    },
+    {
+      "id": "evimg_1765136089114_cdd86d26",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089114_cdd86d26_Fotos_WhatsApp Image 2025-12-07 at 12.59.55 _1_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089114_cdd86d26_20251207193452.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.138228",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 37.517082660796554
+    },
+    {
+      "id": "evimg_1765136089138_57bc001b",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089138_57bc001b_Fotos_WhatsApp Image 2025-12-07 at 12.59.55 _2_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089138_57bc001b_20251207193453.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.171243",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 33.76186040753209
+    },
+    {
+      "id": "evimg_1765136089223_c2bdbaba",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089223_c2bdbaba_Fotos_WhatsApp Image 2025-12-07 at 12.59.55.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089223_c2bdbaba_20251207193453.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.251988",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 81.21927739123122
+    },
+    {
+      "id": "evimg_1765136089251_74cbc505",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089251_74cbc505_Fotos_WhatsApp Image 2025-12-07 at 12.59.56 _1_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089251_74cbc505_20251207193454.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.281456",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 186.42612401699472
+    },
+    {
+      "id": "evimg_1765136089281_702bac70",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089281_702bac70_Fotos_WhatsApp Image 2025-12-07 at 12.59.56 _2_.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089281_702bac70_20251207193454.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.309240",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 47.46090357012294
+    },
+    {
+      "id": "evimg_1765136089309_82b8c274",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089309_82b8c274_Fotos_WhatsApp Image 2025-12-07 at 12.59.56.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089309_82b8c274_20251207193455.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.337688",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 39.16834118998182
+    },
+    {
+      "id": "evimg_1765136089337_8363a8cd",
+      "uploader": "jose@dipperauto.com",
+      "original_rel": "media/events/1/gallery/raw/jose@dipperauto.com/evimg_1765136089337_8363a8cd_Fotos_WhatsApp Image 2025-12-07 at 12.59.57.jpeg",
+      "edited_rel": "media/events/1/gallery/edited/jose@dipperauto.com/evimg_1765136089337_8363a8cd_20251207193456.png",
+      "applied_lut_id": 1,
+      "uploaded_at": "2025-12-07T19:34:49.370017",
+      "meta": {
+        "Dimensions": "1067x1600",
+        "width": 1067,
+        "height": 1600
+      },
+      "sharpness": 53.645632259746996
+    }
+  ]
 }

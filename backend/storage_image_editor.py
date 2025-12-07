@@ -320,6 +320,19 @@ def _detect_face_anchor(img: Image.Image, anchor: str = "center") -> Optional[Tu
         cy = y + int(h * 0.75)
     return (cx, cy)
 
+def _detect_face_bbox(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
+    if cv2 is None:
+        return None
+    arr = np.asarray(img.convert("RGB"))
+    gray = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    faces = cascade.detectMultiScale(gray, 1.2, 6)
+    if len(faces) == 0:
+        return None
+    # maior rosto
+    x, y, w, h = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)[0]
+    return (int(x), int(y), int(w), int(h))
+
 def _detect_pose_anchor(img: Image.Image, anchor: str) -> Optional[Tuple[int, int]]:
     """Usa landmarks da pose para obter a âncora. Coordenadas normalizadas -> pixels."""
     if mp is None:
@@ -345,6 +358,66 @@ def _detect_pose_anchor(img: Image.Image, anchor: str) -> Optional[Tuple[int, in
         if left and right:
             return (int((left["x"] + right["x"]) * 0.5 * w), int((left["y"] + right["y"]) * 0.5 * h))
     return None
+
+def _compute_subject_sharpness(img: Image.Image) -> float:
+    """
+    Calcula a nitidez do SUJEITO:
+    - Se pose disponível: ROI ao redor do tronco (ombros).
+    - Se face disponível: ROI ao redor da face ampliada.
+    - Fallback: ROI central.
+    Métrica: variância do Laplaciano (OpenCV) na ROI, ou gradiente (fallback).
+    """
+    w, h = img.width, img.height
+
+    # 1) Tenta pose: usa distância entre ombros para dimensionar ROI
+    roi = None
+    if mp is not None:
+        lms = _detect_pose_landmarks(img)
+        if lms:
+            name_map = {lm["name"]: lm for lm in lms}
+            ls, rs = name_map.get("left_shoulder"), name_map.get("right_shoulder")
+            if ls and rs:
+                cx = int((ls["x"] + rs["x"]) * 0.5 * w)
+                cy = int((ls["y"] + rs["y"]) * 0.5 * h)
+                dist = int(np.hypot((ls["x"] - rs["x"]) * w, (ls["y"] - rs["y"]) * h))
+                roi_w = max(80, min(w, int(dist * 1.2)))
+                roi_h = max(80, min(h, int(dist * 1.6)))
+                # desce um pouco para pegar o tórax
+                cy_offset = int(0.4 * dist)
+                x = max(0, min(w - roi_w, cx - roi_w // 2))
+                y = max(0, min(h - roi_h, cy + cy_offset - roi_h // 2))
+                roi = img.crop((x, y, x + roi_w, y + roi_h))
+
+    # 2) Tenta face
+    if roi is None:
+        bbox = _detect_face_bbox(img)
+        if bbox:
+            x, y, fw, fh = bbox
+            cx, cy = x + fw // 2, y + fh // 2
+            roi_w = max(80, int(fw * 1.6))
+            roi_h = max(80, int(fh * 2.0))
+            x = max(0, min(w - roi_w, cx - roi_w // 2))
+            y = max(0, min(h - roi_h, cy - roi_h // 2))
+            roi = img.crop((x, y, x + roi_w, y + roi_h))
+
+    # 3) Fallback central
+    if roi is None:
+        roi_w = int(w * 0.4)
+        roi_h = int(h * 0.6)
+        x = (w - roi_w) // 2
+        y = (h - roi_h) // 2
+        roi = img.crop((x, y, x + roi_w, y + roi_h))
+
+    # Métrica na ROI
+    if cv2 is not None:
+        gray = np.asarray(roi.convert("L"))
+        lap = cv2.Laplacian(gray, cv2.CV_64F)
+        return float(lap.var())
+
+    arr = np.asarray(roi.convert("L")).astype(np.float32)
+    gy, gx = np.gradient(arr)
+    grad_mag = np.sqrt(gx**2 + gy**2)
+    return float(np.var(grad_mag))
 
 def process_image(image_id: str, params: Dict[str, Any]) -> Dict[str, Any]:
     img_dir = os.path.join(EDITOR_DIR, image_id)

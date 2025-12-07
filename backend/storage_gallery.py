@@ -12,8 +12,8 @@ from PIL import Image
 from storage_image_editor import _apply_adjustments
 # ADD: importar funções de crop para reutilizar a mesma lógica do editor
 from storage_image_editor import _crop_normal, _crop_face
-# ADD: importar cálculo de nitidez
-from storage_image_editor import _compute_sharpness
+# ADD: importar cálculo de nitidez do sujeito
+from storage_image_editor import _compute_subject_sharpness
 
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "media")
 EVENTS_BASE = os.path.join(MEDIA_DIR, "events")
@@ -184,7 +184,8 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
                 img = _crop_face(img, aspect=aspect, scale=scale, anchor=anchor)
 
             out_img = _apply_adjustments(img, lut_params or {})
-            sharpness_value = _compute_sharpness(out_img)
+            # calcular nitidez do SUJEITO na imagem já ajustada
+            subject_sharpness = _compute_subject_sharpness(out_img)
         except Exception:
             continue
 
@@ -209,7 +210,8 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         rel_out = os.path.relpath(abs_out, os.path.dirname(__file__)).replace(os.sep, "/")
         item["edited_rel"] = rel_out
         item["applied_lut_id"] = lut_id
-        item["sharpness"] = sharpness_value
+        # salvar nitidez do sujeito
+        item["sharpness"] = subject_sharpness
         count += 1
 
     _save_index(event_id, index)
