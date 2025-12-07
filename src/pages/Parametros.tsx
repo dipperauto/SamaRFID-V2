@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 import Cropper from "react-easy-crop";
 import PoseOverlay from "@/components/PoseOverlay";
@@ -93,6 +94,7 @@ const ParametrosPage: React.FC = () => {
   const [poseLandmarks, setPoseLandmarks] = React.useState<{ name: string; x: number; y: number; visibility?: number }[] | null>(null);
 
   const [isProcessing, setIsProcessing] = React.useState<boolean>(false);
+  const [previewMode, setPreviewMode] = React.useState<"original" | "processed">("processed");
 
   const uploadRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -307,25 +309,59 @@ const ParametrosPage: React.FC = () => {
             </div>
 
             {/* Preview sempre em evidência */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-slate-700 mb-1">Original</div>
-                <div className="rounded-md overflow-hidden border bg-white">
-                  {originalUrl ? (
-                    <img src={originalUrl} alt="Original" className="w-full h-auto" />
-                  ) : (
-                    <div className="h-64 flex items-center justify-center text-slate-500">Envie uma imagem para começar</div>
-                  )}
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm text-slate-700">Visualização</Label>
+                <ToggleGroup
+                  type="single"
+                  value={previewMode}
+                  onValueChange={(val) => val && setPreviewMode(val as "original" | "processed")}
+                  className="bg-white/70 border rounded-md p-1"
+                >
+                  <ToggleGroupItem
+                    value="processed"
+                    aria-label="Ver imagem editada"
+                    className="px-3 py-1.5"
+                  >
+                    Editado
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="original"
+                    aria-label="Ver imagem original"
+                    className="px-3 py-1.5"
+                  >
+                    Original
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
-              <div>
-                <div className="text-sm text-slate-700 mb-1">Processado</div>
-                <div className="rounded-md overflow-hidden border bg-white">
-                  {processedUrl ? (
-                    <img src={processedUrl} alt="Processado" className="w-full h-auto" />
-                  ) : (
-                    <div className="h-64 flex items-center justify-center text-slate-500">Aguarde o processamento</div>
-                  )}
+
+              <div className="flex justify-center">
+                <div className="inline-block p-2 rounded-2xl border bg-white shadow-sm ring-1 ring-black/5">
+                  <div className="overflow-hidden rounded-xl border bg-white">
+                    {previewMode === "processed" ? (
+                      processedUrl ? (
+                        <img
+                          src={processedUrl}
+                          alt="Imagem editada"
+                          className="max-h-[60vh] w-auto object-contain"
+                        />
+                      ) : (
+                        <div className="h-64 w-[22rem] flex items-center justify-center text-slate-500">
+                          Aguarde o processamento
+                        </div>
+                      )
+                    ) : originalUrl ? (
+                      <img
+                        src={originalUrl}
+                        alt="Imagem original"
+                        className="max-h-[60vh] w-auto object-contain"
+                      />
+                    ) : (
+                      <div className="h-64 w-[22rem] flex items-center justify-center text-slate-500">
+                        Envie uma imagem para começar
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
