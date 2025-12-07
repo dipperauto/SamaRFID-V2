@@ -222,7 +222,7 @@ const EventEditForm: React.FC<Props> = ({ event, onUpdated }) => {
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Foto de capa do evento</label>
-        <PhotoCropper onChange={(d) => setPhotoBase64(d)} initialImage={null} />
+        <PhotoCropper onChange={(d) => setPhotoBase64(d)} initialImage={null} cropShape="rect" aspect={16 / 9} />
         {event.photo_path && (
           <div className="text-xs text-slate-700">
             Capa atual:

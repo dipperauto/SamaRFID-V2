@@ -4,10 +4,14 @@ import React from "react";
 import Cropper from "react-easy-crop";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
+import { AspectRatio } from "./ui/aspect-ratio";
 
 type Props = {
   onChange: (dataUrl: string | null) => void;
   initialImage?: string | null;
+  // NEW: permitir configurar formato e proporção do recorte
+  cropShape?: "rect" | "round";
+  aspect?: number;
 };
 
 type AreaPixels = { width: number; height: number; x: number; y: number };
@@ -42,7 +46,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: AreaPixels): Promise<s
   return canvas.toDataURL("image/png");
 }
 
-const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null }) => {
+const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null, cropShape = "round", aspect = 1 }) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [imageSrc, setImageSrc] = React.useState<string | null>(initialImage ?? null);
   const [crop, setCrop] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -120,11 +124,11 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null }) => {
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={1}
+              aspect={aspect}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
-              cropShape="round"
+              cropShape={cropShape}
               showGrid={false}
             />
           </div>
@@ -154,9 +158,19 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null }) => {
 
       {preview && (
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-full overflow-hidden border">
-            <img src={preview} alt="Prévia" className="w-full h-full object-cover" />
-          </div>
+          {cropShape === "round" ? (
+            <div className="w-16 h-16 rounded-full overflow-hidden border">
+              <img src={preview} alt="Prévia" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-full max-w-xs">
+              <AspectRatio ratio={aspect || 16 / 9}>
+                <div className="w-full h-full rounded-md overflow-hidden border">
+                  <img src={preview} alt="Prévia" className="w-full h-full object-cover" />
+                </div>
+              </AspectRatio>
+            </div>
+          )}
           <div className="text-sm text-gray-600">Prévia da foto recortada</div>
         </div>
       )}

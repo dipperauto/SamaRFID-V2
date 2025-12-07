@@ -219,7 +219,7 @@ const EventCreateForm: React.FC<Props> = ({ onCreated }) => {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Foto de capa do evento</label>
-            <PhotoCropper onChange={(d) => setPhotoBase64(d)} initialImage={null} />
+            <PhotoCropper onChange={(d) => setPhotoBase64(d)} initialImage={null} cropShape="rect" aspect={16 / 9} />
           </div>
 
           <div className="flex justify-end">
