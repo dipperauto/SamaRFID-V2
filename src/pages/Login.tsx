@@ -116,6 +116,15 @@ const Login: React.FC = () => {
               <LogIn className="mr-2 h-4 w-4" />
               Entrar
             </Button>
+            <div className="mt-2 text-center">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="text-sm text-[#f26716] hover:text-[#e46014] underline-offset-2 hover:underline"
+              >
+                Esqueci a senha
+              </a>
+            </div>
           </form>
         </div>
       </div>
