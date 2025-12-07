@@ -102,6 +102,19 @@ app.mount(
     name="static",
 )
 
+# Helper para normalizar qualquer caminho salvo (media/, backend/media/ ou static/) para uma URL sob /static
+def _to_static_url(rel_path: str) -> str:
+    if not rel_path:
+        return ""
+    p = str(rel_path).replace("\\", "/").lstrip("/")
+    if p.startswith("backend/"):
+        p = p[len("backend/"):]
+    if p.startswith("static/"):
+        return p
+    if p.startswith("media/"):
+        p = p[len("media/"):]
+    return f"static/{p}"
+
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 
 SESSION_SECRET = os.environ.get("SESSION_SECRET", ADMIN_TOKEN or "dev-secret-change-me").strip()
@@ -786,15 +799,13 @@ def public_event_info(event_id: int):
     if not ev:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
     # monta URLs públicas
-    photo_url = ""
-    if ev.get("photo_path"):
-        photo_url = f"static/{str(ev['photo_path']).replace('media/', '')}"
+    photo_url = _to_static_url(ev.get("photo_path") or "")
     # fotógrafos enriquecidos
     photographers_info = []
     for uname in (ev.get("photographers") or []):
         u = get_user(uname) or {}
         prof_rel = u.get("profile_photo_path") or ""
-        prof_url = f"static/{prof_rel.replace('media/', '')}" if prof_rel else ""
+        prof_url = _to_static_url(prof_rel) if prof_rel else ""
         photographers_info.append({
             "username": uname,
             "full_name": u.get("full_name") or uname,
