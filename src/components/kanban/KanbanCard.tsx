@@ -126,7 +126,7 @@ const KanbanCard: React.FC<Props> = ({ card, onClick, onDelete }) => {
             </Badge>
           ) : null}
           {card.color === "liquid_glass" ? (
-            <Badge className="bg-[#f77821]/15 text-[#f77821] hover:bg-[#f77821]/20">Liquid Glass</Badge>
+            <Badge className="bg-[#f26716]/15 text-[#f26716] hover:bg-[#f26716]/20">Liquid Glass</Badge>
           ) : null}
         </div>
       </CardContent>

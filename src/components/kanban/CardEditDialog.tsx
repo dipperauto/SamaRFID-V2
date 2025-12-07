@@ -139,7 +139,7 @@ const CardEditDialog: React.FC<Props> = ({ open, onOpenChange, initial, users, o
             >
               Cancelar
             </Button>
-            <Button onClick={submit} className="bg-[#f77821] hover:bg-[#e86f1a] text-white">Salvar</Button>
+            <Button onClick={submit} className="bg-[#f26716] hover:bg-[#e46014] text-white">Salvar</Button>
           </div>
         </div>
       </DialogContent>

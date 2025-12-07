@@ -15,7 +15,7 @@ const Index = () => {
         <p className="text-xl text-gray-700 mb-6">
           Start building your amazing project here!
         </p>
-        <Button asChild className="bg-[#f77821] hover:bg-[#e86f1a] text-white">
+        <Button asChild className="bg-[#f26716] hover:bg-[#e46014] text-white">
           <Link to="/login">Ir para o Login</Link>
         </Button>
       </div>
