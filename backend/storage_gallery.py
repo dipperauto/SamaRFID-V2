@@ -12,6 +12,8 @@ from PIL import Image
 from storage_image_editor import _apply_adjustments
 # ADD: importar funções de crop para reutilizar a mesma lógica do editor
 from storage_image_editor import _crop_normal, _crop_face
+# ADD: importar cálculo de nitidez
+from storage_image_editor import _compute_sharpness
 
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "media")
 EVENTS_BASE = os.path.join(MEDIA_DIR, "events")
@@ -136,7 +138,12 @@ def list_gallery_for_event(event_id: int) -> Dict[str, Any]:
         if original_rel:
             raw_list.append({**common, "url": original_url})
         if edited_rel:
-            edited_list.append({**common, "url": edited_url, "lut_id": item.get("applied_lut_id")})
+            edited_list.append({
+                **common,
+                "url": edited_url,
+                "lut_id": item.get("applied_lut_id"),
+                "sharpness": item.get("sharpness", 0.0),
+            })
     return {"raw": raw_list, "edited": edited_list}
 
 def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: Dict[str, Any], lut_id: Optional[int]) -> int:
@@ -177,6 +184,7 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
                 img = _crop_face(img, aspect=aspect, scale=scale, anchor=anchor)
 
             out_img = _apply_adjustments(img, lut_params or {})
+            sharpness_value = _compute_sharpness(out_img)
         except Exception:
             continue
 
@@ -201,6 +209,7 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         rel_out = os.path.relpath(abs_out, os.path.dirname(__file__)).replace(os.sep, "/")
         item["edited_rel"] = rel_out
         item["applied_lut_id"] = lut_id
+        item["sharpness"] = sharpness_value
         count += 1
 
     _save_index(event_id, index)

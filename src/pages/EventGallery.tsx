@@ -19,6 +19,8 @@ type GalleryItem = {
   uploader: string;
   meta?: Record<string, any>;
   lut_id?: number | null;
+  // ADD: nitidez
+  sharpness?: number;
 };
 
 const EventGalleryPage: React.FC = () => {
@@ -339,6 +341,11 @@ const EventGalleryPage: React.FC = () => {
                         <Badge variant="outline" className="bg-black/5">{it.uploader}</Badge>
                         <div className="flex items-center gap-2">
                           {it.lut_id != null && <Badge variant="outline">LUT #{it.lut_id}</Badge>}
+                          {typeof it.sharpness === "number" && (
+                            <Badge variant="outline" title="Quanto maior, mais nítida">
+                              Nitidez: {Math.round(it.sharpness)}
+                            </Badge>
+                          )}
                           <Checkbox
                             checked={selectedIds.has(it.id)}
                             onCheckedChange={() => toggleSelect(it.id)}
@@ -383,6 +390,12 @@ const EventGalleryPage: React.FC = () => {
                   <div>
                     <div className="font-medium">Data de captura</div>
                     <div className="text-slate-700">{viewerItem.meta?.DateTimeOriginal || "-"}</div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <div className="font-medium">Nitidez (quanto maior, mais nítida)</div>
+                    <div className="text-slate-700">
+                      {typeof viewerItem.sharpness === "number" ? Math.round(viewerItem.sharpness) : "-"}
+                    </div>
                   </div>
                 </div>
               </div>
