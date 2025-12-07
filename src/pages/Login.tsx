@@ -74,7 +74,7 @@ const Login: React.FC = () => {
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 py-8 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
-            <img src="/blink-logo.png" alt="Blink Fotos" className="h-20 md:h-24 w-auto" />
+            <img src="/login.png" alt="Blink Fotos" className="h-20 md:h-24 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
