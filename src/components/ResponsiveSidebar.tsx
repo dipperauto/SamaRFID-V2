@@ -13,6 +13,7 @@ const ResponsiveSidebar: React.FC = () => {
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const [allowedPages, setAllowedPages] = React.useState<string[] | null>(null);
+  const [userInfo, setUserInfo] = React.useState<{ username?: string; full_name?: string; role?: string; photoUrl?: string } | null>(null);
 
   React.useEffect(() => {
     const run = async () => {
@@ -20,12 +21,22 @@ const ResponsiveSidebar: React.FC = () => {
         const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
         if (!res.ok) {
           setAllowedPages([]);
+          setUserInfo(null);
           return;
         }
         const data = await res.json();
         setAllowedPages(data?.allowed_pages ?? []);
+        const path = data?.profile_photo_path as string | undefined;
+        const photoUrl = path ? `${API_URL}/static/${path}`.replace(/\/static\/(\/)?/, "/static/") : undefined;
+        setUserInfo({
+          username: data?.username,
+          full_name: data?.full_name,
+          role: data?.role,
+          photoUrl,
+        });
       } catch {
         setAllowedPages([]);
+        setUserInfo(null);
       }
     };
     run();
@@ -71,6 +82,29 @@ const ResponsiveSidebar: React.FC = () => {
             <SheetHeader className="p-4">
               <SheetTitle className="text-slate-900">Menu</SheetTitle>
             </SheetHeader>
+            {/* User section (mobile) */}
+            {userInfo && (
+              <div className="px-4 pb-3">
+                <div className="flex items-center gap-3 rounded-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 backdrop-blur-xl p-3 shadow">
+                  {userInfo.photoUrl ? (
+                    <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-[#efeae3]" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-black/5 border border-[#efeae3] flex items-center justify-center text-slate-700">👤</div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-900 truncate">
+                      Olá{" "}
+                      <span className="text-[#f26716] font-semibold">
+                        {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
+                      </span>
+                    </div>
+                    {userInfo.role && (
+                      <div className="text-[11px] text-slate-700 truncate">{userInfo.role}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="px-4 pb-4 space-y-2">
               {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (
                 <button
@@ -106,6 +140,29 @@ const ResponsiveSidebar: React.FC = () => {
           <div className="flex items-center justify-center px-4 py-4 border-b border-[#efeae3]">
             <img src="/login.png" alt="Blink Fotos" className="h-12 w-auto" />
           </div>
+          {/* User section (desktop) */}
+          {userInfo && (
+            <div className="px-3 pb-3">
+              <div className="flex items-center gap-3 rounded-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 backdrop-blur-xl p-3 shadow">
+                {userInfo.photoUrl ? (
+                  <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-[#efeae3]" />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-black/5 border border-[#efeae3] flex items-center justify-center text-slate-700">👤</div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-900 truncate">
+                    Olá{" "}
+                    <span className="text-[#f26716] font-semibold">
+                      {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
+                    </span>
+                  </div>
+                  {userInfo.role && (
+                    <div className="text-[11px] text-slate-700 truncate">{userInfo.role}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <nav className="flex-1 px-2 py-2 space-y-1">
             {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (

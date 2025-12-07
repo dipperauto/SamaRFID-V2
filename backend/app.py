@@ -198,7 +198,15 @@ def auth_me(request: Request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida ou expirada.")
     user = get_user(data["username"])
     allowed = (user or {}).get("allowed_pages") or default_allowed_pages((user or {}).get("role"))
-    return LoginResponse(success=True, role=data.get("role"), allowed_pages=allowed)
+    # Include extra user info for UI
+    return LoginResponse(
+        success=True,
+        role=data.get("role"),
+        allowed_pages=allowed,
+        username=data.get("username"),
+        full_name=(user or {}).get("full_name"),
+        profile_photo_path=(user or {}).get("profile_photo_path")
+    )
 
 @app.post("/auth/logout")
 def auth_logout(response: Response, request: Request):

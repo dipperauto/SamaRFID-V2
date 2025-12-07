@@ -12,6 +12,9 @@ class LoginResponse(BaseModel):
     role: Optional[str] = None
     allowed_pages: Optional[List[str]] = None
     message: Optional[str] = None
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    profile_photo_path: Optional[str] = None
 
 
 class AddUserRequest(BaseModel):
