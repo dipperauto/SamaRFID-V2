@@ -8,6 +8,7 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 import re
+from fastapi import Form
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse, User, ListUsersResponse, UpdateUserRequest
 from storage import get_user, add_user, get_all_users, update_user
@@ -741,13 +742,14 @@ def events_gallery_list(event_id: int, request: Request):
     return list_gallery_for_event(event_id)
 
 @app.post("/events/{event_id}/gallery/upload")
-async def events_gallery_upload(event_id: int, request: Request, files: List[UploadFile] = File(...)):
+async def events_gallery_upload(event_id: int, request: Request, files: List[UploadFile] = File(...), sharpness_threshold: Optional[float] = Form(None)):
     member = _require_event_member(request, event_id)
     contents: List[Tuple[str, bytes]] = []
     for f in files:
         data = await f.read()
         contents.append((f.filename, data))
-    created = add_images_to_event(event_id, member["username"], contents)
+    # repassa threshold (se none, storage usará padrão)
+    created = add_images_to_event(event_id, member["username"], contents, sharpness_threshold)
     # retorna apenas ids e contagem
     return {"count": len(created), "image_ids": [c["id"] for c in created]}
 

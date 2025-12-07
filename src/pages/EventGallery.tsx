@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import ProgressOverlay from "@/components/ProgressOverlay";
 import { showError, showSuccess } from "@/utils/toast";
 import { Image as ImageIcon, Trash2, Wand2 } from "lucide-react";
@@ -19,8 +21,9 @@ type GalleryItem = {
   uploader: string;
   meta?: Record<string, any>;
   lut_id?: number | null;
-  // ADD: nitidez
   sharpness?: number;
+  discarded?: boolean;
+  uploaded_at?: string;
 };
 
 const EventGalleryPage: React.FC = () => {
@@ -32,6 +35,15 @@ const EventGalleryPage: React.FC = () => {
   const [edited, setEdited] = React.useState<GalleryItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [eventName, setEventName] = React.useState<string>("");
+
+  // Tabs, busca, ordenação e paginação
+  const [activeTab, setActiveTab] = React.useState<"raw" | "edited">("raw");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [sortBy, setSortBy] = React.useState<"sharpness" | "date" | "uploader">("date");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+  const PAGE_SIZE = 50;
+  const [rawPage, setRawPage] = React.useState<number>(1);
+  const [editedPage, setEditedPage] = React.useState<number>(1);
 
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const toggleSelect = (id: string) => {
@@ -47,6 +59,7 @@ const EventGalleryPage: React.FC = () => {
   const [lutDialogOpen, setLutDialogOpen] = React.useState(false);
   const [luts, setLuts] = React.useState<{ id: number; name: string }[]>([]);
   const [selectedLutId, setSelectedLutId] = React.useState<number | null>(null);
+  const [sharpnessThreshold, setSharpnessThreshold] = React.useState<number>(39);
 
   const [progressPhase, setProgressPhase] = React.useState<"upload" | "processing" | null>(null);
   const [progressPercent, setProgressPercent] = React.useState<number>(0);
@@ -75,6 +88,9 @@ const EventGalleryPage: React.FC = () => {
       const data = await res.json();
       setRaw((data?.raw ?? []) as GalleryItem[]);
       setEdited((data?.edited ?? []) as GalleryItem[]);
+      // reset páginas se necessário
+      setRawPage(1);
+      setEditedPage(1);
     } finally {
       setLoading(false);
     }
@@ -97,6 +113,65 @@ const EventGalleryPage: React.FC = () => {
     };
     loadEventName();
   }, [API_URL, eventId]);
+
+  // Deriva itens filtrados/ordenados/paginados para o tab atual
+  const applySearch = React.useCallback((items: GalleryItem[]) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) => {
+      const fields = [
+        it.uploader || "",
+        String(it.sharpness ?? ""),
+        String(it.lut_id ?? ""),
+        String(it.uploaded_at ?? ""),
+        it.meta?.Dimensions || "",
+      ].map((s) => s.toLowerCase());
+      return fields.some((f) => f.includes(q));
+    });
+  }, [searchQuery]);
+
+  const applySort = React.useCallback((items: GalleryItem[]) => {
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      let va: number | string = 0;
+      let vb: number | string = 0;
+      if (sortBy === "sharpness") {
+        va = Number(a.sharpness ?? 0);
+        vb = Number(b.sharpness ?? 0);
+      } else if (sortBy === "uploader") {
+        va = (a.uploader || "").toLowerCase();
+        vb = (b.uploader || "").toLowerCase();
+      } else {
+        // date
+        va = new Date(a.uploaded_at || 0).getTime();
+        vb = new Date(b.uploaded_at || 0).getTime();
+      }
+      const cmp = typeof va === "string" && typeof vb === "string" ? va.localeCompare(vb) : (va as number) - (vb as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [sortBy, sortDir]);
+
+  const getPaged = React.useCallback((items: GalleryItem[], page: number) => {
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const clampedPage = Math.min(Math.max(1, page), totalPages);
+    const start = (clampedPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return { pageItems: items.slice(start, end), totalPages, currentPage: clampedPage };
+  }, []);
+
+  const rawDisplay = React.useMemo(() => {
+    const filtered = applySearch(raw);
+    const sorted = applySort(filtered);
+    return getPaged(sorted, rawPage);
+  }, [raw, applySearch, applySort, getPaged, rawPage]);
+
+  const editedDisplay = React.useMemo(() => {
+    const filtered = applySearch(edited);
+    const sorted = applySort(filtered);
+    return getPaged(sorted, editedPage);
+  }, [edited, applySearch, applySort, getPaged, editedPage]);
 
   // Upload handler
   const onPickFiles = () => {
@@ -138,6 +213,7 @@ const EventGalleryPage: React.FC = () => {
       const chunk = files.slice(i, i + chunkSize);
       const form = new FormData();
       chunk.forEach((f) => form.append("files", f));
+      form.append("sharpness_threshold", String(sharpnessThreshold));
       const res = await fetch(`${API_URL}/events/${eventId}/gallery/upload`, {
         method: "POST",
         credentials: "include",
@@ -242,6 +318,15 @@ const EventGalleryPage: React.FC = () => {
     await loadGallery();
   };
 
+  // Selecionar todas as fotos visíveis na aba atual
+  const selectAllVisible = () => {
+    const ids =
+      activeTab === "raw"
+        ? rawDisplay.pageItems.map((it) => it.id)
+        : editedDisplay.pageItems.map((it) => it.id);
+    setSelectedIds(new Set(ids));
+  };
+
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewerItem, setViewerItem] = React.useState<GalleryItem | null>(null);
 
@@ -253,6 +338,37 @@ const EventGalleryPage: React.FC = () => {
             {eventName ? `Galeria — ${eventName}` : `Galeria do Evento #${eventId}`}
           </h1>
           <div className="flex items-center gap-2">
+            {/* Busca e ordenação */}
+            <div className="hidden md:flex items-center gap-2">
+              <Input
+                placeholder="Pesquisar por nitidez, data, fotógrafo..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setRawPage(1);
+                  setEditedPage(1);
+                }}
+                className="w-64"
+              />
+              <Select
+                value={sortBy}
+                onValueChange={(v) => {
+                  setSortBy(v as any);
+                  setRawPage(1);
+                  setEditedPage(1);
+                }}
+              >
+                <SelectTrigger className="w-40"><SelectValue placeholder="Ordenar por" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Data</SelectItem>
+                  <SelectItem value="uploader">Fotógrafo</SelectItem>
+                  <SelectItem value="sharpness">Nitidez</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}>
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </Button>
+            </div>
             <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
             <Button onClick={onPickFiles} className="bg-black/80 text-white hover:bg-black">
               <ImageIcon className="h-4 w-4 mr-2" /> Upload de imagens
@@ -262,7 +378,6 @@ const EventGalleryPage: React.FC = () => {
               ref={fileInputRef}
               type="file"
               multiple
-              // pasta inteira (suportado em Chrome/Edge)
               // @ts-expect-error non-standard attribute
               webkitdirectory="true"
               className="hidden"
@@ -277,6 +392,9 @@ const EventGalleryPage: React.FC = () => {
             Selecionadas: {selectedIds.size}
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={selectAllVisible}>
+              Selecionar todas (página)
+            </Button>
             <Button variant="outline" onClick={massDelete} disabled={!selectedIds.size}>
               <Trash2 className="h-4 w-4 mr-2" /> Excluir
             </Button>
@@ -291,7 +409,9 @@ const EventGalleryPage: React.FC = () => {
             <CardTitle className="text-lg">Imagens do evento</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="raw" className="w-full">
+            <Tabs value={activeTab} onValueChange={(v) => {
+              setActiveTab(v as any);
+            }} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="raw">Brutas</TabsTrigger>
                 <TabsTrigger value="edited">Editadas</TabsTrigger>
@@ -299,18 +419,25 @@ const EventGalleryPage: React.FC = () => {
 
               <TabsContent value="raw" className="space-y-4">
                 {loading && <div className="text-sm text-slate-700">Carregando...</div>}
-                {!loading && raw.length === 0 && (
+                {!loading && rawDisplay.pageItems.length === 0 && (
                   <div className="text-sm text-slate-700">Nenhuma imagem bruta.</div>
                 )}
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {raw.map((it) => (
+                  {rawDisplay.pageItems.map((it) => (
                     <div key={it.id} className="group relative rounded-lg overflow-hidden border bg-white">
-                      <img
-                        src={`${API_URL}/${it.url}`}
-                        alt={it.id}
-                        className="w-full h-40 object-cover cursor-pointer"
-                        onClick={() => { setViewerItem(it); setViewerOpen(true); }}
-                      />
+                      <AspectRatio ratio={1}>
+                        <img
+                          src={`${API_URL}/${it.url}`}
+                          alt={it.id}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => { setViewerItem(it); setViewerOpen(true); }}
+                        />
+                      </AspectRatio>
+                      {it.discarded && (
+                        <div className="absolute top-2 left-2">
+                          <Badge variant="destructive">Descartada</Badge>
+                        </div>
+                      )}
                       <div className="p-2 flex items-center justify-between">
                         <Badge variant="outline" className="bg-black/5">{it.uploader}</Badge>
                         <Checkbox
@@ -321,22 +448,35 @@ const EventGalleryPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+                {/* Paginação RAW */}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button variant="outline" disabled={rawPage <= 1} onClick={() => setRawPage((p) => Math.max(1, p - 1))}>Anterior</Button>
+                  <div className="text-sm">Página {rawDisplay.currentPage} de {rawDisplay.totalPages}</div>
+                  <Button variant="outline" disabled={rawPage >= rawDisplay.totalPages} onClick={() => setRawPage((p) => Math.min(rawDisplay.totalPages, p + 1))}>Próxima</Button>
+                </div>
               </TabsContent>
 
               <TabsContent value="edited" className="space-y-4">
                 {loading && <div className="text-sm text-slate-700">Carregando...</div>}
-                {!loading && edited.length === 0 && (
+                {!loading && editedDisplay.pageItems.length === 0 && (
                   <div className="text-sm text-slate-700">Nenhuma imagem editada.</div>
                 )}
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {edited.map((it) => (
+                  {editedDisplay.pageItems.map((it) => (
                     <div key={it.id} className="group relative rounded-lg overflow-hidden border bg-white">
-                      <img
-                        src={`${API_URL}/${it.url}`}
-                        alt={it.id}
-                        className="w-full h-40 object-cover cursor-pointer"
-                        onClick={() => { setViewerItem(it); setViewerOpen(true); }}
-                      />
+                      <AspectRatio ratio={1}>
+                        <img
+                          src={`${API_URL}/${it.url}`}
+                          alt={it.id}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onClick={() => { setViewerItem(it); setViewerOpen(true); }}
+                        />
+                      </AspectRatio>
+                      {it.discarded && (
+                        <div className="absolute top-2 left-2">
+                          <Badge variant="destructive">Descartada</Badge>
+                        </div>
+                      )}
                       <div className="p-2 flex items-center justify-between">
                         <Badge variant="outline" className="bg-black/5">{it.uploader}</Badge>
                         <div className="flex items-center gap-2">
@@ -354,6 +494,12 @@ const EventGalleryPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+                {/* Paginação EDITED */}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button variant="outline" disabled={editedPage <= 1} onClick={() => setEditedPage((p) => Math.max(1, p - 1))}>Anterior</Button>
+                  <div className="text-sm">Página {editedDisplay.currentPage} de {editedDisplay.totalPages}</div>
+                  <Button variant="outline" disabled={editedPage >= editedDisplay.totalPages} onClick={() => setEditedPage((p) => Math.min(editedDisplay.totalPages, p + 1))}>Próxima</Button>
                 </div>
               </TabsContent>
             </Tabs>
@@ -427,6 +573,17 @@ const EventGalleryPage: React.FC = () => {
                     LUT #{l.id} — {l.name}
                   </Button>
                 ))}
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Limite de nitidez para descarte</div>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={sharpnessThreshold}
+                  onChange={(e) => setSharpnessThreshold(Number(e.target.value || 0))}
+                />
+                <div className="text-xs text-slate-600">Fotos com nitidez do sujeito abaixo deste valor serão marcadas como descartadas. Padrão: 39.</div>
               </div>
               {/* Rodapé dependente do contexto (upload vs troca) */}
               <div className="flex items-center justify-end gap-2 pt-2">

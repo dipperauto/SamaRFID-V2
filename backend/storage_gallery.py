@@ -72,7 +72,7 @@ def _read_basic_meta(img: Image.Image) -> Dict[str, Any]:
         pass
     return meta
 
-def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, bytes]]) -> List[Dict[str, Any]]:
+def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, bytes]], sharpness_threshold: Optional[float] = None) -> List[Dict[str, Any]]:
     """
     Salva originais organizados em: media/events/{event_id}/gallery/raw/{uploader}/<id>_<original_name.ext>
     Atualiza index.json com metadados e retorna os registros criados.
@@ -83,6 +83,7 @@ def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, byt
 
     index = _load_index(event_id)
     created_records: List[Dict[str, Any]] = []
+    threshold = float(sharpness_threshold) if sharpness_threshold is not None else 39.0
 
     for filename, content in files:
         image_id = _gen_image_id()
@@ -93,13 +94,14 @@ def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, byt
         abs_path = os.path.join(user_raw_dir, stored_name)
         with open(abs_path, "wb") as fw:
             fw.write(content)
-        # metadados
+        # metadados e nitidez do sujeito no RAW
         try:
-            img = Image.open(io.BytesIO(content))
-            img = img.convert("RGB")
+            img = Image.open(io.BytesIO(content)).convert("RGB")
             meta = _read_basic_meta(img)
+            sharp_raw = float(_compute_subject_sharpness(img))
         except Exception:
             meta = {"Dimensions": "", "width": 0, "height": 0}
+            sharp_raw = 0.0
         rel = os.path.relpath(abs_path, os.path.dirname(__file__)).replace(os.sep, "/")
         record = {
             "id": image_id,
@@ -109,6 +111,9 @@ def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, byt
             "applied_lut_id": None,
             "uploaded_at": datetime.utcnow().isoformat(),
             "meta": meta,
+            # marca descarte baseado no threshold do upload
+            "sharpness": sharp_raw,
+            "discarded": bool(sharp_raw < threshold),
         }
         index["images"].append(record)
         created_records.append(record)
@@ -134,15 +139,23 @@ def list_gallery_for_event(event_id: int) -> Dict[str, Any]:
             "id": item.get("id"),
             "uploader": item.get("uploader"),
             "meta": item.get("meta") or {},
+            "uploaded_at": item.get("uploaded_at"),
         }
         if original_rel:
-            raw_list.append({**common, "url": original_url})
+            raw_list.append({
+                **common,
+                "url": original_url,
+                "discarded": bool(item.get("discarded", False)),
+                "sharpness": float(item.get("sharpness", 0.0)),
+            })
         if edited_rel:
             edited_list.append({
                 **common,
                 "url": edited_url,
                 "lut_id": item.get("applied_lut_id"),
-                "sharpness": item.get("sharpness", 0.0),
+                "discarded": bool(item.get("discarded", False)),
+                # nitidez (após LUT, se calculada; senão mantém a do raw)
+                "sharpness": float(item.get("sharpness", 0.0)),
             })
     return {"raw": raw_list, "edited": edited_list}
 
