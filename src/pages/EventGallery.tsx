@@ -148,6 +148,18 @@ const EventGalleryPage: React.FC = () => {
     return base;
   }, [photographers, ownerUsername]);
 
+  // Nome amigável para fotógrafos (quando vier só e-mail)
+  const formatName = React.useCallback((fullName?: string, username?: string) => {
+    if (fullName && fullName.trim().length) return fullName;
+    const raw = username || "";
+    let base = raw.includes("@") ? raw.split("@")[0] : raw;
+    base = base.replace(/[\.\_\-]/g, " ").trim().replace(/\s+/g, " ");
+    return base
+      .split(" ")
+      .map((s) => (s ? s[0].toUpperCase() + s.slice(1) : ""))
+      .join(" ") || raw;
+  }, []);
+
   // Deriva itens filtrados/ordenados/paginados para o tab atual
   const applySearch = React.useCallback((items: GalleryItem[]) => {
     const q = searchQuery.trim().toLowerCase();
@@ -458,7 +470,7 @@ const EventGalleryPage: React.FC = () => {
                     <AvatarFallback>{(p.full_name || p.username).slice(0, 2).toUpperCase()}</AvatarFallback>
                   )}
                 </Avatar>
-                <span className="text-sm">{p.full_name || p.username}</span>
+                <span className="text-sm">{formatName(p.full_name, p.username)}</span>
               </div>
             ))}
           </div>

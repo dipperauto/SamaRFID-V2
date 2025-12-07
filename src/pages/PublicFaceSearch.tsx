@@ -148,7 +148,7 @@ const PublicFaceSearchPage: React.FC = () => {
     }
   };
 
-  // Adicionar memo com fotógrafos incluindo o owner, evitando duplicata
+  // Derivar lista de fotógrafos incluindo owner (sem duplicar)
   const photographersWithOwner = React.useMemo(() => {
     const base = info?.photographers || [];
     const owner = info?.owner_username;
@@ -157,6 +157,18 @@ const PublicFaceSearchPage: React.FC = () => {
     }
     return base;
   }, [info]);
+
+  // Nome amigável para fotógrafos (quando vier só e-mail)
+  const formatName = React.useCallback((fullName?: string, username?: string) => {
+    if (fullName && fullName.trim().length) return fullName;
+    const raw = username || "";
+    let base = raw.includes("@") ? raw.split("@")[0] : raw;
+    base = base.replace(/[\.\_\-]/g, " ").trim().replace(/\s+/g, " ");
+    return base
+      .split(" ")
+      .map((s) => (s ? s[0].toUpperCase() + s.slice(1) : ""))
+      .join(" ") || raw;
+  }, []);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center py-10 px-4">
@@ -202,7 +214,7 @@ const PublicFaceSearchPage: React.FC = () => {
                         <AvatarFallback>{(p.full_name || p.username).slice(0, 2).toUpperCase()}</AvatarFallback>
                       )}
                     </Avatar>
-                    <div className="text-sm">{p.full_name || p.username}</div>
+                    <div className="text-sm">{formatName(p.full_name, p.username)}</div>
                   </div>
                 ))}
               </div>
