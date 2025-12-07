@@ -236,7 +236,6 @@ const EventGalleryPage: React.FC = () => {
       const form = new FormData();
       chunk.forEach((f) => form.append("files", f));
       form.append("sharpness_threshold", String(sharpnessThreshold));
-      // adiciona o preço por imagem nesta leva
       form.append("price_brl", String(priceBRL));
       const res = await fetch(`${API_URL}/events/${eventId}/gallery/upload`, {
         method: "POST",
@@ -659,6 +658,23 @@ const EventGalleryPage: React.FC = () => {
                 />
                 <div className="text-xs text-slate-600">Fotos com nitidez do sujeito abaixo deste valor serão marcadas como descartadas. Padrão: 39.</div>
               </div>
+
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Preço por imagem (R$)</div>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={priceBRL}
+                  onChange={(e) => {
+                    const v = Number(e.target.value || 0);
+                    setPriceBRL(v);
+                    localStorage.setItem("lastPriceBRL", String(v));
+                  }}
+                />
+                <div className="text-xs text-slate-600">Este valor será salvo nas imagens enviadas. Lembramos automaticamente o último valor usado.</div>
+              </div>
+
               {/* Rodapé dependente do contexto (upload vs troca) */}
               <div className="flex items-center justify-end gap-2 pt-2">
                 {pendingFiles.current ? (

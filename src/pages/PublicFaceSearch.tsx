@@ -155,7 +155,7 @@ const PublicFaceSearchPage: React.FC = () => {
           {/* Header com logo e thumb do evento */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+              <img src="/login.png" alt="Logo" className="h-12 w-auto" />
               <div className="text-lg font-semibold">
                 {info ? info.name : loadingInfo ? "Carregando..." : "Evento"}
               </div>
