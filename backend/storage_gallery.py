@@ -14,6 +14,8 @@ from storage_image_editor import _apply_adjustments
 from storage_image_editor import _crop_normal, _crop_face
 # ADD: importar cálculo de nitidez do sujeito
 from storage_image_editor import _compute_subject_sharpness
+# ADD: importar auto-crop por pose/face
+from storage_image_editor import _auto_crop_by_pose
 
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "media")
 EVENTS_BASE = os.path.join(MEDIA_DIR, "events")
@@ -184,18 +186,15 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         # processar imagem
         try:
             img = Image.open(abs_original).convert("RGB")
-            # APPLY CROP SE DEFINIDO NO LUT
+            # AUTO-CROP por imagem:
+            # usa aspect/scale do LUT, mas âncora dinâmica (pose/face) e sem crop se múltiplas pessoas ou nenhuma.
             crop_cfg = (lut_params or {}).get("crop") or {}
-            mode = str(crop_cfg.get("mode", "none"))
-            if mode == "normal":
-                rect = crop_cfg.get("rect")
-                img = _crop_normal(img, rect)
-            elif mode == "face":
-                aspect = float(crop_cfg.get("aspect", 1.0))
-                scale = float(crop_cfg.get("scale", 1.0))
-                anchor = str(crop_cfg.get("anchor", "center"))
-                img = _crop_face(img, aspect=aspect, scale=scale, anchor=anchor)
-
+            aspect = float(crop_cfg.get("aspect", 1.0))
+            scale = float(crop_cfg.get("scale", 1.0))
+            auto_cropped = _auto_crop_by_pose(img, aspect=aspect, scale=scale)
+            if auto_cropped is not None:
+                img = auto_cropped
+            # aplica ajustes do LUT
             out_img = _apply_adjustments(img, lut_params or {})
             # calcular nitidez do SUJEITO na imagem já ajustada
             subject_sharpness = _compute_subject_sharpness(out_img)
