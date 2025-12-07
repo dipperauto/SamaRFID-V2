@@ -49,6 +49,8 @@ const ParametrosPage: React.FC = () => {
   const [faceScale, setFaceScale] = React.useState(1.0);
   const [poseLandmarks, setPoseLandmarks] = React.useState<{ name: string; x: number; y: number; visibility?: number }[] | null>(null);
 
+  const [isProcessing, setIsProcessing] = React.useState<boolean>(false);
+
   const onFile = async (f: File) => {
     const form = new FormData();
     form.append("file", f);
