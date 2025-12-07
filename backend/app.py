@@ -33,6 +33,8 @@ from storage_clients import (
 )
 from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
 from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
+from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse
+from storage_events import add_event, get_events_for_user
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -98,6 +100,19 @@ SESSION_TTL = int(os.environ.get("SESSION_TTL", "86400"))
 
 LIMIT_BYTES = 50 * 1024 * 1024  # 50 MB por cliente
 
+# Segurança adicional por headers (HSTS, etc.)
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # HSTS (navegadores ignoram em HTTP, efetivo em HTTPS)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Proteções básicas
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # ----- Helpers de sessão e permissões -----
 
@@ -130,10 +145,10 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 def default_allowed_pages(role: Optional[str]) -> List[str]:
-    # keys: "home","teste","clients","admin:add-user","users","kanban"
+    # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
-      return ["home", "teste", "clients", "admin:add-user", "users", "kanban"]
-    return ["home", "teste", "clients", "kanban"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events"]
+    return ["home", "teste", "clients", "kanban", "events"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -533,3 +548,76 @@ def kanban_delete_card(card_id: str, request: Request):
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card não encontrado.")
     return {"success": True}
+
+# ----- Busca pública de usuários (apenas autenticado, retorna dados mínimos) -----
+@app.get("/users/search-public", response_model=UsersSearchResponse)
+def users_search_public(request: Request, q: Optional[str] = None):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    raw = get_all_users()
+    ql = (q or "").strip().lower()
+    users: list[PublicUser] = []
+    for u in raw:
+        role = (u.get("role", "") or "").lower()
+        # apenas fotógrafos visíveis para convites
+        if role not in ("fotografo", "fotógrafo"):
+            continue
+        uname = u.get("username", "")
+        fname = u.get("full_name", "")
+        if ql and (ql not in uname.lower() and ql not in fname.lower()):
+            continue
+        users.append(
+            PublicUser(
+                username=uname,
+                full_name=fname,
+                role=u.get("role", ""),
+                profile_photo_path=u.get("profile_photo_path") or None,
+            )
+        )
+        if not ql and len(users) >= 20:
+            break
+    return UsersSearchResponse(users=users)
+
+# ----- Eventos (apenas membros podem ver; criação pelo usuário da sessão) -----
+@app.get("/events", response_model=ListEventsResponse)
+def events_list(request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    username = data["username"]
+    events = get_events_for_user(username)
+    return ListEventsResponse(count=len(events), events=[Event(**e) for e in events])
+
+@app.post("/events", response_model=Event)
+def events_create(payload: AddEventRequest, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    owner = data["username"]
+    # sanitiza fotógrafos: max 5, únicos, existem e são fotógrafos
+    from storage import get_user
+    sanitized: List[str] = []
+    for uname in (payload.photographers or []):
+        if uname in sanitized:
+            continue
+        u = get_user(uname)
+        if not u:
+            continue
+        role = (u.get("role", "") or "").lower()
+        if role in ("fotografo", "fotógrafo"):
+            sanitized.append(uname)
+        if len(sanitized) >= 5:
+            break
+    created = add_event(
+        payload.name,
+        payload.description,
+        payload.start_date,
+        payload.end_date,
+        owner,
+        sanitized,
+        payload.photo_base64,
+    )
+    return Event(**created)

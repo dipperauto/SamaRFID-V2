@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
 import UsersPage from "./pages/Users";
+import EventsPage from "./pages/Events";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/events" element={<EventsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

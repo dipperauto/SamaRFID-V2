@@ -57,6 +57,17 @@ class ListUsersResponse(BaseModel):
     users: List[User]
 
 
+class PublicUser(BaseModel):
+    username: str
+    full_name: str
+    role: str
+    profile_photo_path: Optional[str] = None
+
+
+class UsersSearchResponse(BaseModel):
+    users: List[PublicUser]
+
+
 class Client(BaseModel):
     id: int
     full_name: str
@@ -182,3 +193,26 @@ class UpdateCardRequest(BaseModel):
     color: Optional[str] = None
     listId: Optional[str] = None
     position: Optional[int] = None
+
+
+class Event(BaseModel):
+    id: int
+    name: str
+    description: str
+    start_date: str
+    end_date: str
+    owner_username: str
+    photo_path: Optional[str] = None
+    photographers: List[str]
+
+class AddEventRequest(BaseModel):
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    start_date: str = Field(min_length=1)  # ISO date (YYYY-MM-DD)
+    end_date: str = Field(min_length=1)    # ISO date (YYYY-MM-DD)
+    photographers: List[str] = []
+    photo_base64: Optional[str] = None
+
+class ListEventsResponse(BaseModel):
+    count: int
+    events: List[Event]
