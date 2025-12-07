@@ -2,11 +2,12 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from hashlib import sha256
 import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
+import re
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse, User, ListUsersResponse, UpdateUserRequest
 from storage import get_user, add_user, get_all_users, update_user
@@ -42,6 +43,9 @@ from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
 # NOVO: galeria por evento
 from storage_events import get_event_by_id
 from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images
+
+# ADD: importar funções de eventos usadas abaixo
+from storage_events import get_events_for_user, add_event, update_event, delete_event, get_event_by_id
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -119,6 +123,25 @@ async def security_headers(request: Request, call_next):
     # Proteções básicas
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # CORS fallback: reflete Origin válido (localhost com porta ou FRONTEND_URL)
+    origin = request.headers.get("origin", "")
+    frontend_url = os.environ.get("FRONTEND_URL", "").strip()
+    origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
+    try:
+        if origin and (
+            (frontend_url and origin == frontend_url) or
+            (re.fullmatch(origin_regex, origin) is not None)
+        ):
+            # Se CORSMiddleware não adicionou, garantimos aqui
+            response.headers.setdefault("Access-Control-Allow-Origin", origin)
+            response.headers.setdefault("Access-Control-Allow-Credentials", "true")
+            # Ajuda caches/proxies a variar por origin
+            response.headers.setdefault("Vary", "Origin")
+    except Exception:
+        # silencioso: não bloquear resposta por erro de regex
+        pass
+
     return response
 
 # ----- Helpers de sessão e permissões -----
