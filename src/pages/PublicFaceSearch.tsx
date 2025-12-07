@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Image as ImageIcon, Camera, Loader2, X } from "lucide-react";
 
 type Photographer = { username: string; full_name: string; profile_photo_url?: string };
-type PublicEventInfo = { id: number; name: string; description: string; photo_url?: string; photographers: Photographer[] };
+type PublicEventInfo = { id: number; name: string; description: string; photo_url?: string; photographers: Photographer[]; owner_username?: string };
 type MatchItem = { id: string; url: string; uploader: string; score: number; uploaded_at?: string; meta?: Record<string, any>; price_brl?: number };
 
 const PublicFaceSearchPage: React.FC = () => {
@@ -147,36 +147,52 @@ const PublicFaceSearchPage: React.FC = () => {
     }
   };
 
+  // Adicionar memo com fotógrafos incluindo o owner, evitando duplicata
+  const photographersWithOwner = React.useMemo(() => {
+    const base = info?.photographers || [];
+    const owner = info?.owner_username;
+    if (owner && !base.find((p) => p.username === owner)) {
+      return [...base, { username: owner, full_name: owner }];
+    }
+    return base;
+  }, [info]);
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center py-10 px-4">
       <AnimatedBackground />
+      {/* BACKGROUND: foto do evento desfocada e esbranquiçada */}
+      {info?.photo_url && (
+        <div className="absolute inset-0">
+          <img
+            src={`${API_URL}/${info.photo_url}`}
+            alt="Background do Evento"
+            className="w-full h-full object-cover"
+            style={{ filter: "blur(12px)", transform: "scale(1.08)" }}
+          />
+          <div className="absolute inset-0 bg-white/65" />
+        </div>
+      )}
+
       <div className="relative z-10 w-full max-w-4xl">
         <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/85 py-8 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
-          {/* Header profissional: logo central, título e thumb maior */}
+          {/* Header: apenas logo + título centralizados */}
           <div className="mb-8">
             <div className="flex items-center justify-center">
               <img src="/login.png" alt="Logo" className="h-14 md:h-16 w-auto" />
             </div>
-            <div className="mt-5 flex flex-col items-center justify-center gap-4 text-center">
+            <div className="mt-5 flex flex-col items-center justify-center gap-2 text-center">
               <div className="text-2xl md:text-3xl font-semibold">
                 {info ? info.name : loadingInfo ? "Carregando..." : "Evento"}
               </div>
-              {info?.photo_url && (
-                <div className="w-36 h-36 md:w-40 md:h-40 rounded-xl overflow-hidden border bg-white ring-1 ring-black/5 shadow-sm">
-                  <AspectRatio ratio={1}>
-                    <img src={`${API_URL}/${info.photo_url}`} alt="Thumb do Evento" className="w-full h-full object-cover" />
-                  </AspectRatio>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Fotógrafos */}
-          {info?.photographers?.length ? (
+          {/* Fotógrafos (inclui owner) */}
+          {photographersWithOwner.length ? (
             <div className="mb-6">
               <div className="text-sm font-medium mb-2 text-center md:text-left">Fotógrafos</div>
               <div className="flex flex-wrap items-center gap-3">
-                {info.photographers.map((p) => (
+                {photographersWithOwner.map((p) => (
                   <div key={p.username} className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       {p.profile_photo_url ? (
@@ -196,6 +212,7 @@ const PublicFaceSearchPage: React.FC = () => {
             <div className="text-sm text-slate-700">
               Faça o reconhecimento facial para verificar se há fotos suas neste evento.
             </div>
+
             {/* Upload e câmera (grid responsivo) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
@@ -250,7 +267,7 @@ const PublicFaceSearchPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Resultados */}
+            {/* Resultados com visualizações maiores */}
             <div className="mt-2">
               {!searching && matches.length === 0 && previewUrl && (
                 <div className="text-sm text-slate-700">Nenhuma foto correspondente encontrada.</div>
@@ -258,20 +275,20 @@ const PublicFaceSearchPage: React.FC = () => {
               {matches.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Fotos encontradas ({matches.length})</div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {matches.map((m) => (
-                      <div key={m.id} className="group relative rounded-lg overflow-hidden border bg-white">
-                        <AspectRatio ratio={1}>
+                      <div key={m.id} className="group relative rounded-xl overflow-hidden border bg-white shadow-sm">
+                        <AspectRatio ratio={4/3}>
                           <img
                             src={`${API_URL}/${m.url}`}
                             alt={m.id}
                             className="w-full h-full object-cover"
                           />
                         </AspectRatio>
-                        <div className="absolute bottom-2 left-2 text-[11px] px-2 py-0.5 rounded bg-black/60 text-white">
+                        <div className="absolute bottom-2 left-2 text-[12px] px-2 py-0.5 rounded bg-black/60 text-white">
                           R$ {(m.price_brl ?? 0).toFixed(2)} • Score: {m.score.toFixed(2)}
                         </div>
-                        <div className="p-2 flex items-center justify-between">
+                        <div className="p-3 flex items-center justify-between">
                           <div className="text-xs text-slate-700 truncate">{m.uploader}</div>
                           <label className="flex items-center gap-2 text-xs">
                             <input

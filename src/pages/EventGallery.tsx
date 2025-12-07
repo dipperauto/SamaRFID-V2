@@ -38,6 +38,7 @@ const EventGalleryPage: React.FC = () => {
   const [eventName, setEventName] = React.useState<string>("");
   const [eventThumbUrl, setEventThumbUrl] = React.useState<string>("");
   const [photographers, setPhotographers] = React.useState<{ username: string; full_name: string; profile_photo_url?: string }[]>([]);
+  const [ownerUsername, setOwnerUsername] = React.useState<string>("");
 
   // Tabs, busca, ordenação e paginação
   const [activeTab, setActiveTab] = React.useState<"raw" | "edited">("raw");
@@ -116,6 +117,7 @@ const EventGalleryPage: React.FC = () => {
         if (!res.ok) return;
         const data = await res.json();
         if (data?.name) setEventName(String(data.name));
+        if (data?.owner_username) setOwnerUsername(String(data.owner_username));
       } catch {}
     };
     loadEventName();
@@ -135,6 +137,15 @@ const EventGalleryPage: React.FC = () => {
     };
     loadPublicInfo();
   }, [API_URL, eventId]);
+
+  // Derivar lista de fotógrafos incluindo owner (sem duplicar)
+  const displayPhotographers = React.useMemo(() => {
+    const base = photographers || [];
+    if (ownerUsername && !base.find((p) => p.username === ownerUsername)) {
+      return [...base, { username: ownerUsername, full_name: ownerUsername }];
+    }
+    return base;
+  }, [photographers, ownerUsername]);
 
   // Deriva itens filtrados/ordenados/paginados para o tab atual
   const applySearch = React.useCallback((items: GalleryItem[]) => {
@@ -432,19 +443,12 @@ const EventGalleryPage: React.FC = () => {
         {/* Info do evento e fotógrafos */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {eventThumbUrl && (
-              <div className="w-14 h-14 rounded-lg overflow-hidden border bg-white">
-                <AspectRatio ratio={1}>
-                  <img src={`${API_URL}/${eventThumbUrl}`} alt="Thumb" className="w-full h-full object-cover" />
-                </AspectRatio>
-              </div>
-            )}
             <div className="text-sm text-slate-700">
               Evento: <span className="font-medium">{eventName || `#${eventId}`}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {photographers.map((p) => (
+            {displayPhotographers.map((p) => (
               <div key={p.username} className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   {p.profile_photo_url ? (
