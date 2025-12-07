@@ -634,6 +634,13 @@ def events_list(request: Request):
     events = get_events_for_user(username)
     return ListEventsResponse(count=len(events), events=[Event(**e) for e in events])
 
+# ADD: detalhes de um evento (apenas membros do evento)
+@app.get("/events/{event_id}", response_model=Event)
+def event_detail(event_id: int, request: Request):
+    member = _require_event_member(request, event_id)
+    ev = member["event"]
+    return Event(**ev)
+
 @app.post("/events", response_model=Event)
 def events_create(payload: AddEventRequest, request: Request):
     token = request.cookies.get("session")

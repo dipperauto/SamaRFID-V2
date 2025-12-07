@@ -29,6 +29,7 @@ const EventGalleryPage: React.FC = () => {
   const [raw, setRaw] = React.useState<GalleryItem[]>([]);
   const [edited, setEdited] = React.useState<GalleryItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
+  const [eventName, setEventName] = React.useState<string>("");
 
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const toggleSelect = (id: string) => {
@@ -80,6 +81,20 @@ const EventGalleryPage: React.FC = () => {
   React.useEffect(() => {
     loadGallery();
   }, [loadGallery]);
+
+  // ADD: carregar nome do evento
+  React.useEffect(() => {
+    const loadEventName = async () => {
+      if (!eventId) return;
+      try {
+        const res = await fetch(`${API_URL}/events/${eventId}`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.name) setEventName(String(data.name));
+      } catch {}
+    };
+    loadEventName();
+  }, [API_URL, eventId]);
 
   // Upload handler
   const onPickFiles = () => {
@@ -232,7 +247,9 @@ const EventGalleryPage: React.FC = () => {
     <div className="min-h-screen w-full overflow-hidden p-4 text-slate-900 bg-[#efeae3]">
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-semibold">Galeria do Evento #{eventId}</h1>
+          <h1 className="text-xl md:text-2xl font-semibold">
+            {eventName ? `Galeria — ${eventName}` : `Galeria do Evento #${eventId}`}
+          </h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
             <Button onClick={onPickFiles} className="bg-black/80 text-white hover:bg-black">

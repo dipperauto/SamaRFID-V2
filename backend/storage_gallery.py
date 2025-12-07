@@ -10,6 +10,8 @@ from PIL import Image
 
 # Reutiliza os ajustes do editor
 from storage_image_editor import _apply_adjustments
+# ADD: importar funções de crop para reutilizar a mesma lógica do editor
+from storage_image_editor import _crop_normal, _crop_face
 
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "media")
 EVENTS_BASE = os.path.join(MEDIA_DIR, "events")
@@ -162,6 +164,18 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         # processar imagem
         try:
             img = Image.open(abs_original).convert("RGB")
+            # APPLY CROP SE DEFINIDO NO LUT
+            crop_cfg = (lut_params or {}).get("crop") or {}
+            mode = str(crop_cfg.get("mode", "none"))
+            if mode == "normal":
+                rect = crop_cfg.get("rect")
+                img = _crop_normal(img, rect)
+            elif mode == "face":
+                aspect = float(crop_cfg.get("aspect", 1.0))
+                scale = float(crop_cfg.get("scale", 1.0))
+                anchor = str(crop_cfg.get("anchor", "center"))
+                img = _crop_face(img, aspect=aspect, scale=scale, anchor=anchor)
+
             out_img = _apply_adjustments(img, lut_params or {})
         except Exception:
             continue
