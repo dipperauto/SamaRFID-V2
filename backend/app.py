@@ -33,8 +33,8 @@ from storage_clients import (
 )
 from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
 from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
-from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse
-from storage_events import add_event, get_events_for_user
+from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse, UpdateEventRequest, DeleteEventResponse
+from storage_events import add_event, get_events_for_user, get_event_by_id, update_event, delete_event
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -597,7 +597,7 @@ def events_create(payload: AddEventRequest, request: Request):
     if not data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     owner = data["username"]
-    # sanitiza fotógrafos: max 5, únicos, existem e são fotógrafos
+    # sanitiza fotógrafos: max 5, únicos, existem e são fotógrafos/usuários
     from storage import get_user
     sanitized: List[str] = []
     for uname in (payload.photographers or []):
@@ -607,7 +607,7 @@ def events_create(payload: AddEventRequest, request: Request):
         if not u:
             continue
         role = (u.get("role", "") or "").lower()
-        if role in ("fotografo", "fotógrafo"):
+        if role in ("fotografo", "fotógrafo", "usuario", "usuário"):
             sanitized.append(uname)
         if len(sanitized) >= 5:
             break
@@ -621,3 +621,63 @@ def events_create(payload: AddEventRequest, request: Request):
         payload.photo_base64,
     )
     return Event(**created)
+
+# Atualizar evento (apenas proprietário)
+@app.put("/events/{event_id}", response_model=Event)
+def events_update(event_id: int, payload: UpdateEventRequest, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    username = data["username"]
+    existing = get_event_by_id(event_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    if existing["owner_username"] != username:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas o proprietário pode editar o evento.")
+    # sanitiza fotógrafos se enviado
+    sanitized = None
+    if payload.photographers is not None:
+        from storage import get_user
+        sanitized = []
+        for uname in (payload.photographers or []):
+            if uname in sanitized:
+                continue
+            u = get_user(uname)
+            if not u:
+                continue
+            role = (u.get("role", "") or "").lower()
+            if role in ("fotografo", "fotógrafo", "usuario", "usuário"):
+                sanitized.append(uname)
+            if len(sanitized) >= 5:
+                break
+    updated = update_event(
+        event_id,
+        name=payload.name,
+        description=payload.description,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        photographers=sanitized,
+        photo_base64=payload.photo_base64,
+    )
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado para atualização.")
+    return Event(**updated)
+
+# Excluir evento (apenas proprietário)
+@app.delete("/events/{event_id}", response_model=DeleteEventResponse)
+def events_delete(event_id: int, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    username = data["username"]
+    existing = get_event_by_id(event_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    if existing["owner_username"] != username:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas o proprietário pode excluir o evento.")
+    ok = delete_event(event_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    return DeleteEventResponse(success=True, message="Evento excluído com sucesso.")
