@@ -7,6 +7,11 @@ from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
 from PIL import Image
+import numpy as np
+try:
+    import cv2  # detector de face via Haar (se disponível)
+except Exception:
+    cv2 = None
 
 # Reutiliza os ajustes do editor
 from storage_image_editor import _apply_adjustments
@@ -73,6 +78,91 @@ def _read_basic_meta(img: Image.Image) -> Dict[str, Any]:
     except Exception:
         pass
     return meta
+
+def _detect_largest_face_bbox(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
+    """
+    Detecta a maior face via Haar (se OpenCV estiver disponível).
+    Retorna (x, y, w, h) ou None se não houver.
+    """
+    if cv2 is None:
+        return None
+    arr = np.asarray(img.convert("RGB"))
+    gray = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    faces = cascade.detectMultiScale(gray, 1.2, 6)
+    if len(faces) == 0:
+        return None
+    x, y, w, h = sorted(faces, key=lambda f: f[2]*f[3], reverse=True)[0]
+    return (int(x), int(y), int(w), int(h))
+
+def _extract_face_vector(img: Image.Image) -> Optional[np.ndarray]:
+    """
+    Extrai um vetor de características do rosto (maior rosto da imagem).
+    Preferência: OpenCV Haar para detectar; vetor = patch cinza 64x64 normalizado.
+    Retorna None se não detectar rosto.
+    """
+    bbox = _detect_largest_face_bbox(img)
+    if bbox is None:
+        return None
+    x, y, w, h = bbox
+    roi = img.crop((x, y, x + w, y + h)).convert("L")
+    roi = roi.resize((64, 64))
+    arr = np.asarray(roi).astype(np.float32)
+    # normaliza iluminação
+    arr = (arr - arr.mean()) / (arr.std() + 1e-6)
+    vec = arr.flatten()
+    # normalização final para simetria de escala
+    norm = np.linalg.norm(vec) + 1e-6
+    return vec / norm
+
+def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+    return float(np.dot(a, b) / ((np.linalg.norm(a) + 1e-6) * (np.linalg.norm(b) + 1e-6)))
+
+def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold: float = 0.90) -> List[Dict[str, Any]]:
+    """
+    Compara o rosto da imagem de consulta contra as fotos RAW do evento.
+    Retorna os itens com similaridade >= limiar. Usa maior rosto de cada imagem.
+    """
+    index = _load_index(event_id)
+    if not index.get("images"):
+        return []
+    try:
+        qimg = Image.open(io.BytesIO(query_bytes)).convert("RGB")
+    except Exception:
+        return []
+    qvec = _extract_face_vector(qimg)
+    if qvec is None:
+        return []
+
+    matches: List[Dict[str, Any]] = []
+    for item in index.get("images", []):
+        original_rel = item.get("original_rel") or ""
+        if not original_rel:
+            continue
+        abs_path = os.path.join(os.path.dirname(__file__), original_rel)
+        if not os.path.isfile(abs_path):
+            continue
+        try:
+            img = Image.open(abs_path).convert("RGB")
+        except Exception:
+            continue
+        vec = _extract_face_vector(img)
+        if vec is None:
+            continue
+        sim = _cosine_similarity(qvec, vec)
+        if sim >= similarity_threshold:
+            url = f"static/{original_rel.replace('media/', '')}"
+            matches.append({
+                "id": item.get("id"),
+                "url": url,
+                "uploader": item.get("uploader"),
+                "score": sim,
+                "uploaded_at": item.get("uploaded_at"),
+                "meta": item.get("meta") or {},
+            })
+    # ordenar por similaridade decrescente
+    matches.sort(key=lambda m: m.get("score", 0.0), reverse=True)
+    return matches
 
 def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, bytes]], sharpness_threshold: Optional[float] = None) -> List[Dict[str, Any]]:
     """

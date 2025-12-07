@@ -13,6 +13,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 import ParametrosPage from "./pages/Parametros";
 import EventGalleryPage from "./pages/EventGallery";
+import PublicFaceSearchPage from "./pages/PublicFaceSearch";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,8 @@ const App = () => (
           <Route path="/" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/login" element={<Login />} />
+          {/* Página pública (sem layout) */}
+          <Route path="/public/events/:eventId/face" element={<PublicFaceSearchPage />} />
           {/* Rotas com layout (menu responsivo) */}
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />

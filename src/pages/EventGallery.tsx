@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ProgressOverlay from "@/components/ProgressOverlay";
 import { showError, showSuccess } from "@/utils/toast";
 import { Image as ImageIcon, Trash2, Wand2 } from "lucide-react";
@@ -35,6 +36,8 @@ const EventGalleryPage: React.FC = () => {
   const [edited, setEdited] = React.useState<GalleryItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [eventName, setEventName] = React.useState<string>("");
+  const [eventThumbUrl, setEventThumbUrl] = React.useState<string>("");
+  const [photographers, setPhotographers] = React.useState<{ username: string; full_name: string; profile_photo_url?: string }[]>([]);
 
   // Tabs, busca, ordenação e paginação
   const [activeTab, setActiveTab] = React.useState<"raw" | "edited">("raw");
@@ -112,6 +115,21 @@ const EventGalleryPage: React.FC = () => {
       } catch {}
     };
     loadEventName();
+  }, [API_URL, eventId]);
+
+  // Carregar dados públicos para pegar thumb e fotógrafos
+  React.useEffect(() => {
+    const loadPublicInfo = async () => {
+      if (!eventId) return;
+      try {
+        const res = await fetch(`${API_URL}/public/events/${eventId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.photo_url) setEventThumbUrl(String(data.photo_url));
+        setPhotographers((data?.photographers ?? []) as any);
+      } catch {}
+    };
+    loadPublicInfo();
   }, [API_URL, eventId]);
 
   // Deriva itens filtrados/ordenados/paginados para o tab atual
@@ -370,6 +388,9 @@ const EventGalleryPage: React.FC = () => {
               </Button>
             </div>
             <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
+            <Button variant="outline" onClick={() => window.open(`/public/events/${eventId}/face`, "_blank")}>
+              Reconhecimento (link público)
+            </Button>
             <Button onClick={onPickFiles} className="bg-black/80 text-white hover:bg-black">
               <ImageIcon className="h-4 w-4 mr-2" /> Upload de imagens
             </Button>
@@ -383,6 +404,36 @@ const EventGalleryPage: React.FC = () => {
               className="hidden"
               onChange={(e) => handleFilesSelected(e.target.files)}
             />
+          </div>
+        </div>
+
+        {/* Info do evento e fotógrafos */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {eventThumbUrl && (
+              <div className="w-14 h-14 rounded-lg overflow-hidden border bg-white">
+                <AspectRatio ratio={1}>
+                  <img src={`${API_URL}/${eventThumbUrl}`} alt="Thumb" className="w-full h-full object-cover" />
+                </AspectRatio>
+              </div>
+            )}
+            <div className="text-sm text-slate-700">
+              Evento: <span className="font-medium">{eventName || `#${eventId}`}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {photographers.map((p) => (
+              <div key={p.username} className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  {p.profile_photo_url ? (
+                    <AvatarImage src={`${API_URL}/${p.profile_photo_url}`} alt={p.full_name} />
+                  ) : (
+                    <AvatarFallback>{(p.full_name || p.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+                  )}
+                </Avatar>
+                <span className="text-sm">{p.full_name || p.username}</span>
+              </div>
+            ))}
           </div>
         </div>
 

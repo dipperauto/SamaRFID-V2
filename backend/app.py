@@ -779,6 +779,49 @@ def events_gallery_delete(event_id: int, payload: dict, request: Request):
     deleted = delete_event_images(event_id, image_ids)
     return {"deleted": deleted}
 
+# ----- Endpoints Públicos (sem autenticação) -----
+@app.get("/public/events/{event_id}")
+def public_event_info(event_id: int):
+    ev = get_event_by_id(event_id)
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    # monta URLs públicas
+    photo_url = ""
+    if ev.get("photo_path"):
+        photo_url = f"static/{str(ev['photo_path']).replace('media/', '')}"
+    # fotógrafos enriquecidos
+    photographers_info = []
+    for uname in (ev.get("photographers") or []):
+        u = get_user(uname) or {}
+        prof_rel = u.get("profile_photo_path") or ""
+        prof_url = f"static/{prof_rel.replace('media/', '')}" if prof_rel else ""
+        photographers_info.append({
+            "username": uname,
+            "full_name": u.get("full_name") or uname,
+            "profile_photo_url": prof_url,
+        })
+    return {
+        "id": ev["id"],
+        "name": ev["name"],
+        "description": ev["description"],
+        "photo_url": photo_url,
+        "photographers": photographers_info,
+    }
+
+from fastapi import UploadFile, File
+from storage_gallery import face_search_in_event
+
+@app.post("/public/events/{event_id}/face-search")
+async def public_event_face_search(event_id: int, file: UploadFile = File(...)):
+    ev = get_event_by_id(event_id)
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Imagem inválida.")
+    matches = face_search_in_event(event_id, data)
+    return {"count": len(matches), "matches": matches}
+
 
 # ----- Editor de Imagem (autenticado) -----
 @app.post("/image-editor/upload")
