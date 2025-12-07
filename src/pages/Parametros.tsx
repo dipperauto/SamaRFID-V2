@@ -293,7 +293,7 @@ const ParametrosPage: React.FC = () => {
           <CardContent className="space-y-6 relative">
             {isProcessing && <LoadingOverlay message="Processando imagem..." />}
 
-            {/* Barra superior: upload + aplicar */}
+            {/* Barra superior: upload */}
             <div className="flex flex-wrap items-center gap-3">
               <Input
                 type="file"
@@ -304,14 +304,6 @@ const ParametrosPage: React.FC = () => {
                   if (f) onFile(f);
                 }}
               />
-              <Button
-                variant="default"
-                onClick={() => process()}
-                disabled={!imageId || isProcessing}
-                className="ml-auto"
-              >
-                {isProcessing ? "Processando..." : "Aplicar alterações"}
-              </Button>
             </div>
 
             {/* Preview sempre em evidência */}
@@ -370,6 +362,13 @@ const ParametrosPage: React.FC = () => {
                       max={currentControl.max}
                       step={currentControl.step}
                       onValueChange={(vals) => currentControl.set(vals[0])}
+                      onValueCommit={(vals) => {
+                        // processa quando solta o slider
+                        if (imageId && !isProcessing) {
+                          // garante que usamos o valor final já definido por onValueChange
+                          process();
+                        }
+                      }}
                       className="w-full"
                     />
                     <div className="mt-2 flex justify-between text-xs text-slate-500">
@@ -412,6 +411,11 @@ const ParametrosPage: React.FC = () => {
                             max={2}
                             step={0.01}
                             onValueChange={(vals) => setZoom(vals[0])}
+                            onValueCommit={() => {
+                              if (imageId && !isProcessing) {
+                                process();
+                              }
+                            }}
                           />
                         </div>
                         <div className="space-y-1">
@@ -503,6 +507,11 @@ const ParametrosPage: React.FC = () => {
                             max={2}
                             step={0.01}
                             onValueChange={(vals) => setFaceScale(vals[0])}
+                            onValueCommit={() => {
+                              if (imageId && !isProcessing) {
+                                process();
+                              }
+                            }}
                           />
                         </div>
                         <p className="text-xs text-slate-700 md:col-span-3">
