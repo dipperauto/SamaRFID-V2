@@ -36,6 +36,12 @@ const ParametrosPage: React.FC = () => {
   const [originalUrl, setOriginalUrl] = React.useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = React.useState<string | null>(null);
 
+  // ADD: estados de LUTs (antes usados sem declaração)
+  const [presets, setPresets] = React.useState<LutPreset[]>([]);
+  const [lutName, setLutName] = React.useState<string>("");
+  const [lutDesc, setLutDesc] = React.useState<string>("");
+  const [processedRelPath, setProcessedRelPath] = React.useState<string | null>(null);
+
   // Ajustes
   const [brightness, setBrightness] = React.useState(0);
   const [exposure, setExposure] = React.useState(0); // -2..2
