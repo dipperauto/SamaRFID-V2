@@ -36,6 +36,9 @@ from storage_kanban import get_board, create_list, update_list, delete_list, cre
 from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse, UpdateEventRequest, DeleteEventResponse
 from storage_image_editor import save_original, process_image, get_metadata, get_histogram_and_sharpness
 from storage_image_editor import get_pose_landmarks
+# ADD: LUTs
+from models import LUTPreset, ListLUTsResponse, AddLUTRequest, AddLUTResponse, DeleteLUTResponse
+from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -730,3 +733,43 @@ def image_editor_pose(image_id: str, request: Request):
     if not data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     return get_pose_landmarks(image_id)
+
+# ----- LUTs (presets por usuário, autenticado) -----
+
+@app.get("/luts", response_model=ListLUTsResponse)
+def luts_list(request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    presets_raw = get_luts_for_user(data["username"])
+    presets = [LUTPreset(**p) for p in presets_raw]
+    return ListLUTsResponse(count=len(presets), presets=presets)
+
+@app.post("/luts", response_model=AddLUTResponse)
+def luts_add(payload: AddLUTRequest, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    if not (payload.name or "").strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome do LUT é obrigatório.")
+    created = add_lut(
+        data["username"],
+        payload.name,
+        payload.description,
+        payload.params,
+        payload.thumb_source_url,
+    )
+    return AddLUTResponse(success=True, message="LUT salvo com sucesso.", preset=LUTPreset(**created))
+
+@app.delete("/luts/{lut_id}", response_model=DeleteLUTResponse)
+def luts_delete(lut_id: int, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_lut(lut_id, data["username"])
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LUT não encontrado.")
+    return DeleteLUTResponse(success=True, message="LUT removido com sucesso.")

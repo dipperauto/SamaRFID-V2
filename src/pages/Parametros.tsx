@@ -19,6 +19,20 @@ type ProcessOut = {
   dimensions: { width: number; height: number };
 };
 
+// ADD: tipos e estados para LUTs
+type LutPreset = {
+  id: number;
+  name: string;
+  description?: string | null;
+  params: any;
+  thumb_url?: string | null;
+  created_at: string;
+};
+const [presets, setPresets] = React.useState<LutPreset[]>([]);
+const [lutName, setLutName] = React.useState<string>("");
+const [lutDesc, setLutDesc] = React.useState<string>("");
+const [processedRelPath, setProcessedRelPath] = React.useState<string | null>(null);
+
 const ParametrosPage: React.FC = () => {
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
@@ -113,8 +127,120 @@ const ParametrosPage: React.FC = () => {
     }
     const out: ProcessOut = await res.json();
     setProcessedUrl(`${API_URL}/${out.processed_url}`);
+    setProcessedRelPath(out.processed_url); // guarda caminho relativo para thumbnail do LUT
     setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
+
+  // Buscar LUTs do usuário ao carregar a página
+  React.useEffect(() => {
+    const fetchPresets = async () => {
+      try {
+        const res = await fetch(`${API_URL}/luts`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        setPresets(Array.isArray(data.presets) ? data.presets : []);
+      } catch {
+        // silencioso
+      }
+    };
+    fetchPresets();
+  }, [API_URL]);
+
+  // Salvar LUT atual
+  const saveCurrentLUT = async () => {
+    if (!lutName.trim()) {
+      toast.error("Informe um nome para o LUT.");
+      return;
+    }
+    if (!processedRelPath) {
+      toast("Aplicando ajustes antes de salvar...");
+      await process();
+    }
+    const body = {
+      name: lutName.trim(),
+      description: lutDesc.trim() || undefined,
+      params: {
+        brightness,
+        exposure,
+        gamma,
+        shadows,
+        highlights,
+        curves_strength: curves,
+        temperature,
+        saturation,
+        vibrance,
+        vignette,
+        contrast,
+        crop: {
+          mode: cropMode,
+          rect: cropMode === "normal" ? croppedRect : undefined,
+          aspect: cropMode === "face" ? cropAspect : undefined,
+          scale: cropMode === "face" ? faceScale : undefined,
+          anchor: cropMode === "face" ? faceAnchor : undefined,
+        },
+      },
+      thumb_source_url: processedRelPath,
+    };
+    const res = await fetch(`${API_URL}/luts`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      toast.error("Falha ao salvar LUT.");
+      return;
+    }
+    const data = await res.json();
+    if (data?.preset) {
+      toast.success("LUT salvo!");
+      setPresets((prev) => [data.preset, ...prev]);
+      setLutName("");
+      setLutDesc("");
+    }
+  };
+
+  // Aplicar LUT (carrega parâmetros e reprocessa)
+  const applyLUT = async (p: LutPreset) => {
+    const params = p.params || {};
+    setBrightness(Number(params.brightness ?? 0));
+    setExposure(Number(params.exposure ?? 0));
+    setGamma(Number(params.gamma ?? 1));
+    setShadows(Number(params.shadows ?? 0));
+    setHighlights(Number(params.highlights ?? 0));
+    setCurves(Number(params.curves_strength ?? 0));
+    setTemperature(Number(params.temperature ?? 0));
+    setSaturation(Number(params.saturation ?? 0));
+    setVibrance(Number(params.vibrance ?? 0));
+    setVignette(Number(params.vignette ?? 0));
+    setContrast(Number(params.contrast ?? 0));
+    const cropParams = params.crop || {};
+    const mode = cropParams.mode as "none" | "normal" | "face" | undefined;
+    if (mode) setCropMode(mode);
+    if (mode === "normal") {
+      setCropAspect(Number(cropParams.aspect ?? cropAspect));
+      // rect aplicado no backend; manter UI
+    } else if (mode === "face") {
+      setCropAspect(Number(cropParams.aspect ?? cropAspect));
+      setFaceScale(Number(cropParams.scale ?? faceScale));
+      if (cropParams.anchor) setFaceAnchor(cropParams.anchor);
+    }
+    await process();
+  };
+
+  // Excluir LUT
+  const deleteLUT = async (id: number) => {
+    const res = await fetch(`${API_URL}/luts/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      toast.error("Não foi possível excluir o LUT.");
+      return;
+    }
+    toast.success("LUT excluído.");
+    setPresets((prev) => prev.filter((x) => x.id !== id));
+  };
 
   // Atualizar busca da pose: buscar assim que houver imageId (independente do modo de crop)
   React.useEffect(() => {
@@ -351,6 +477,71 @@ const ParametrosPage: React.FC = () => {
                 </TabsContent>
               </Tabs>
             )}
+
+            {/* Seção: Salvar LUT */}
+            <div className="mt-6 border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Salvar LUT (preset)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-1">
+                  <Label>Nome</Label>
+                  <Input value={lutName} onChange={(e) => setLutName(e.target.value)} placeholder="Ex.: Retrato quente" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Descrição</Label>
+                  <textarea
+                    className="w-full border rounded-md px-3 py-2 text-sm"
+                    rows={3}
+                    value={lutDesc}
+                    onChange={(e) => setLutDesc(e.target.value)}
+                    placeholder="Anote detalhes (temperatura, contraste, aspecto, etc.)"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="default" disabled={!imageId} onClick={saveCurrentLUT}>
+                  Salvar LUT com esta foto como thumbnail
+                </Button>
+                <span className="text-xs text-slate-600">
+                  Dica: clique em "Aplicar alterações" antes, para garantir que a miniatura represente o resultado atual.
+                </span>
+              </div>
+            </div>
+
+            {/* Lista de LUTs do usuário */}
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">Meus LUTs</h3>
+              {presets.length === 0 ? (
+                <div className="text-sm text-slate-600">Nenhum LUT salvo ainda.</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {presets.map((p) => (
+                    <div key={p.id} className="border rounded-md overflow-hidden bg-white">
+                      {p.thumb_url ? (
+                        <img
+                          src={`${API_URL}/${p.thumb_url}`}
+                          alt={p.name}
+                          className="w-full h-40 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-slate-100 flex items-center justify-center text-slate-500 text-sm">
+                          Sem thumbnail
+                        </div>
+                      )}
+                      <div className="p-3 space-y-2">
+                        <div className="font-medium">{p.name}</div>
+                        {p.description && <div className="text-sm text-slate-600 line-clamp-3">{p.description}</div>}
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={() => applyLUT(p)}>Aplicar</Button>
+                          <Button size="sm" variant="outline" onClick={() => deleteLUT(p.id)}>Excluir</Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Preview lado a lado */}
             {originalUrl && processedUrl && (

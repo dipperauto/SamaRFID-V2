@@ -228,3 +228,35 @@ class ListEventsResponse(BaseModel):
 class DeleteEventResponse(BaseModel):
     success: bool
     message: Optional[str] = None
+
+# ---------- LUTs (presets de parâmetros do editor) ----------
+
+from typing import Any, Dict
+
+class LUTPreset(BaseModel):
+    id: int
+    username: str
+    name: str
+    description: Optional[str] = None
+    params: Dict[str, Any]
+    thumb_url: Optional[str] = None
+    created_at: str
+
+class ListLUTsResponse(BaseModel):
+    count: int
+    presets: List[LUTPreset]
+
+class AddLUTRequest(BaseModel):
+    name: str = Field(min_length=1)
+    description: Optional[str] = None
+    params: Dict[str, Any]
+    thumb_source_url: Optional[str] = None  # ex.: 'static/editor/.../preview_xxx.png'
+
+class AddLUTResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    preset: Optional[LUTPreset] = None
+
+class DeleteLUTResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
