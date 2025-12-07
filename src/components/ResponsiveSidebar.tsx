@@ -26,8 +26,22 @@ const ResponsiveSidebar: React.FC = () => {
         }
         const data = await res.json();
         setAllowedPages(data?.allowed_pages ?? []);
-        const path = data?.profile_photo_path as string | undefined;
-        const photoUrl = path ? `${API_URL}/static/${path}`.replace(/\/static\/(\/)?/, "/static/") : undefined;
+        const pathRaw = data?.profile_photo_path as string | undefined;
+        const normalized = pathRaw ? pathRaw.replace(/\\/g, "/") : undefined;
+        let webPath: string | undefined = undefined;
+        if (normalized) {
+          const p = normalized.replace(/^\/+/, "");
+          if (p.startsWith("static/")) {
+            webPath = p; // já está em static/
+          } else if (p.startsWith("media/")) {
+            webPath = p.replace(/^media\//, "static/"); // media -> static
+          } else if (p.startsWith("users/")) {
+            webPath = `static/${p}`; // prefixa static/
+          } else {
+            webPath = `static/${p}`; // caminho genérico vai para static/
+          }
+        }
+        const photoUrl = webPath ? `${API_URL}/${webPath}` : undefined;
         setUserInfo({
           username: data?.username,
           full_name: data?.full_name,
