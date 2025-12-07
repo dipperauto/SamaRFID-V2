@@ -205,9 +205,20 @@ def save_original(file_bytes: bytes, filename: str) -> Dict[str, Any]:
     img_dir = os.path.join(EDITOR_DIR, image_id)
     _ensure_dir(img_dir)
     img = Image.open(io.BytesIO(file_bytes))
+
+    # RESIZE: limitar a imagem a um bounding box de 1920x1080 mantendo proporção
+    if hasattr(Image, "Resampling"):
+        resample = Image.Resampling.LANCZOS
+    else:
+        resample = getattr(Image, "LANCZOS", Image.ANTIALIAS)
+    max_w, max_h = 1920, 1080
+    img = img.convert("RGB")
+    img.thumbnail((max_w, max_h), resample)
+
     orig_name = _unique_name("original", "png")
     orig_path = os.path.join(img_dir, orig_name)
-    img.convert("RGB").save(orig_path, format="PNG")
+    img.save(orig_path, format="PNG", optimize=True)
+
     rel = os.path.relpath(orig_path, MEDIA_ROOT).replace(os.sep, "/")
     return {"image_id": image_id, "original_rel": rel, "original_url": f"static/{rel}", "meta": _read_metadata(img)}
 
