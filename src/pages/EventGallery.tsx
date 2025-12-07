@@ -66,6 +66,10 @@ const EventGalleryPage: React.FC = () => {
 
   const [progressPhase, setProgressPhase] = React.useState<"upload" | "processing" | null>(null);
   const [progressPercent, setProgressPercent] = React.useState<number>(0);
+  const [priceBRL, setPriceBRL] = React.useState<number>(() => {
+    const raw = localStorage.getItem("lastPriceBRL");
+    return raw ? Number(raw) : 10;
+  });
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -232,6 +236,8 @@ const EventGalleryPage: React.FC = () => {
       const form = new FormData();
       chunk.forEach((f) => form.append("files", f));
       form.append("sharpness_threshold", String(sharpnessThreshold));
+      // adiciona o preço por imagem nesta leva
+      form.append("price_brl", String(priceBRL));
       const res = await fetch(`${API_URL}/events/${eventId}/gallery/upload`, {
         method: "POST",
         credentials: "include",
@@ -405,6 +411,23 @@ const EventGalleryPage: React.FC = () => {
               onChange={(e) => handleFilesSelected(e.target.files)}
             />
           </div>
+        </div>
+
+        {/* Preço base lembrado para uploads */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-700">Preço por imagem (R$)</span>
+          <Input
+            type="number"
+            min={0}
+            step={0.5}
+            value={priceBRL}
+            onChange={(e) => {
+              const v = Number(e.target.value || 0);
+              setPriceBRL(v);
+              localStorage.setItem("lastPriceBRL", String(v));
+            }}
+            className="w-32"
+          />
         </div>
 
         {/* Info do evento e fotógrafos */}

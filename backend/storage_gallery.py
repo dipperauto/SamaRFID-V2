@@ -29,12 +29,39 @@ def _ensure_event_dirs(event_id: int):
     base = os.path.join(EVENTS_BASE, str(event_id), "gallery")
     raw_dir = os.path.join(base, "raw")
     edited_dir = os.path.join(base, "edited")
+    wm_dir = os.path.join(base, "wm")
     os.makedirs(raw_dir, exist_ok=True)
     os.makedirs(edited_dir, exist_ok=True)
-    return base, raw_dir, edited_dir
+    os.makedirs(wm_dir, exist_ok=True)
+    return base, raw_dir, edited_dir, wm_dir
+
+def _watermark_path() -> str:
+    return os.path.join(os.path.dirname(__file__), "media", "watermark", "watermark.png")
+
+def _apply_center_watermark(img: Image.Image) -> Image.Image:
+    """
+    Aplica PNG de marca d'água central, escalando para ~50% da largura da imagem (com limites).
+    """
+    wm_file = _watermark_path()
+    if not os.path.isfile(wm_file):
+        return img
+    wm = Image.open(wm_file).convert("RGBA")
+    W, H = img.width, img.height
+    # Escala alvo: 50% da largura da imagem (máx 80%, mín 20%)
+    target_w = max(int(W * 0.2), min(int(W * 0.5), int(W * 0.8)))
+    scale = target_w / wm.width
+    target_h = max(1, int(wm.height * scale))
+    wm_resized = wm.resize((target_w, target_h), Image.LANCZOS)
+    # Centro
+    x = (W - target_w) // 2
+    y = (H - target_h) // 2
+    # Composição
+    base = img.convert("RGBA")
+    base.alpha_composite(wm_resized, (x, y))
+    return base.convert("RGB")
 
 def _index_path(event_id: int) -> str:
-    base, _, _ = _ensure_event_dirs(event_id)
+    base, _, _, _ = _ensure_event_dirs(event_id)
     return os.path.join(base, "index.json")
 
 def _load_index(event_id: int) -> Dict[str, Any]:
@@ -120,8 +147,8 @@ def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold: float = 0.90) -> List[Dict[str, Any]]:
     """
-    Compara o rosto da imagem de consulta contra as fotos RAW do evento.
-    Retorna os itens com similaridade >= limiar. Usa maior rosto de cada imagem.
+    Compara o rosto da imagem de consulta contra as fotos RAW do evento e retorna
+    matches com URL de versão COM MARCA D'ÁGUA.
     """
     index = _load_index(event_id)
     if not index.get("images"):
@@ -151,25 +178,27 @@ def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold
             continue
         sim = _cosine_similarity(qvec, vec)
         if sim >= similarity_threshold:
-            url = f"static/{original_rel.replace('media/', '')}"
+            uploader = item.get("uploader") or "unknown"
+            wm_rel = _ensure_watermarked(event_id, original_rel, uploader, item.get("id") or "img")
+            url = f"static/{(wm_rel or original_rel).replace('media/', '')}"
             matches.append({
                 "id": item.get("id"),
                 "url": url,
-                "uploader": item.get("uploader"),
+                "uploader": uploader,
                 "score": sim,
                 "uploaded_at": item.get("uploaded_at"),
                 "meta": item.get("meta") or {},
+                "price_brl": item.get("price_brl"),
             })
-    # ordenar por similaridade decrescente
     matches.sort(key=lambda m: m.get("score", 0.0), reverse=True)
     return matches
 
-def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, bytes]], sharpness_threshold: Optional[float] = None) -> List[Dict[str, Any]]:
+def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, bytes]], sharpness_threshold: Optional[float] = None, price_brl: Optional[float] = None) -> List[Dict[str, Any]]:
     """
     Salva originais organizados em: media/events/{event_id}/gallery/raw/{uploader}/<id>_<original_name.ext>
     Atualiza index.json com metadados e retorna os registros criados.
     """
-    base, raw_dir, _ = _ensure_event_dirs(event_id)
+    base, raw_dir, _, wm_dir = _ensure_event_dirs(event_id)
     user_raw_dir = os.path.join(raw_dir, uploader)
     os.makedirs(user_raw_dir, exist_ok=True)
 
@@ -195,6 +224,13 @@ def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, byt
             meta = {"Dimensions": "", "width": 0, "height": 0}
             sharp_raw = 0.0
         rel = os.path.relpath(abs_path, os.path.dirname(__file__)).replace(os.sep, "/")
+        # valor financeiro
+        price_val = None
+        try:
+            if price_brl is not None:
+                price_val = float(price_brl)
+        except Exception:
+            price_val = None
         record = {
             "id": image_id,
             "uploader": uploader,
@@ -206,12 +242,36 @@ def add_images_to_event(event_id: int, uploader: str, files: List[Tuple[str, byt
             # marca descarte baseado no threshold do upload
             "sharpness": sharp_raw,
             "discarded": bool(sharp_raw < threshold),
+            "price_brl": price_val if price_val is not None else None,
         }
         index["images"].append(record)
         created_records.append(record)
 
     _save_index(event_id, index)
     return created_records
+
+def _ensure_watermarked(event_id: int, original_rel: str, uploader: str, image_id: str) -> Optional[str]:
+    """
+    Gera e retorna caminho relativo para a versão com marca d'água, salvando em gallery/wm/{uploader}/{id}_wm.png.
+    """
+    try:
+        base, _, _, wm_dir = _ensure_event_dirs(event_id)
+        user_wm_dir = os.path.join(wm_dir, uploader)
+        os.makedirs(user_wm_dir, exist_ok=True)
+        abs_original = os.path.join(os.path.dirname(__file__), original_rel)
+        if not os.path.isfile(abs_original):
+            return None
+        out_name = f"{image_id}_wm.png"
+        abs_out = os.path.join(user_wm_dir, out_name)
+        if os.path.isfile(abs_out):
+            return os.path.relpath(abs_out, os.path.dirname(__file__)).replace(os.sep, "/")
+        # gerar
+        img = Image.open(abs_original).convert("RGB")
+        wm_img = _apply_center_watermark(img)
+        wm_img.save(abs_out, format="PNG", compress_level=1)
+        return os.path.relpath(abs_out, os.path.dirname(__file__)).replace(os.sep, "/")
+    except Exception:
+        return None
 
 def list_gallery_for_event(event_id: int) -> Dict[str, Any]:
     """
@@ -232,6 +292,7 @@ def list_gallery_for_event(event_id: int) -> Dict[str, Any]:
             "uploader": item.get("uploader"),
             "meta": item.get("meta") or {},
             "uploaded_at": item.get("uploaded_at"),
+            "price_brl": item.get("price_brl"),
         }
         if original_rel:
             raw_list.append({
@@ -256,7 +317,7 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
     Aplica ajustes (LUT) sobre as originais e grava PNG em: edited/{uploader}/<id>_<timestamp>.png
     Substitui a versão anterior se existir.
     """
-    base, _, edited_dir = _ensure_event_dirs(event_id)
+    base, _, edited_dir, _ = _ensure_event_dirs(event_id)
     index = _load_index(event_id)
     count = 0
     now_tag = datetime.utcnow().strftime("%Y%m%d%H%M%S")
@@ -277,7 +338,6 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         try:
             img = Image.open(abs_original).convert("RGB")
             # AUTO-CROP por imagem:
-            # usa aspect/scale do LUT, mas âncora dinâmica (pose/face) e sem crop se múltiplas pessoas ou nenhuma.
             crop_cfg = (lut_params or {}).get("crop") or {}
             aspect = float(crop_cfg.get("aspect", 1.0))
             scale = float(crop_cfg.get("scale", 1.0))
@@ -312,7 +372,6 @@ def apply_lut_for_event_images(event_id: int, image_ids: List[str], lut_params: 
         rel_out = os.path.relpath(abs_out, os.path.dirname(__file__)).replace(os.sep, "/")
         item["edited_rel"] = rel_out
         item["applied_lut_id"] = lut_id
-        # salvar nitidez do sujeito
         item["sharpness"] = subject_sharpness
         count += 1
 

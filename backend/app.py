@@ -755,14 +755,14 @@ def events_gallery_list(event_id: int, request: Request):
     return list_gallery_for_event(event_id)
 
 @app.post("/events/{event_id}/gallery/upload")
-async def events_gallery_upload(event_id: int, request: Request, files: List[UploadFile] = File(...), sharpness_threshold: Optional[float] = Form(None)):
+async def events_gallery_upload(event_id: int, request: Request, files: List[UploadFile] = File(...), sharpness_threshold: Optional[float] = Form(None), price_brl: Optional[float] = Form(None)):
     member = _require_event_member(request, event_id)
     contents: List[Tuple[str, bytes]] = []
     for f in files:
         data = await f.read()
         contents.append((f.filename, data))
     # repassa threshold (se none, storage usará padrão)
-    created = add_images_to_event(event_id, member["username"], contents, sharpness_threshold)
+    created = add_images_to_event(event_id, member["username"], contents, sharpness_threshold, price_brl)
     # retorna apenas ids e contagem
     return {"count": len(created), "image_ids": [c["id"] for c in created]}
 
@@ -832,6 +832,32 @@ async def public_event_face_search(event_id: int, file: UploadFile = File(...)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Imagem inválida.")
     matches = face_search_in_event(event_id, data)
     return {"count": len(matches), "matches": matches}
+
+@app.post("/public/purchase")
+def public_purchase(payload: dict):
+    """
+    Mock de compra: aprova sempre, grava um registro leve e retorna sucesso.
+    payload: { event_id: int, items: [ids], buyer: { name, email, cpf }, total_brl: number }
+    """
+    try:
+        event_id = int(payload.get("event_id"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="event_id inválido.")
+    items = list(payload.get("items") or [])
+    buyer = dict(payload.get("buyer") or {})
+    total_brl = payload.get("total_brl")
+    # log simples
+    base_dir = os.path.join(os.path.dirname(__file__), "media", "events", str(event_id), "purchases")
+    os.makedirs(base_dir, exist_ok=True)
+    fname = datetime.now(timezone.utc).strftime("purchase_%Y%m%d%H%M%S.json")
+    path = os.path.join(base_dir, fname)
+    try:
+        import json
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"items": items, "buyer": buyer, "total_brl": total_brl}, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+    return {"success": True, "message": "Pagamento aprovado. As fotos serão enviadas para seu e-mail."}
 
 
 # ----- Editor de Imagem (autenticado) -----

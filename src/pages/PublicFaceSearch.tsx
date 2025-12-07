@@ -14,7 +14,7 @@ import { Image as ImageIcon, Camera, Loader2, X } from "lucide-react";
 
 type Photographer = { username: string; full_name: string; profile_photo_url?: string };
 type PublicEventInfo = { id: number; name: string; description: string; photo_url?: string; photographers: Photographer[] };
-type MatchItem = { id: string; url: string; uploader: string; score: number; uploaded_at?: string; meta?: Record<string, any> };
+type MatchItem = { id: string; url: string; uploader: string; score: number; uploaded_at?: string; meta?: Record<string, any>; price_brl?: number };
 
 const PublicFaceSearchPage: React.FC = () => {
   const { eventId } = useParams();
@@ -30,6 +30,22 @@ const PublicFaceSearchPage: React.FC = () => {
   const [matches, setMatches] = React.useState<MatchItem[]>([]);
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewerItem, setViewerItem] = React.useState<MatchItem | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const totalBRL = React.useMemo(() => {
+    return matches
+      .filter((m) => selectedIds.has(m.id))
+      .reduce((sum, m) => sum + (Number(m.price_brl || 0) || 0), 0);
+  }, [matches, selectedIds]);
 
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
@@ -237,15 +253,61 @@ const PublicFaceSearchPage: React.FC = () => {
                           <img
                             src={`${API_URL}/${m.url}`}
                             alt={m.id}
-                            className="w-full h-full object-cover cursor-pointer"
-                            onClick={() => { setViewerItem(m); setViewerOpen(true); }}
+                            className="w-full h-full object-cover"
                           />
                         </AspectRatio>
                         <div className="absolute bottom-2 left-2 text-[11px] px-2 py-0.5 rounded bg-black/60 text-white">
-                          Score: {m.score.toFixed(2)}
+                          R$ {(m.price_brl ?? 0).toFixed(2)} • Score: {m.score.toFixed(2)}
+                        </div>
+                        <div className="p-2 flex items-center justify-between">
+                          <div className="text-xs text-slate-700 truncate">{m.uploader}</div>
+                          <label className="flex items-center gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(m.id)}
+                              onChange={() => toggleSelect(m.id)}
+                            />
+                            Selecionar
+                          </label>
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Total e checkout */}
+                  <div className="flex items-center justify-between border-t pt-3">
+                    <div className="text-sm text-slate-700">
+                      Selecionadas: {selectedIds.size} • Total: <span className="font-semibold">R$ {totalBRL.toFixed(2)}</span>
+                    </div>
+                    <Button
+                      disabled={!selectedIds.size}
+                      onClick={async () => {
+                        const buyerName = prompt("Nome completo:");
+                        const buyerEmail = prompt("E-mail:");
+                        const buyerCPF = prompt("CPF:");
+                        if (!buyerName || !buyerEmail || !buyerCPF) return;
+                        const payload = {
+                          event_id: Number(eventId),
+                          items: Array.from(selectedIds),
+                          buyer: { name: buyerName, email: buyerEmail, cpf: buyerCPF },
+                          total_brl: totalBRL,
+                        };
+                        const res = await fetch(`${API_URL}/public/purchase`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        });
+                        if (!res.ok) {
+                          alert("Falha ao processar pagamento. Tente novamente.");
+                          return;
+                        }
+                        alert("Pagamento aprovado! As fotos serão enviadas para seu e-mail.");
+                        setSelectedIds(new Set());
+                      }}
+                      className="bg-[#f26716] hover:bg-[#e46014] text-white"
+                    >
+                      Finalizar compra
+                    </Button>
                   </div>
                 </div>
               )}
