@@ -34,7 +34,7 @@ from storage_clients import (
 from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
 from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
 from models import PublicUser, UsersSearchResponse, Event, AddEventRequest, ListEventsResponse, UpdateEventRequest, DeleteEventResponse
-from storage_events import add_event, get_events_for_user, get_event_by_id, update_event, delete_event
+from storage_image_editor import save_original, process_image, get_metadata, get_histogram_and_sharpness
 
 # Simple .env loader (no extra dependency)
 def load_env_file(path: str, override: bool = True):
@@ -147,8 +147,8 @@ def _verify_session_token(token: str) -> Optional[dict]:
 def default_allowed_pages(role: Optional[str]) -> List[str]:
     # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
-      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events"]
-    return ["home", "teste", "clients", "kanban", "events"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros"]
+    return ["home", "teste", "clients", "kanban", "events", "parametros"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -681,3 +681,43 @@ def events_delete(event_id: int, request: Request):
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
     return DeleteEventResponse(success=True, message="Evento excluído com sucesso.")
+
+# ----- Editor de Imagem (autenticado) -----
+@app.post("/image-editor/upload")
+async def image_editor_upload(request: Request, file: UploadFile = File(...)):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    content = await file.read()
+    saved = save_original(content, file.filename)
+    return saved
+
+@app.post("/image-editor/process")
+def image_editor_process(payload: dict, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    image_id = str(payload.get("image_id") or "")
+    if not image_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="image_id obrigatório.")
+    params = dict(payload.get("params") or {})
+    out = process_image(image_id, params)
+    return out
+
+@app.get("/image-editor/meta/{image_id}")
+def image_editor_meta(image_id: str, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    return get_metadata(image_id)
+
+@app.get("/image-editor/histogram/{image_id}")
+def image_editor_histogram(image_id: str, request: Request):
+    token = request.cookies.get("session")
+    data = _verify_session_token(token or "")
+    if not data:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    return get_histogram_and_sharpness(image_id)

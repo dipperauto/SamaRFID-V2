@@ -1,2 +1,5 @@
-fastapi==0.115.4
-uvicorn==0.32.0
+# File contents excluded from context
+
+Pillow
+numpy
+opencv-python
