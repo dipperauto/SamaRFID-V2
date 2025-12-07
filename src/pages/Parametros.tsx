@@ -290,7 +290,7 @@ const ParametrosPage: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-4">
         <Card className="rounded-2xl border bg-[#efeae3]/85 ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900">
           <CardHeader>
-            <CardTitle>Parâmetros • Editor de Fotos</CardTitle>
+            <CardTitle>Editor de Fotos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 relative">
             {isProcessing && <LoadingOverlay message="Processando imagem..." />}

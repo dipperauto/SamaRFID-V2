@@ -4,7 +4,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, TestTube, UserPlus, Menu, LogOut, Users } from "lucide-react";
+import { Home, TestTube, UserPlus, Menu, LogOut, Users, CalendarDays, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PAGES } from "@/utils/pages";
 
@@ -137,6 +137,8 @@ const ResponsiveSidebar: React.FC = () => {
                   {item.icon === "clients" && <Users className="h-4 w-4" />}
                   {item.icon === "adminAddUser" && <UserPlus className="h-4 w-4" />}
                   {item.icon === "users" && <Users className="h-4 w-4" />}
+                  {item.icon === "events" && <CalendarDays className="h-4 w-4" />}
+                  {item.icon === "photo" && <ImageIcon className="h-4 w-4" />}
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               ))}
@@ -201,6 +203,8 @@ const ResponsiveSidebar: React.FC = () => {
                   {item.icon === "clients" && <Users className="h-4 w-4" />}
                   {item.icon === "adminAddUser" && <UserPlus className="h-4 w-4" />}
                   {item.icon === "users" && <Users className="h-4 w-4" />}
+                  {item.icon === "events" && <CalendarDays className="h-4 w-4" />}
+                  {item.icon === "photo" && <ImageIcon className="h-4 w-4" />}
                 </span>
                 <span className="text-sm font-medium block">{item.label}</span>
               </NavLink>
