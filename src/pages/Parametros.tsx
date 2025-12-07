@@ -12,6 +12,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui
 import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import Cropper from "react-easy-crop";
 import PoseOverlay from "@/components/PoseOverlay";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type Hist = { r: number[]; g: number[]; b: number[] };
 type ProcessOut = {
@@ -33,6 +34,7 @@ const ParametrosPage: React.FC = () => {
   const [meta, setMeta] = React.useState<Meta | null>(null);
   const [hist, setHist] = React.useState<Hist | null>(null);
   const [sharp, setSharp] = React.useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Ajustes
   const [brightness, setBrightness] = React.useState(0);
@@ -87,6 +89,8 @@ const ParametrosPage: React.FC = () => {
 
   const process = React.useCallback(async () => {
     if (!imageId) return;
+    setIsProcessing(true);
+    toast("Processando imagem...");
     const payload: any = {
       image_id: imageId,
       params: {
@@ -118,12 +122,14 @@ const ParametrosPage: React.FC = () => {
     });
     if (!res.ok) {
       toast.error("Falha ao processar imagem.");
+      setIsProcessing(false);
       return;
     }
     const out: ProcessOut = await res.json();
     setProcessedUrl(`${API_URL}/${out.processed_url}`);
     setHist(out.histogram);
     setSharp(out.sharpness);
+    setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
 
   // BUSCAR POSE quando imagem carregar ou ao ativar 'face'
@@ -137,12 +143,6 @@ const ParametrosPage: React.FC = () => {
     };
     fetchPose();
   }, [imageId, cropMode, API_URL]);
-
-  // reduzir debounce para ~120ms
-  React.useEffect(() => {
-    const t = setTimeout(() => { process(); }, 120);
-    return () => clearTimeout(t);
-  }, [process]);
 
   const uploadRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -164,7 +164,8 @@ const ParametrosPage: React.FC = () => {
           <CardHeader>
             <CardTitle>Parâmetros • Editor de Fotos</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 relative">
+            {isProcessing && <LoadingOverlay message="Processando imagem..." />}
             <div className="flex flex-wrap items-center gap-3">
               <Input
                 type="file"
@@ -180,6 +181,14 @@ const ParametrosPage: React.FC = () => {
                   Nitidez: {sharp != null ? sharp.toFixed(2) : "—"}
                 </Badge>
               )}
+              <Button
+                variant="default"
+                onClick={() => process()}
+                disabled={!imageId || isProcessing}
+                className="ml-auto"
+              >
+                {isProcessing ? "Processando..." : "Aplicar alterações"}
+              </Button>
             </div>
 
             {imageId && (
