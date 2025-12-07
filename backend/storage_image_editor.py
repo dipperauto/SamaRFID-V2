@@ -100,23 +100,39 @@ def _apply_adjustments(
         arr_norm[..., 0] = np.clip(arr_norm[..., 0] + (0.1 * t), 0.0, 1.0)  # R
         arr_norm[..., 2] = np.clip(arr_norm[..., 2] - (0.1 * t), 0.0, 1.0)  # B
 
-    # Saturation / Vibrance (HSV)
-    import colorsys
-    rgb = arr_norm.reshape(-1, 3)
-    hsv = np.zeros_like(rgb)
-    for i in range(rgb.shape[0]):
-        hsv[i] = colorsys.rgb_to_hsv(rgb[i, 0], rgb[i, 1], rgb[i, 2])
+    # Saturation / Vibrance (HSV) — vetorizado com OpenCV se disponível
     saturation = float(params.get("saturation", 0.0))
     vibrance = float(params.get("vibrance", 0.0))
-    if saturation != 0.0:
-        s_gain = 1.0 + (saturation / 100.0)
-        hsv[:, 1] = np.clip(hsv[:, 1] * s_gain, 0.0, 1.0)
-    if vibrance != 0.0:
-        vib = vibrance / 100.0
-        hsv[:, 1] = np.clip(hsv[:, 1] + vib * (1.0 - hsv[:, 1]), 0.0, 1.0)
-    for i in range(rgb.shape[0]):
-        rgb[i] = colorsys.hsv_to_rgb(hsv[i, 0], hsv[i, 1], hsv[i, 2])
-    arr_norm = rgb.reshape(h, w, 3)
+    if (saturation != 0.0 or vibrance != 0.0) and cv2 is not None:
+        rgb_uint8 = np.clip(arr_norm * 255.0, 0.0, 255.0).astype(np.uint8)
+        bgr = rgb_uint8[..., ::-1]  # RGB -> BGR
+        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        s = hsv[..., 1].astype(np.float32)
+        if saturation != 0.0:
+            s *= (1.0 + (saturation / 100.0))
+        if vibrance != 0.0:
+            s += (vibrance / 100.0) * (255.0 - s)
+        s = np.clip(s, 0.0, 255.0).astype(np.uint8)
+        hsv[..., 1] = s
+        bgr_out = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        rgb_out = bgr_out[..., ::-1].astype(np.float32) / 255.0
+        arr_norm = np.clip(rgb_out, 0.0, 1.0)
+    elif saturation != 0.0 or vibrance != 0.0:
+        # Fallback: conversão por coresys (mais lenta)
+        import colorsys
+        rgb = arr_norm.reshape(-1, 3)
+        hsv = np.zeros_like(rgb)
+        for i in range(rgb.shape[0]):
+            hsv[i] = colorsys.rgb_to_hsv(rgb[i, 0], rgb[i, 1], rgb[i, 2])
+        if saturation != 0.0:
+            s_gain = 1.0 + (saturation / 100.0)
+            hsv[:, 1] = np.clip(hsv[:, 1] * s_gain, 0.0, 1.0)
+        if vibrance != 0.0:
+            vib = vibrance / 100.0
+            hsv[:, 1] = np.clip(hsv[:, 1] + vib * (1.0 - hsv[:, 1]), 0.0, 1.0)
+        for i in range(rgb.shape[0]):
+            rgb[i] = colorsys.hsv_to_rgb(hsv[i, 0], hsv[i, 1], hsv[i, 2])
+        arr_norm = rgb.reshape(h, w, 3)
 
     # Contrast
     contrast = float(params.get("contrast", 0.0))
@@ -217,7 +233,8 @@ def save_original(file_bytes: bytes, filename: str) -> Dict[str, Any]:
 
     orig_name = _unique_name("original", "png")
     orig_path = os.path.join(img_dir, orig_name)
-    img.save(orig_path, format="PNG", optimize=True)
+    # salvar com compressão leve para velocidade
+    img.save(orig_path, format="PNG", compress_level=1)
 
     rel = os.path.relpath(orig_path, MEDIA_ROOT).replace(os.sep, "/")
     return {"image_id": image_id, "original_rel": rel, "original_url": f"static/{rel}", "meta": _read_metadata(img)}
@@ -326,7 +343,8 @@ def process_image(image_id: str, params: Dict[str, Any]) -> Dict[str, Any]:
 
     out_name = _unique_name("preview", "png")
     out_path = os.path.join(img_dir, out_name)
-    out.save(out_path, format="PNG")
+    # salvar preview com compressão leve para reduzir latência
+    out.save(out_path, format="PNG", compress_level=1)
 
     rel = os.path.relpath(out_path, MEDIA_ROOT).replace(os.sep, "/")
     hist = _compute_histogram_rgb(out)
