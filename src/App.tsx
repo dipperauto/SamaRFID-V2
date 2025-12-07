@@ -5,14 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import Teste from "./pages/Teste";
-import AdminAddUser from "./pages/AdminAddUser";
 import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
-import ClientsPage from "./pages/Clients";
 import UsersPage from "./pages/Users";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import KanbanPage from "./pages/Kanban";
 
 const queryClient = new QueryClient();
 
@@ -31,11 +27,7 @@ const App = () => (
           {/* Rotas com layout (menu responsivo) */}
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />
-            <Route path="/teste" element={<Teste />} />
-            <Route path="/admin/add-user" element={<AdminAddUser />} />
-            <Route path="/clients" element={<ClientsPage />} />
             <Route path="/users" element={<UsersPage />} />
-            <Route path="/kanban" element={<KanbanPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

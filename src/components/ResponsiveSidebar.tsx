@@ -71,6 +71,12 @@ const ResponsiveSidebar: React.FC = () => {
             <SheetHeader className="p-4">
               <SheetTitle className="text-white">Menu</SheetTitle>
             </SheetHeader>
+            <div className="px-4 -mt-2 pb-3 text-xs text-white/90">
+              <p>
+                Plataforma para fotógrafos compartilharem fotos com o público e clientes, com publicação de fotos de eventos
+                para compra e download em alta resolução. Obrigado por usar nosso sistema — seu trabalho inspira!
+              </p>
+            </div>
             <div className="px-4 pb-4 space-y-2">
               {(allowedPages ? PAGES.filter(p => allowedPages.includes(p.key)) : PAGES).map((item) => (
                 <button
@@ -104,7 +110,14 @@ const ResponsiveSidebar: React.FC = () => {
       >
         <div className="flex flex-col w-full h-full text-white">
           <div className="flex items-center justify-center px-4 py-4 border-b border-white/25">
-            <img src="/logo.png" alt="Logo da empresa" className="h-12 w-auto" />
+            <img src="/login.png" alt="Blink Fotos" className="h-12 w-auto" />
+          </div>
+
+          <div className="px-4 pt-2 pb-4 text-xs text-white/90">
+            <p>
+              Plataforma para fotógrafos compartilharem fotos com o público e clientes, com publicação de fotos de eventos
+              para compra e download em alta resolução. Obrigado por usar nosso sistema — seu trabalho inspira!
+            </p>
           </div>
 
           <nav className="flex-1 px-2 py-2 space-y-1">
