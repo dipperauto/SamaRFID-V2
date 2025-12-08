@@ -148,7 +148,7 @@ def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold: float = 0.90) -> List[Dict[str, Any]]:
     """
     Compara o rosto da imagem de consulta contra as fotos RAW do evento e retorna
-    matches com URL de versão COM MARCA D'ÁGUA.
+    matches com URL de versão COM MARCA D'ÁGUA. Exibe a EDITADA quando existir.
     """
     index = _load_index(event_id)
     if not index.get("images"):
@@ -164,6 +164,7 @@ def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold
     matches: List[Dict[str, Any]] = []
     for item in index.get("images", []):
         original_rel = item.get("original_rel") or ""
+        edited_rel = item.get("edited_rel") or ""
         if not original_rel:
             continue
         abs_path = os.path.join(os.path.dirname(__file__), original_rel)
@@ -179,8 +180,10 @@ def face_search_in_event(event_id: int, query_bytes: bytes, similarity_threshold
         sim = _cosine_similarity(qvec, vec)
         if sim >= similarity_threshold:
             uploader = item.get("uploader") or "unknown"
-            wm_rel = _ensure_watermarked(event_id, original_rel, uploader, item.get("id") or "img")
-            url = f"static/{(wm_rel or original_rel).replace('media/', '')}"
+            # Prioriza a versão EDITADA para exibição; fallback para original
+            src_rel = edited_rel if edited_rel else original_rel
+            wm_rel = _ensure_watermarked(event_id, src_rel, uploader, item.get("id") or "img")
+            url = f"static/{(wm_rel or src_rel).replace('media/', '')}"
             matches.append({
                 "id": item.get("id"),
                 "url": url,

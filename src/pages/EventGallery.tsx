@@ -377,8 +377,8 @@ const EventGalleryPage: React.FC = () => {
   const revertDiscard = async () => {
     if (!selectedIds.size || !eventId) return;
     const ids = Array.from(selectedIds);
-    const res = await fetch(`${API_URL}/events/${eventId}/gallery`, {
-      method: "PATCH",
+    const res = await fetch(`${API_URL}/events/${eventId}/gallery/mark-discarded`, {
+      method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image_ids: ids, discarded: false }),
@@ -388,7 +388,7 @@ const EventGalleryPage: React.FC = () => {
       return;
     }
     clearSelection();
-    showSuccess("Descartes revertidos.");
+    showSuccess("Descarte revertido.");
     await loadGallery();
   };
 

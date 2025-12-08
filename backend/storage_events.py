@@ -1,5 +1,6 @@
 import csv
 import os
+import shutil
 import base64
 import uuid
 from typing import Optional, Dict, List, Tuple
@@ -288,4 +289,11 @@ def delete_event(event_id: int) -> bool:
         abs_path = os.path.join(os.path.dirname(__file__), photo_to_delete)
         if os.path.exists(abs_path):
             os.remove(abs_path)
+    # remover toda a pasta do evento (galeria, compras, etc.)
+    try:
+        ev_dir = os.path.join(MEDIA_EVENTS_DIR, str(event_id))
+        if os.path.isdir(ev_dir):
+            shutil.rmtree(ev_dir, ignore_errors=True)
+    except Exception:
+        pass
     return True
