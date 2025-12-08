@@ -404,3 +404,19 @@ def delete_event_images(event_id: int, image_ids: List[str]) -> int:
     index["images"] = remaining
     _save_index(event_id, index)
     return deleted
+
+# NOVO: marcar imagens como descartadas ou não descartadas
+def set_event_images_discarded(event_id: int, image_ids: List[str], discarded: bool) -> int:
+    """
+    Atualiza a flag 'discarded' das imagens listadas no index.json do evento.
+    Retorna a quantidade de registros atualizados.
+    """
+    index = _load_index(event_id)
+    ids = set(image_ids or [])
+    updated = 0
+    for item in index.get("images", []):
+        if item.get("id") in ids:
+            item["discarded"] = bool(discarded)
+            updated += 1
+    _save_index(event_id, index)
+    return updated

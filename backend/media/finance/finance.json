@@ -1,0 +1,23 @@
+{
+  "balances": {
+    "jose@dipperauto.com": 12.0
+  },
+  "purchases": [
+    {
+      "id": "8ed99c3ff38f49e1bbdbeef39b3cfde0",
+      "event_id": 1,
+      "owner": "jose@dipperauto.com",
+      "items": [
+        "evimg_1765151371682_9cbebd10"
+      ],
+      "buyer": {
+        "name": "José Ricardo",
+        "email": "jose@dipperauto.com",
+        "cpf": "04443219269",
+        "card_number": "adawdawdrf"
+      },
+      "total_brl": 12.0,
+      "timestamp": "2025-12-07T23:54:39.866817+00:00"
+    }
+  ]
+}

@@ -374,6 +374,24 @@ const EventGalleryPage: React.FC = () => {
     setSelectedIds(new Set(ids));
   };
 
+  const revertDiscard = async () => {
+    if (!selectedIds.size || !eventId) return;
+    const ids = Array.from(selectedIds);
+    const res = await fetch(`${API_URL}/events/${eventId}/gallery`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image_ids: ids, discarded: false }),
+    });
+    if (!res.ok) {
+      showError("Falha ao reverter descarte.");
+      return;
+    }
+    clearSelection();
+    showSuccess("Descartes revertidos.");
+    await loadGallery();
+  };
+
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewerItem, setViewerItem] = React.useState<GalleryItem | null>(null);
 
@@ -484,6 +502,9 @@ const EventGalleryPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={selectAllVisible}>
               Selecionar todas (página)
+            </Button>
+            <Button variant="outline" onClick={revertDiscard} disabled={!selectedIds.size}>
+              Reverter descarte
             </Button>
             <Button variant="outline" onClick={massDelete} disabled={!selectedIds.size}>
               <Trash2 className="h-4 w-4 mr-2" /> Excluir

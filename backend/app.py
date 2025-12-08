@@ -43,7 +43,7 @@ from models import LUTPreset, ListLUTsResponse, AddLUTRequest, AddLUTResponse, D
 from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
 # NOVO: galeria por evento
 from storage_events import get_event_by_id
-from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images
+from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images, set_event_images_discarded
 from storage_finance import record_purchase, get_finance_summary, list_finance_purchases
 
 # ADD: importar funções de eventos usadas abaixo
@@ -792,6 +792,15 @@ def events_gallery_delete(event_id: int, payload: dict, request: Request):
     image_ids = list(payload.get("image_ids") or [])
     deleted = delete_event_images(event_id, image_ids)
     return {"deleted": deleted}
+
+# NOVO: marcar/ reverter descarte em massa
+@app.post("/events/{event_id}/gallery/mark-discarded")
+def events_gallery_mark_discarded(event_id: int, payload: dict, request: Request):
+    _require_event_member(request, event_id)
+    image_ids = list(payload.get("image_ids") or [])
+    discarded = bool(payload.get("discarded", False))
+    updated = set_event_images_discarded(event_id, image_ids, discarded)
+    return {"updated": updated, "discarded": discarded}
 
 # ----- Endpoints Públicos (sem autenticação) -----
 @app.get("/public/events/{event_id}")

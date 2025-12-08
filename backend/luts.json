@@ -3,29 +3,29 @@
     {
       "id": 1,
       "username": "jose@dipperauto.com",
-      "name": "Teste de LUT",
-      "description": "aaaaa",
+      "name": "Lut da Reunião",
+      "description": "Primeiro Lut que criamos para testar",
       "params": {
-        "brightness": -9,
-        "exposure": 0.4,
+        "brightness": 0,
+        "exposure": 0.6,
         "gamma": 1,
-        "shadows": 8,
-        "highlights": 0,
+        "shadows": 0,
+        "highlights": 24,
         "curves_strength": 0,
         "temperature": 0,
         "saturation": 0,
-        "vibrance": 0,
-        "vignette": 0,
-        "contrast": 11,
+        "vibrance": -6,
+        "vignette": 0.1,
+        "contrast": 12,
         "crop": {
           "mode": "face",
           "aspect": 0.5625,
           "scale": 1.21,
-          "anchor": "shoulders_center"
+          "anchor": "nose"
         }
       },
       "thumb_url": "static/luts/lut_1_jose_dipperauto_com.png",
-      "created_at": "2025-12-07T18:55:26.187504"
+      "created_at": "2025-12-07T23:45:37.191302"
     }
   ]
 }
