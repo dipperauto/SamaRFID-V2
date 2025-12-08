@@ -24,7 +24,7 @@ const ResponsiveSidebar: React.FC = () => {
   React.useEffect(() => {
     const run = async () => {
       try {
-        const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
+        const res = await fetch(`${API_URL}/api/auth/me`, { method: "GET", credentials: "include" });
         if (!res.ok) {
           setAllowedPages([]);
           setUserInfo(null);
@@ -68,7 +68,7 @@ const ResponsiveSidebar: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    const res = await fetch(`${API_URL}/auth/logout`, {
+    const res = await fetch(`${API_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

@@ -26,7 +26,7 @@ const ClientsPage: React.FC = () => {
   const { data, refetch } = useQuery<ClientsResponse>({
     queryKey: ["clients"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/clients`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/clients`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -52,7 +52,7 @@ const ClientsPage: React.FC = () => {
       toast.error("Notas devem ter no máximo 50 linhas.");
       return;
     }
-    const res = await fetch(`${API_URL}/clients/register`, {
+    const res = await fetch(`${API_URL}/api/clients/register`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -76,7 +76,7 @@ const ClientsPage: React.FC = () => {
       toast.error("Notas devem ter no máximo 50 linhas.");
       return;
     }
-    const res = await fetch(`${API_URL}/clients/${selected.id}`, {
+    const res = await fetch(`${API_URL}/api/clients/${selected.id}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

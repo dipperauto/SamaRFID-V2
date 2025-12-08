@@ -17,7 +17,7 @@ const BackendStatus: React.FC = () => {
     const run = async () => {
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/health`, { method: "GET" });
+        const res = await fetch(`${API_URL}/api/health`, { method: "GET" });
         if (!res.ok) {
           setError(`HTTP ${res.status}`);
           setHealth(null);

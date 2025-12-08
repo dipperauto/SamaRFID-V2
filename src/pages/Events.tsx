@@ -60,7 +60,7 @@ const EventsPage: React.FC = () => {
 
   const loadMe = React.useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/auth/me`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/auth/me`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       setCurrentUsername(data?.username || null);
@@ -70,7 +70,7 @@ const EventsPage: React.FC = () => {
   const loadEvents = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/events`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/events`, { credentials: "include" });
       const data = await res.json();
       setEvents(data?.events ?? []);
     } finally {
@@ -85,7 +85,7 @@ const EventsPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const res = await fetch(`${API_URL}/events/${deleteTarget.id}`, {
+    const res = await fetch(`${API_URL}/api/events/${deleteTarget.id}`, {
       method: "DELETE",
       credentials: "include",
     });

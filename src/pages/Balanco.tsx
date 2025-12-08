@@ -49,8 +49,8 @@ const BalancoPage: React.FC = () => {
       if (dateRange.start) qs.set("start", dateRange.start);
       if (dateRange.end) qs.set("end", dateRange.end);
       const [sumRes, purRes] = await Promise.all([
-        fetch(`${API_URL}/finance/summary?${qs.toString()}`, { credentials: "include" }),
-        fetch(`${API_URL}/finance/purchases?${qs.toString()}`, { credentials: "include" }),
+        fetch(`${API_URL}/api/finance/summary?${qs.toString()}`, { credentials: "include" }),
+        fetch(`${API_URL}/api/finance/purchases?${qs.toString()}`, { credentials: "include" }),
       ]);
       const sumJson = await sumRes.json();
       const purJson = await purRes.json();

@@ -21,7 +21,7 @@ const Login: React.FC = () => {
     const check = async () => {
       setHealthErr(null);
       try {
-        const res = await fetch(`${API_URL}/health`, { method: "GET" });
+        const res = await fetch(`${API_URL}/api/health`, { method: "GET" });
         if (!res.ok) {
           setHealth(null);
           setHealthErr(`HTTP ${res.status}`);
@@ -45,7 +45,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

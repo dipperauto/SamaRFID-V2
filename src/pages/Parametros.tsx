@@ -101,7 +101,7 @@ const ParametrosPage: React.FC = () => {
   const onFile = async (f: File) => {
     const form = new FormData();
     form.append("file", f);
-    const res = await fetch(`${API_URL}/image-editor/upload`, {
+    const res = await fetch(`${API_URL}/api/image-editor/upload`, {
       method: "POST",
       credentials: "include",
       body: form,
@@ -148,7 +148,7 @@ const ParametrosPage: React.FC = () => {
         },
       },
     };
-    const res = await fetch(`${API_URL}/image-editor/process`, {
+    const res = await fetch(`${API_URL}/api/image-editor/process`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -168,7 +168,7 @@ const ParametrosPage: React.FC = () => {
   React.useEffect(() => {
     const fetchPresets = async () => {
       try {
-        const res = await fetch(`${API_URL}/luts`, { credentials: "include" });
+        const res = await fetch(`${API_URL}/api/luts`, { credentials: "include" });
         if (!res.ok) return;
         const data = await res.json();
         setPresets(Array.isArray(data.presets) ? data.presets : []);
@@ -213,7 +213,7 @@ const ParametrosPage: React.FC = () => {
       },
       thumb_source_url: processedRelPath,
     };
-    const res = await fetch(`${API_URL}/luts`, {
+    const res = await fetch(`${API_URL}/api/luts`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -260,7 +260,7 @@ const ParametrosPage: React.FC = () => {
   };
 
   const deleteLUT = async (id: number) => {
-    const res = await fetch(`${API_URL}/luts/${id}`, {
+    const res = await fetch(`${API_URL}/api/luts/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -275,7 +275,7 @@ const ParametrosPage: React.FC = () => {
   React.useEffect(() => {
     const fetchPose = async () => {
       if (!imageId) return;
-      const res = await fetch(`${API_URL}/image-editor/pose/${imageId}`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/image-editor/pose/${imageId}`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       setPoseLandmarks(Array.isArray(data.landmarks) ? data.landmarks : []);

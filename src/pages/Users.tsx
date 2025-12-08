@@ -25,7 +25,7 @@ const UsersPage: React.FC = () => {
   const { data, refetch } = useQuery<UsersResponse>({
     queryKey: ["users"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/users`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/users`, { credentials: "include" });
       if (!res.ok) {
         if (res.status === 403) {
           throw new Error("Acesso restrito a administradores.");
@@ -47,7 +47,7 @@ const UsersPage: React.FC = () => {
   React.useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const res = await fetch(`${API_URL}/auth/me`, { method: "GET", credentials: "include" });
+        const res = await fetch(`${API_URL}/api/auth/me`, { method: "GET", credentials: "include" });
         if (!res.ok) {
           setIsAdmin(false);
           return;
@@ -72,7 +72,7 @@ const UsersPage: React.FC = () => {
       toast.error("Usuário deve ser um e-mail válido.");
       return;
     }
-    const res = await fetch(`${API_URL}/users/register-session`, {
+    const res = await fetch(`${API_URL}/api/users/register-session`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -102,7 +102,7 @@ const UsersPage: React.FC = () => {
       profile_photo_base64: values.profile_photo_base64 || undefined,
       allowed_pages: values.allowed_pages,
     };
-    const res = await fetch(`${API_URL}/users/${encodeURIComponent(selected.username)}`, {
+    const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(selected.username)}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

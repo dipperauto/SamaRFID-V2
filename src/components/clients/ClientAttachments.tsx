@@ -37,7 +37,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   const { data, refetch } = useQuery<FilesResponse>({
     queryKey: ["client-files", clientId],
     queryFn: async () => {
-      const res = await fetch(`${apiUrl}/clients/${clientId}/files`, { credentials: "include" });
+      const res = await fetch(`${apiUrl}/api/clients/${clientId}/files`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },
@@ -46,7 +46,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   const onUpload = async (file: File) => {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${apiUrl}/clients/${clientId}/files`, {
+    const res = await fetch(`${apiUrl}/api/clients/${clientId}/files`, {
       method: "POST",
       credentials: "include",
       body: form,
@@ -61,7 +61,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   };
 
   const onDelete = async (name: string) => {
-    const res = await fetch(`${apiUrl}/clients/${clientId}/files/${encodeURIComponent(name)}`, {
+    const res = await fetch(`${apiUrl}/api/clients/${clientId}/files/${encodeURIComponent(name)}`, {
       method: "DELETE",
       credentials: "include",
     });

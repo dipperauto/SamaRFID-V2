@@ -29,7 +29,7 @@ const AdminAddUser: React.FC = () => {
   React.useEffect(() => {
     const check = async () => {
       try {
-        const res = await fetch(`${API_URL}/auth/token-check`, { method: "GET" });
+        const res = await fetch(`${API_URL}/api/auth/token-check`, { method: "GET" });
         if (!res.ok) return;
         const data = await res.json();
         setBackendTokenPreview(data?.tokenPreview ?? null);
@@ -76,7 +76,7 @@ const AdminAddUser: React.FC = () => {
       toast.error("Usuário deve ser um e-mail válido.");
       return;
     }
-    const res = await fetch(`${API_URL}/users/register`, {
+    const res = await fetch(`${API_URL}/api/users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -89,7 +89,7 @@ const EventGalleryPage: React.FC = () => {
     if (!eventId) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/events/${eventId}/gallery`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/events/${eventId}/gallery`, { credentials: "include" });
       if (!res.ok) {
         showError("Falha ao carregar galeria.");
         return;
@@ -114,7 +114,7 @@ const EventGalleryPage: React.FC = () => {
     const loadEventName = async () => {
       if (!eventId) return;
       try {
-        const res = await fetch(`${API_URL}/events/${eventId}`, { credentials: "include" });
+        const res = await fetch(`${API_URL}/api/events/${eventId}`, { credentials: "include" });
         if (!res.ok) return;
         const data = await res.json();
         if (data?.name) setEventName(String(data.name));
@@ -129,7 +129,7 @@ const EventGalleryPage: React.FC = () => {
     const loadPublicInfo = async () => {
       if (!eventId) return;
       try {
-        const res = await fetch(`${API_URL}/public/events/${eventId}`);
+        const res = await fetch(`${API_URL}/api/public/events/${eventId}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data?.photo_url) setEventThumbUrl(String(data.photo_url));
@@ -261,7 +261,7 @@ const EventGalleryPage: React.FC = () => {
       chunk.forEach((f) => form.append("files", f));
       form.append("sharpness_threshold", String(sharpnessThreshold));
       form.append("price_brl", String(priceBRL));
-      const res = await fetch(`${API_URL}/events/${eventId}/gallery/upload`, {
+      const res = await fetch(`${API_URL}/api/events/${eventId}/gallery/upload`, {
         method: "POST",
         credentials: "include",
         body: form,
@@ -289,7 +289,7 @@ const EventGalleryPage: React.FC = () => {
       let processed = 0;
       // processar uma por uma para mostrar progresso
       for (const iid of imageIds) {
-        const resp = await fetch(`${API_URL}/events/${eventId}/gallery/apply-lut`, {
+        const resp = await fetch(`${API_URL}/api/events/${eventId}/gallery/apply-lut`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -311,7 +311,7 @@ const EventGalleryPage: React.FC = () => {
   const massDelete = async () => {
     if (!selectedIds.size || !eventId) return;
     const ids = Array.from(selectedIds);
-    const res = await fetch(`${API_URL}/events/${eventId}/gallery`, {
+    const res = await fetch(`${API_URL}/api/events/${eventId}/gallery`, {
       method: "DELETE",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -346,7 +346,7 @@ const EventGalleryPage: React.FC = () => {
     setProgressPercent(0);
     let processed = 0;
     for (const iid of ids) {
-      const resp = await fetch(`${API_URL}/events/${eventId}/gallery/change-lut`, {
+      const resp = await fetch(`${API_URL}/api/events/${eventId}/gallery/change-lut`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -377,7 +377,7 @@ const EventGalleryPage: React.FC = () => {
   const revertDiscard = async () => {
     if (!selectedIds.size || !eventId) return;
     const ids = Array.from(selectedIds);
-    const res = await fetch(`${API_URL}/events/${eventId}/gallery/mark-discarded`, {
+    const res = await fetch(`${API_URL}/api/events/${eventId}/gallery/mark-discarded`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

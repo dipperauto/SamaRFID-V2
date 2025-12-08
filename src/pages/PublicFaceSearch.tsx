@@ -57,7 +57,7 @@ const PublicFaceSearchPage: React.FC = () => {
       if (!eventId) return;
       setLoadingInfo(true);
       try {
-        const res = await fetch(`${API_URL}/public/events/${eventId}`);
+        const res = await fetch(`${API_URL}/api/public/events/${eventId}`);
         if (!res.ok) {
           setInfo(null);
           return;
@@ -130,7 +130,7 @@ const PublicFaceSearchPage: React.FC = () => {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch(`${API_URL}/public/events/${eventId}/face-search`, {
+      const res = await fetch(`${API_URL}/api/public/events/${eventId}/face-search`, {
         method: "POST",
         body: form,
       });

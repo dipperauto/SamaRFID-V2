@@ -72,7 +72,7 @@ const EventEditForm: React.FC<Props> = ({ event, onUpdated }) => {
     }
     setSearching(true);
     try {
-      const res = await fetch(`${API_URL}/users/search-public?q=${encodeURIComponent(q)}`, {
+      const res = await fetch(`${API_URL}/api/users/search-public?q=${encodeURIComponent(q)}`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -130,7 +130,7 @@ const EventEditForm: React.FC<Props> = ({ event, onUpdated }) => {
       photographers: selected.map(s => s.username),
       photo_base64: photoBase64 ?? undefined, // só envia se recortou nova foto
     };
-    const res = await fetch(`${API_URL}/events/${event.id}`, {
+    const res = await fetch(`${API_URL}/api/events/${event.id}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

@@ -130,6 +130,21 @@ LIMIT_BYTES = 50 * 1024 * 1024  # 50 MB por cliente
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
+# Middleware para aceitar prefixo /api em todas as rotas existentes
+@app.middleware("http")
+async def api_prefix_rewrite(request: Request, call_next):
+    """
+    Permite acessar todas as rotas atuais com o prefixo /api.
+    Ex.: /api/health -> /health, /api/static/... -> /static/...
+    """
+    path = request.scope.get("path") or ""
+    if path == "/api":
+        request.scope["path"] = "/"
+    elif path.startswith("/api/"):
+        request.scope["path"] = path[4:]
+    response = await call_next(request)
+    return response
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)

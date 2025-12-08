@@ -54,7 +54,7 @@ const EventCreateForm: React.FC<Props> = ({ onCreated }) => {
     }
     setSearching(true);
     try {
-      const res = await fetch(`${API_URL}/users/search-public?q=${encodeURIComponent(q)}`, {
+      const res = await fetch(`${API_URL}/api/users/search-public?q=${encodeURIComponent(q)}`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -113,7 +113,7 @@ const EventCreateForm: React.FC<Props> = ({ onCreated }) => {
         photographers: selected.map(s => s.username),
         photo_base64: photoBase64,
       };
-      const res = await fetch(`${API_URL}/events`, {
+      const res = await fetch(`${API_URL}/api/events`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

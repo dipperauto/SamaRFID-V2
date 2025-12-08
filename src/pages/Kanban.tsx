@@ -20,7 +20,7 @@ const KanbanPage: React.FC = () => {
   const { data, refetch } = useQuery<KanbanBoard>({
     queryKey: ["kanban"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/kanban`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/kanban`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },
@@ -29,7 +29,7 @@ const KanbanPage: React.FC = () => {
   const { data: usersData } = useQuery<{ count: number; users: { username: string }[] }>({
     queryKey: ["kanban-users"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/users`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/users`, { credentials: "include" });
       // se acesso negado para não-admin, retorna lista vazia
       if (!res.ok) return { count: 0, users: [] };
       return res.json();
@@ -117,7 +117,7 @@ const KanbanPage: React.FC = () => {
       return { ...prev, cards: updated };
     });
 
-    const res = await fetch(`${API_URL}/kanban/cards/${encodeURIComponent(draggableId)}`, {
+    const res = await fetch(`${API_URL}/api/kanban/cards/${encodeURIComponent(draggableId)}`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -135,7 +135,7 @@ const KanbanPage: React.FC = () => {
   const createList = async () => {
     const title = newListTitle.trim();
     if (!title) return;
-    const res = await fetch(`${API_URL}/kanban/lists`, {
+    const res = await fetch(`${API_URL}/api/kanban/lists`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -154,7 +154,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const deleteList = async (listId: string) => {
-    const res = await fetch(`${API_URL}/kanban/lists/${encodeURIComponent(listId)}`, {
+    const res = await fetch(`${API_URL}/api/kanban/lists/${encodeURIComponent(listId)}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -169,7 +169,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const deleteCard = async (cardId: string) => {
-    const res = await fetch(`${API_URL}/kanban/cards/${encodeURIComponent(cardId)}`, {
+    const res = await fetch(`${API_URL}/api/kanban/cards/${encodeURIComponent(cardId)}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -203,7 +203,7 @@ const KanbanPage: React.FC = () => {
     color?: string | null;
   }) => {
     if (editingCard) {
-      const res = await fetch(`${API_URL}/kanban/cards/${encodeURIComponent(editingCard.id)}`, {
+      const res = await fetch(`${API_URL}/api/kanban/cards/${encodeURIComponent(editingCard.id)}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -216,7 +216,7 @@ const KanbanPage: React.FC = () => {
       }
       toast.success("Card atualizado!");
     } else if (newCardListId) {
-      const res = await fetch(`${API_URL}/kanban/cards`, {
+      const res = await fetch(`${API_URL}/api/kanban/cards`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

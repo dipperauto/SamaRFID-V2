@@ -45,7 +45,7 @@ const PublicCheckoutPage: React.FC = () => {
         buyer: { name, email, cpf, card_number: cardNumber },
         total_brl: totalParam,
       };
-      const res = await fetch(`${API_URL}/public/purchase`, {
+      const res = await fetch(`${API_URL}/api/public/purchase`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
