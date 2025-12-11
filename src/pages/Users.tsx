@@ -43,6 +43,7 @@ const UsersPage: React.FC = () => {
   const [editMode, setEditMode] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [isAdmin, setIsAdmin] = React.useState<boolean>(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<AppUser | null>(null);
 
   React.useEffect(() => {
     const checkAdmin = async () => {
@@ -60,6 +61,12 @@ const UsersPage: React.FC = () => {
     };
     checkAdmin();
   }, [API_URL]);
+
+  React.useEffect(() => {
+    const handler = (e: any) => setDeleteTarget(e.detail as AppUser);
+    window.addEventListener("user-delete-request", handler as any);
+    return () => window.removeEventListener("user-delete-request", handler as any);
+  }, []);
 
   const handleCreate = async (values: UserFormValues) => {
     const required = [values.username, values.full_name, values.role, values.password].every(Boolean);
@@ -148,7 +155,7 @@ const UsersPage: React.FC = () => {
   }, [data, search]);
 
   return (
-    <div className="min-h-screen w-full overflow-hidden p-4 text-slate-900 bg-[#efeae3]">
+    <div className="min-h-screen w-full overflow-hidden p-4 text-white">
       <div className="relative z-10 space-y-4">
         {/* Top header (sem Card) */}
         <div className="rounded-3xl px-2 md:px-4 py-3">
@@ -157,24 +164,24 @@ const UsersPage: React.FC = () => {
             <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
               {/* Busca desktop */}
               <div className="relative hidden md:block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Pesquisar por nome, e-mail, papel..."
-                  className="w-64 pl-9 bg-[#efeae3]/70 text-slate-900 placeholder:text-slate-700 border-[#efeae3] focus-visible:ring-slate-900/30"
+                  className="w-64 pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
                 />
               </div>
               {/* Switch desktop */}
               <div className="hidden md:flex items-center gap-2">
-                <span className="text-sm text-slate-700">Modo edição</span>
+                <span className="text-sm text-white/80">Modo edição</span>
                 <Switch checked={editMode} onCheckedChange={setEditMode} />
               </div>
               {/* Botão - full width no mobile */}
               {isAdmin && (
                 <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                   <DialogTrigger asChild>
-                    <Button className="w-full md:w-auto bg-black/5 text-slate-900 hover:bg-black/10 border border-[#efeae3] ring-1 ring-[#efeae3]/60">
+                    <Button className="w-full md:w-auto bg-white/20 text-white hover:bg-white/25">
                       Cadastrar Usuário
                     </Button>
                   </DialogTrigger>
@@ -196,18 +203,18 @@ const UsersPage: React.FC = () => {
 
             {/* Busca mobile */}
             <div className="relative md:hidden">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Pesquisar por nome, e-mail, papel..."
-                className="w-full pl-9 bg-[#efeae3]/70 text-slate-900 placeholder:text-slate-700 border-[#efeae3] focus-visible:ring-slate-900/30"
+                className="w-full pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
               />
             </div>
 
             {/* Switch mobile */}
             <div className="flex items-center gap-2 md:hidden">
-              <span className="text-sm text-slate-700">Modo edição</span>
+              <span className="text-sm text-white/80">Modo edição</span>
               <Switch checked={editMode} onCheckedChange={setEditMode} />
             </div>
           </div>
@@ -215,12 +222,12 @@ const UsersPage: React.FC = () => {
           {/* Indicadores */}
           <div className="mt-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-slate-700 text-sm">Indicadores:</span>
-              <Badge variant="outline" className="bg-black/5 text-slate-900">Total: {total}</Badge>
-              <Badge className="bg-black/5 text-slate-900 hover:bg-black/10">
+              <span className="text-white/80 text-sm">Indicadores:</span>
+              <Badge variant="outline" className="bg-white/10 text-white">Total: {total}</Badge>
+              <Badge className="bg-white/20 text-white hover:bg-white/25">
                 Encontrados: {users.length}
               </Badge>
-              <Badge className="bg-black/5 text-slate-900 hover:bg-black/10">
+              <Badge className="bg-white/20 text-white hover:bg-white/25">
                 Administradores: {data?.users.filter((u) => (u.role || "").toLowerCase() === "administrador").length ?? 0}
               </Badge>
             </div>
@@ -294,6 +301,48 @@ const UsersPage: React.FC = () => {
               onCancel={() => setOpenEdit(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+          <DialogHeader>
+            <DialogTitle>Excluir Usuário</DialogTitle>
+            <DialogDescription className="text-white/80">
+              Tem certeza que deseja excluir o usuário {deleteTarget?.full_name} ({deleteTarget?.username})? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              className="text-black bg-white hover:bg-white/90"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(deleteTarget.username)}`, {
+                  method: "DELETE",
+                  credentials: "include",
+                });
+                if (!res.ok) {
+                  const detail = await res.json().catch(() => null);
+                  toast.error(detail?.detail ?? "Falha ao excluir usuário.");
+                  return;
+                }
+                toast.success("Usuário excluído com sucesso!");
+                setDeleteTarget(null);
+                await refetch();
+                queryClient.invalidateQueries({ queryKey: ["users"] });
+              }}
+            >
+              Excluir
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

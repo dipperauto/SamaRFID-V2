@@ -84,6 +84,18 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
                   Editar
                 </Button>
               )}
+              {editMode && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    const ev = new CustomEvent("user-delete-request", { detail: user });
+                    window.dispatchEvent(ev);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Excluir
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -11,7 +11,7 @@ import re
 from fastapi import Form
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse, User, ListUsersResponse, UpdateUserRequest
-from storage import get_user, add_user, get_all_users, update_user
+from storage import get_user, add_user, get_all_users, update_user, delete_user
 from security import verify_password, hash_password
 from models import (
     Client,
@@ -356,8 +356,13 @@ def users_register_session(payload: AddUserRequest, request: Request):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-
-# ----- Usuários (token legado) -----
+@app.delete("/users/{username}")
+def users_delete(username: str, request: Request):
+    _require_admin(request)
+    ok = delete_user(username)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    return {"success": True, "message": "Usuário excluído com sucesso."}
 
 @app.post("/users/register", response_model=AddUserResponse)
 def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):

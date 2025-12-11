@@ -152,6 +152,15 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label>Telefone</Label>
+          <Input
+            value={values.phone}
+            disabled={readOnly}
+            onChange={(e) => setField("phone", e.target.value)}
+            placeholder="(00) 00000-0000"
+          />
+        </div>
+        <div className="space-y-2">
           <Label>Chave Pix (opcional)</Label>
           <Input
             value={values.pix_key || ""}

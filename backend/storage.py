@@ -200,3 +200,28 @@ def update_user(username: str, full_name: Optional[str] = None, role: Optional[s
             writer.writerow(row)
 
     return updated
+
+
+def delete_user(username: str) -> bool:
+    """
+    Remove usuário do CSV. Não remove a foto de perfil para manter cache estático simples.
+    Retorna True se removido; False se não encontrado.
+    """
+    _ensure_csv()
+    rows = []
+    removed = False
+    with open(USERS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("username") == username:
+                removed = True
+                continue
+            rows.append(row)
+    if not removed:
+        return False
+    with open(USERS_CSV_PATH, "w", newline="", encoding="utf-8") as fw:
+        writer = csv.DictWriter(fw, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+    return True
