@@ -74,7 +74,7 @@ const Login: React.FC = () => {
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 py-8 px-6 shadow-2xl backdrop-blur-xl text-white">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
-            <img src="/login.png" alt="Blink Fotos" className="h-20 md:h-24 w-auto" />
+            <img src="/logo.png" alt="UniCosta Contabilidade" className="h-20 md:h-24 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
@@ -113,7 +113,7 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-[#2563eb] hover:bg-[#1e40af] text-white">
+            <Button type="submit" className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white">
               <LogIn className="mr-2 h-4 w-4" />
               Entrar
             </Button>
@@ -121,7 +121,7 @@ const Login: React.FC = () => {
               <a
                 href="#"
                 onClick={(e) => e.preventDefault()}
-                className="text-sm text-[#2563eb] hover:text-[#1e40af] underline-offset-2 hover:underline"
+                className="text-sm text-[#3b82f6] hover:text-[#2563eb] underline-offset-2 hover:underline"
               >
                 Esqueci a senha
               </a>

@@ -18,7 +18,7 @@ const Home: React.FC = () => {
         <Card className="rounded-3xl border border-white/20 bg-[#0b1d3a]/50 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl text-white">
           <CardHeader>
             <CardTitle className="text-white">
-              Bem-vindo ao <span className="text-[#2563eb] font-semibold">BLINK</span> FOTOS
+              Bem-vindo ao <span className="text-[#3b82f6] font-semibold">BLINK</span> FOTOS
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-white/80 text-sm">Status:</span>
               <Badge variant="outline" className="bg-white/10 text-white hover:bg-white/15">Online</Badge>
-              <Badge className="bg-[#2563eb]/20 text-[#cfe2ff] hover:bg-[#2563eb]/25">v1.0</Badge>
+              <Badge className="bg-[#3b82f6]/20 text-[#e6f0ff] hover:bg-[#2563eb]/25">v1.0</Badge>
             </div>
 
             <div className="mt-6 text-xs text-white/70">

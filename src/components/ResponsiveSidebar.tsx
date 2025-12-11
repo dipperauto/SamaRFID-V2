@@ -114,7 +114,7 @@ const ResponsiveSidebar: React.FC = () => {
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-slate-900 truncate">
                       Olá{" "}
-                      <span className="text-[#2563eb] font-semibold">
+                      <span className="text-[#3b82f6] font-semibold">
                         {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                       </span>
                     </div>
@@ -160,7 +160,7 @@ const ResponsiveSidebar: React.FC = () => {
       >
         <div className="flex flex-col w-full h-full text-slate-900">
           <div className="flex items-center justify-center px-4 py-4 border-b border-[#efeae3]">
-            <img src="/login.png" alt="Blink Fotos" className="h-12 w-auto" />
+            <img src="/logo.png" alt="UniCosta Contabilidade" className="h-12 w-auto" />
           </div>
           {/* User section (desktop) */}
           {userInfo && (
@@ -174,7 +174,7 @@ const ResponsiveSidebar: React.FC = () => {
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-slate-900 truncate">
                     Olá{" "}
-                    <span className="text-[#2563eb] font-semibold">
+                    <span className="text-[#3b82f6] font-semibold">
                       {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                     </span>
                   </div>
