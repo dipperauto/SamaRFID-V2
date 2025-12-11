@@ -62,6 +62,8 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("[ClientForm] submit fired"); // DEBUG: submit iniciou
+
     if (readOnly) {
       onCancel?.();
       return;
@@ -92,6 +94,7 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
       return;
     }
 
+    console.log("[ClientForm] calling onSubmit", { addressToSend, values }); // DEBUG: enviando
     onSubmit({ ...values, address: addressToSend });
   };
 
@@ -279,7 +282,13 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           </Button>
         )}
         {!readOnly && (
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar</Button>
+          <Button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => console.log("[ClientForm] submit button clicked")} // DEBUG: clique no botão
+          >
+            Salvar
+          </Button>
         )}
       </div>
     </form>
