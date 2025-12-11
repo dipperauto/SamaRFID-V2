@@ -10,6 +10,8 @@ import AppLayout from "./components/AppLayout";
 import UsersPage from "./pages/Users";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import PageTransitionOverlay from "@/components/PageTransitionOverlay";
+import ClientsPage from "./pages/Clients";
+import ServicesPage from "./pages/Services";
 
 const queryClient = new QueryClient();
 
