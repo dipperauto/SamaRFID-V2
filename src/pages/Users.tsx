@@ -151,14 +151,14 @@ const UsersPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full overflow-hidden p-4 text-white">
       <div className="relative z-10 space-y-4">
-        {/* Top header (sem Card) */}
-        <div className="rounded-3xl px-2 md:px-4 py-3">
+        {/* Top header com liquid glass escuro */}
+        <div className="rounded-2xl px-3 md:px-4 py-3 border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 backdrop-blur-xl shadow-2xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h1 className="text-xl md:text-2xl font-semibold">Usuários</h1>
             <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
               {/* Busca desktop */}
               <div className="relative hidden md:block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -171,7 +171,7 @@ const UsersPage: React.FC = () => {
                 <span className="text-sm text-white/80">Modo edição</span>
                 <Switch checked={editMode} onCheckedChange={setEditMode} />
               </div>
-              {/* Botão - full width no mobile */}
+              {/* Botão - full width no mobile (apenas admin) */}
               {isAdmin && (
                 <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                   <DialogTrigger asChild>
@@ -197,7 +197,7 @@ const UsersPage: React.FC = () => {
 
             {/* Busca mobile */}
             <div className="relative md:hidden">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
