@@ -15,13 +15,14 @@ const Login: React.FC = () => {
   const [health, setHealth] = React.useState<{ status?: string; adminConfigured?: boolean } | null>(null);
   const [healthErr, setHealthErr] = React.useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  // Usar proxy de desenvolvimento: chamar rotas relativas (/api/...)
+  const API_URL = ""; // não usado para chamadas (mantido apenas para debug visual)
 
   React.useEffect(() => {
     const check = async () => {
       setHealthErr(null);
       try {
-        const res = await fetch(`${API_URL}/api/health`, { method: "GET" });
+        const res = await fetch(`/api/health`, { method: "GET" });
         if (!res.ok) {
           setHealth(null);
           setHealthErr(`HTTP ${res.status}`);
@@ -45,7 +46,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -123,7 +124,7 @@ const Login: React.FC = () => {
 
       {/* Debug técnico no canto da página */}
       <div className="absolute bottom-3 right-3 z-20 text-[10px] text-white space-y-0.5 text-right">
-        <div>Backend: {API_URL}</div>
+        <div>Backend: via proxy /api</div>
         <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
         <div>
           Token admin: {health && !healthErr ? (health?.adminConfigured ? "Configurado" : "Não configurado") : "—"}

@@ -20,13 +20,15 @@ type ClientsResponse = {
 };
 
 const ClientsPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  // Usar proxy de desenvolvimento: chamar rotas relativas (/api/...)
+  const API_URL = "";
+
   const queryClient = useQueryClient();
 
   const { data, refetch } = useQuery<ClientsResponse>({
     queryKey: ["clients"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/clients`, { credentials: "include" });
+      const res = await fetch(`/api/clients`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -62,7 +64,7 @@ const ClientsPage: React.FC = () => {
     }
     try {
       console.log("[ClientsPage] sending POST /api/clients/register");
-      const res = await fetch(`${API_URL}/api/clients/register`, {
+      const res = await fetch(`/api/clients/register`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -93,7 +95,7 @@ const ClientsPage: React.FC = () => {
     }
     try {
       console.log("[ClientsPage] sending PUT /api/clients/", selected.id, " API_URL:", API_URL);
-      const res = await fetch(`${API_URL}/api/clients/${selected.id}`, {
+      const res = await fetch(`/api/clients/${selected.id}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
