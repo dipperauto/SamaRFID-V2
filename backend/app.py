@@ -366,7 +366,7 @@ def users_delete(username: str, request: Request):
 
 # NOVO: alias via POST para ambientes que bloqueiam DELETE em proxies
 @app.post("/users/delete")
-def users_delete_post(payload: dict, request: Request):
+def users_delete_post(payload: dict = Body(...), request: Request):
     _require_admin(request)
     username = str(payload.get("username") or "").strip()
     if not username:
