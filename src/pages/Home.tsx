@@ -18,17 +18,19 @@ const Home: React.FC = () => {
         <Card className="rounded-3xl border border-white/20 bg-[#0b1d3a]/50 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl text-white">
           <CardHeader>
             <CardTitle className="text-white">
-              Bem-vindo ao <span className="text-[#3b82f6] font-semibold">BLINK</span> FOTOS
+              Bem-vindo ao <span className="text-[#3b82f6] font-semibold">UniCosta Contabilidade</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-white/90">
-                O Blink Fotos é uma plataforma criada para fotógrafos compartilharem seus trabalhos com o público e clientes. 
-                Em eventos — principalmente de grande escala — você pode publicar suas fotos para que usuários comprem e baixem em alta resolução, de forma prática e segura.
+                A plataforma UniCosta Contabilidade centraliza o dia a dia financeiro da sua empresa: cadastro de clientes e fornecedores,
+                emissão de notas e recibos, controle de despesas e receitas, conciliação bancária e acompanhamento de obrigações fiscais.
+                Tudo com segurança, trilhas de auditoria e acesso por perfis.
               </p>
               <p className="text-white/90">
-                Obrigado por usar nosso sistema! Sua arte inspira, conecta pessoas e eterniza momentos — estamos aqui para apoiar seu trabalho.
+                Tenha dashboards em tempo real com indicadores de lucratividade, fluxo de caixa, impostos a recolher, folha de pagamento
+                e documentos organizados em um só lugar. Automatize rotinas, reduza erros e ganhe agilidade para tomar decisões com confiança.
               </p>
             </div>
 
