@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from hashlib import sha256
 import hmac
 import secrets
@@ -310,7 +310,7 @@ def auth_logout(response: Response, request: Request):
 def users_list(request: Request):
     _require_admin(request)
     raw = get_all_users()
-    users: list[User] = []
+    users: List[User] = []
     for u in raw:
         users.append(
             User(
@@ -403,7 +403,7 @@ def clients_list(request: Request):
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     raw = get_all_clients()
-    clients: list[Client] = []
+    clients: List[Client] = []
     for row in raw:
         clients.append(
             Client(
@@ -653,7 +653,7 @@ def users_search_public(request: Request, q: Optional[str] = None):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     raw = get_all_users()
     ql = (q or "").strip().lower()
-    users: list[PublicUser] = []
+    users: List[PublicUser] = []
     for u in raw:
         role = (u.get("role", "") or "").lower()
         # compat: considerar 'usuario' e 'usuário' também
@@ -1049,7 +1049,7 @@ def services_list(request: Request):
     return {"services": get_all_services()}
 
 @app.post("/services")
-def services_add(payload: Dict[str, any], request: Request):
+def services_add(payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1064,7 +1064,7 @@ def services_add(payload: Dict[str, any], request: Request):
     return {"service": created}
 
 @app.put("/services/{service_id}")
-def services_update(service_id: int, payload: Dict[str, any], request: Request):
+def services_update(service_id: int, payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1099,7 +1099,7 @@ def client_services_list(request: Request):
     return {"assignments": list_assignments()}
 
 @app.post("/client-services")
-def client_services_add(payload: Dict[str, any], request: Request):
+def client_services_add(payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1110,7 +1110,7 @@ def client_services_add(payload: Dict[str, any], request: Request):
     return {"assignment": created}
 
 @app.put("/client-services/{assignment_id}")
-def client_services_update(assignment_id: int, payload: Dict[str, any], request: Request):
+def client_services_update(assignment_id: int, payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
