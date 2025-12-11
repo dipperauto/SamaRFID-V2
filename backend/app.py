@@ -88,7 +88,10 @@ load_env_files(
 app = FastAPI(title="Backend Dyad - Auth")
 
 frontend_url = os.environ.get("FRONTEND_URL")
-frontend_origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
+frontend_origin_regex = os.environ.get(
+    "FRONTEND_ORIGIN_REGEX",
+    r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[frontend_url] if frontend_url else [],
@@ -158,7 +161,10 @@ async def security_headers(request: Request, call_next):
     # CORS fallback: reflete Origin válido (localhost com porta ou FRONTEND_URL)
     origin = request.headers.get("origin", "")
     frontend_url = os.environ.get("FRONTEND_URL", "").strip()
-    origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
+    origin_regex = os.environ.get(
+        "FRONTEND_ORIGIN_REGEX",
+        r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    )
     try:
         if origin and (
             (frontend_url and origin == frontend_url) or
