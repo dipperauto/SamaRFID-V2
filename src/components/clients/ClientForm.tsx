@@ -146,6 +146,15 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
             placeholder="(00) 00000-0000"
           />
         </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label>Endereço</Label>
+          <Input
+            value={values.address}
+            disabled={readOnly}
+            onChange={(e) => setField("address", e.target.value)}
+            placeholder="Rua, número, bairro (preencha aqui se não usar o CEP)"
+          />
+        </div>
         <div className="space-y-2">
           <Label>CEP</Label>
           <div className="flex items-center gap-2">
