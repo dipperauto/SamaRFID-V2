@@ -90,36 +90,36 @@ const ResponsiveSidebar: React.FC = () => {
             <Button
               variant="secondary"
               size="icon"
-              className="shadow-md bg-[#efeae3]/80 text-slate-900 hover:bg-[#efeae3]/70 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl"
+              className="shadow-md bg-[#0b1d3a]/50 text-white hover:bg-[#0b1d3a]/60 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="w-full sm:max-w-sm p-0 bg-[#efeae3]/80 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900 shadow-2xl"
+            className="w-full sm:max-w-sm p-0 bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white shadow-2xl"
           >
             <SheetHeader className="p-4">
-              <SheetTitle className="text-slate-900">Menu</SheetTitle>
+              <SheetTitle className="text-white">Menu</SheetTitle>
             </SheetHeader>
             {/* User section (mobile) */}
             {userInfo && (
               <div className="px-4 pb-3">
-                <div className="flex items-center gap-3 rounded-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 backdrop-blur-xl p-3 shadow">
+                <div className="flex items-center gap-3 rounded-xl border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 backdrop-blur-xl p-3 shadow text-white">
                   {userInfo.photoUrl ? (
-                    <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-[#efeae3]" />
+                    <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-white/20" />
                   ) : (
-                    <div className="h-10 w-10 rounded-full bg-black/5 border border-[#efeae3] flex items-center justify-center text-slate-700">👤</div>
+                    <div className="h-10 w-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white">👤</div>
                   )}
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-900 truncate">
+                    <div className="text-sm font-medium truncate">
                       Olá{" "}
                       <span className="text-[#3b82f6] font-semibold">
                         {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                       </span>
                     </div>
                     {userInfo.role && (
-                      <div className="text-[11px] text-slate-700 truncate">{displayRole}</div>
+                      <div className="text-[11px] text-white/80 truncate">{displayRole}</div>
                     )}
                   </div>
                 </div>
@@ -130,7 +130,7 @@ const ResponsiveSidebar: React.FC = () => {
                 <button
                   key={item.path}
                   onClick={() => onItemClick(item.path)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-black/5 text-slate-800"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-white"
                 >
                   {item.icon === "home" && <Home className="h-4 w-4" />}
                   {item.icon === "test" && <TestTube className="h-4 w-4" />}
@@ -144,7 +144,7 @@ const ResponsiveSidebar: React.FC = () => {
               ))}
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-black/5 text-red-600"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-white/10 text-red-300"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm font-medium">Sair</span>
@@ -156,30 +156,30 @@ const ResponsiveSidebar: React.FC = () => {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-[#efeae3]/80 backdrop-blur-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 shadow-2xl transition-[width] duration-200 z-40 w-64`}
+        className={`hidden lg:flex fixed top-0 left-0 h-screen bg-[#0b1d3a]/50 backdrop-blur-xl border border-white/20 ring-1 ring-white/10 shadow-2xl transition-[width] duration-200 z-40 w-64`}
       >
-        <div className="flex flex-col w-full h-full text-slate-900">
-          <div className="flex items-center justify-center px-4 py-4 border-b border-[#efeae3]">
+        <div className="flex flex-col w-full h-full text-white">
+          <div className="flex items-center justify-center px-4 py-4 border-b border-white/20">
             <img src="/logo.png" alt="UniCosta Contabilidade" className="h-12 w-auto" />
           </div>
           {/* User section (desktop) */}
           {userInfo && (
             <div className="px-3 pb-3">
-              <div className="flex items-center gap-3 rounded-xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 backdrop-blur-xl p-3 shadow">
+              <div className="flex items-center gap-3 rounded-xl border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 backdrop-blur-xl p-3 shadow">
                 {userInfo.photoUrl ? (
-                  <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-[#efeae3]" />
+                  <img src={userInfo.photoUrl} alt={userInfo.full_name || userInfo.username || "Usuário"} className="h-10 w-10 rounded-full object-cover border border-white/20" />
                 ) : (
-                  <div className="h-10 w-10 rounded-full bg-black/5 border border-[#efeae3] flex items-center justify-center text-slate-700">👤</div>
+                  <div className="h-10 w-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white">👤</div>
                 )}
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-slate-900 truncate">
+                  <div className="text-sm font-medium truncate">
                     Olá{" "}
                     <span className="text-[#3b82f6] font-semibold">
                       {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                     </span>
                   </div>
                   {userInfo.role && (
-                    <div className="text-[11px] text-slate-700 truncate">{displayRole}</div>
+                    <div className="text-[11px] text-white/80 truncate">{displayRole}</div>
                   )}
                 </div>
               </div>
@@ -193,7 +193,7 @@ const ResponsiveSidebar: React.FC = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
-                    isActive ? "bg-black/10 text-slate-900" : "text-slate-800 hover:bg-black/5"
+                    isActive ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/5"
                   }`
                 }
               >
@@ -211,12 +211,12 @@ const ResponsiveSidebar: React.FC = () => {
             ))}
           </nav>
 
-          <p className="px-3 pb-2 text-xs text-slate-700">Dipper Automation 2025 ©</p>
+          <p className="px-3 pb-2 text-xs text-white/60">Dipper Automation 2025 ©</p>
 
-          <div className="px-2 py-2 border-t border-[#efeae3]">
+          <div className="px-2 py-2 border-t border-white/20">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors text-red-600 hover:bg-black/5"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors text-red-300 hover:bg-white/5"
             >
               <span className="shrink-0">
                 <LogOut className="h-4 w-4" />
