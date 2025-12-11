@@ -138,6 +138,15 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           />
         </div>
         <div className="space-y-2">
+          <Label>Telefone</Label>
+          <Input
+            value={values.phone}
+            disabled={readOnly}
+            onChange={(e) => setField("phone", e.target.value)}
+            placeholder="(00) 00000-0000"
+          />
+        </div>
+        <div className="space-y-2">
           <Label>CEP</Label>
           <div className="flex items-center gap-2">
             <Input

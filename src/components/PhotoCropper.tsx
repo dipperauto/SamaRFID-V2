@@ -3,7 +3,7 @@
 import React from "react";
 import Cropper from "react-easy-crop";
 import { Button } from "./ui/button";
-import { Slider } from "./ui/slider";
+import BlueSlider from "./BlueSlider";
 import { AspectRatio } from "./ui/aspect-ratio";
 
 type Props = {
@@ -134,7 +134,7 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null, cropShap
           </div>
           <div className="space-y-2">
             <div className="text-sm text-gray-600">Zoom</div>
-            <Slider
+            <BlueSlider
               value={[zoom]}
               min={1}
               max={3}
@@ -143,7 +143,7 @@ const PhotoCropper: React.FC<Props> = ({ onChange, initialImage = null, cropShap
             />
           </div>
           <div className="flex gap-2">
-            <Button type="button" onClick={confirmCrop}>Confirmar corte</Button>
+            <Button type="button" onClick={confirmCrop} className="bg-blue-600 hover:bg-blue-700 text-white">Confirmar corte</Button>
             <Button
               type="button"
               variant="outline"
