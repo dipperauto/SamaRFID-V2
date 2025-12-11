@@ -40,6 +40,13 @@ const ClientsPage: React.FC = () => {
   const [selected, setSelected] = React.useState<Client | null>(null);
   const [editMode, setEditMode] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [deleteTarget, setDeleteTarget] = React.useState<Client | null>(null);
+
+  React.useEffect(() => {
+    const handler = (e: any) => setDeleteTarget(e.detail);
+    window.addEventListener("client-delete-request", handler as any);
+    return () => window.removeEventListener("client-delete-request", handler as any);
+  }, []);
 
   const handleCreate = async (values: ClientFormValues) => {
     const required = [values.full_name, values.doc, values.address, values.phone].every(Boolean);

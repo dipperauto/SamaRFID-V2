@@ -30,6 +30,9 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Home />} />
             <Route path="/users" element={<UsersPage />} />
+            {/* ADDED: rotas novas */}
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/services" element={<ServicesPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

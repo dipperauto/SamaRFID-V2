@@ -32,6 +32,7 @@ from storage_clients import (
     total_client_files_size_bytes,
     save_client_file,
     delete_client_file,
+    delete_client,
 )
 from models import KanbanBoard, KanbanList, KanbanCard, CreateListRequest, UpdateListRequest, CreateCardRequest, UpdateCardRequest
 from storage_kanban import get_board, create_list, update_list, delete_list, create_card, update_card, delete_card
@@ -207,8 +208,8 @@ def _verify_session_token(token: str) -> Optional[dict]:
 def default_allowed_pages(role: Optional[str]) -> List[str]:
     # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
-      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros"]
-    return ["home", "teste", "clients", "kanban", "events", "parametros"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services"]
+    return ["home", "teste", "clients", "kanban", "events", "parametros", "services"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -434,6 +435,7 @@ def clients_register(payload: AddClientRequest, request: Request):
         payload.corporate_name,
         payload.trade_name,
         payload.notes,
+        payload.email,
     )
     client = Client(
         id=int(created["id"]),
@@ -449,8 +451,9 @@ def clients_register(payload: AddClientRequest, request: Request):
         corporate_name=created.get("corporate_name") or None,
         trade_name=created.get("trade_name") or None,
         notes=created.get("notes") or None,
+        email=created.get("email") or None,
     )
-    return AddClientResponse(success=True, message="Cliente cadastrado com sucesso.", client=client)
+    return AddClientResponse(success=True, message="Cliente cadastrado com sucesso!", client=client)
 
 @app.put("/clients/{client_id}", response_model=AddClientResponse)
 def clients_update(client_id: int, payload: UpdateClientRequest, request: Request):
@@ -471,6 +474,7 @@ def clients_update(client_id: int, payload: UpdateClientRequest, request: Reques
         payload.corporate_name,
         payload.trade_name,
         payload.notes,
+        payload.email,
     )
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
@@ -488,8 +492,19 @@ def clients_update(client_id: int, payload: UpdateClientRequest, request: Reques
         corporate_name=updated.get("corporate_name") or None,
         trade_name=updated.get("trade_name") or None,
         notes=updated.get("notes") or None,
+        email=updated.get("email") or None,
     )
     return AddClientResponse(success=True, message="Cliente atualizado com sucesso!", client=client)
+
+@app.delete("/clients/{client_id}")
+def clients_delete(client_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_client(client_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
+    return {"success": True, "message": "Cliente excluído com sucesso."}
 
 # ---------- Anexos por cliente ----------
 
@@ -1013,3 +1028,98 @@ def finance_purchases(request: Request, start: Optional[str] = None, end: Option
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     lst = list_finance_purchases(data["username"], start, end)
     return {"count": len(lst), "purchases": lst}
+
+# === Serviços (catálogo) ===
+from typing import Dict
+from fastapi import Body
+from storage_services import get_all_services, add_service, update_service, delete_service
+
+@app.get("/services")
+def services_list(request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    return {"services": get_all_services()}
+
+@app.post("/services")
+def services_add(payload: Dict[str, any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    price_brl = float(payload.get("price_brl") or 0)
+    payment_type = str(payload.get("payment_type") or "avista")
+    installments_months = int(payload.get("installments_months") or 0)
+    down_payment = float(payload.get("down_payment") or 0)
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome do serviço é obrigatório.")
+    created = add_service(name, price_brl, payment_type, installments_months, down_payment)
+    return {"service": created}
+
+@app.put("/services/{service_id}")
+def services_update(service_id: int, payload: Dict[str, any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    updated = update_service(service_id,
+                             name=payload.get("name"),
+                             price_brl=payload.get("price_brl"),
+                             payment_type=payload.get("payment_type"),
+                             installments_months=payload.get("installments_months"),
+                             down_payment=payload.get("down_payment"))
+    if not updated:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+    return {"service": updated}
+
+@app.delete("/services/{service_id}")
+def services_delete(service_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    ok = delete_service(service_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+    return {"success": True}
+
+# === Vínculos Cliente-Serviço ===
+from storage_client_services import list_assignments, add_assignment, update_assignment, delete_assignment
+
+@app.get("/client-services")
+def client_services_list(request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    return {"assignments": list_assignments()}
+
+@app.post("/client-services")
+def client_services_add(payload: Dict[str, any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    client_id = int(payload.get("client_id") or 0)
+    service_id = int(payload.get("service_id") or 0)
+    discount_percent = float(payload.get("discount_percent") or 0)
+    created = add_assignment(client_id, service_id, discount_percent)
+    return {"assignment": created}
+
+@app.put("/client-services/{assignment_id}")
+def client_services_update(assignment_id: int, payload: Dict[str, any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    updated = update_assignment(assignment_id,
+                                status=payload.get("status"),
+                                discount_percent=payload.get("discount_percent"))
+    if not updated:
+        raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
+    return {"assignment": updated}
+
+@app.delete("/client-services/{assignment_id}")
+def client_services_delete(assignment_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    ok = delete_assignment(assignment_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
+    return {"success": True}

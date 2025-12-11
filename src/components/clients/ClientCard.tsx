@@ -75,7 +75,7 @@ const ClientCard: React.FC<Props> = ({ client, apiUrl, onView, onEdit, editMode 
               <Button
                 variant="secondary"
                 onClick={() => onView(client)}
-                className="w-full sm:w-auto bg-white/20 text-white hover:bg-white/25"
+                className="w-full sm:w-auto bg.white/20 text.white hover:bg.white/25"
               >
                 Ver
               </Button>
@@ -83,9 +83,22 @@ const ClientCard: React.FC<Props> = ({ client, apiUrl, onView, onEdit, editMode 
                 <Button
                   variant="outline"
                   onClick={() => onEdit(client)}
-                  className="w-full sm:w-auto border-white/30 bg-white text-black hover:bg-white/90"
+                  className="w-full sm:w-auto border.white/30 bg.white text.black hover:bg.white/90"
                 >
                   Editar
+                </Button>
+              )}
+              {editMode && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    // comunicação simples: abrir confirmação via evento personalizado
+                    const ev = new CustomEvent("client-delete-request", { detail: client });
+                    window.dispatchEvent(ev);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Excluir
                 </Button>
               )}
             </div>

@@ -20,6 +20,7 @@ export type ClientFormValues = {
   trade_name?: string | null;      // Nome Fantasia
   notes?: string | null;
   profile_photo_base64?: string | null;
+  email?: string | null;
 };
 
 type Props = {
@@ -43,8 +44,15 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
     trade_name: initial?.trade_name ?? "",
     notes: initial?.notes ?? "",
     profile_photo_base64: initial?.profile_photo_base64 ?? null,
+    email: (initial as any)?.email ?? "",
   });
 
+  const [cep, setCep] = React.useState<string>("");
+  const [street, setStreet] = React.useState<string>("");
+  const [numberAddr, setNumberAddr] = React.useState<string>("");
+  const [neighborhood, setNeighborhood] = React.useState<string>("");
+  const [complement, setComplement] = React.useState<string>("");
+  
   const setField = (k: keyof ClientFormValues, v: string | null) => {
     setValues((prev) => ({ ...prev, [k]: v as any }));
   };
@@ -57,10 +65,26 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
       onCancel?.();
       return;
     }
-    const { full_name, doc, address, phone, notes } = values;
-    if (!full_name || !doc || !address || !phone) return;
+    const { full_name, doc, phone, notes } = values;
+    // Montar endereço final
+    const parts = [street, numberAddr ? `nº ${numberAddr}` : "", neighborhood, complement].filter(Boolean);
+    const finalAddress = parts.join(", ");
+    const addressToSend = finalAddress || values.address;
+    if (!full_name || !doc || !addressToSend || !phone) return;
     if (notes && countLines(notes) > 50) return;
-    onSubmit(values);
+    onSubmit({ ...values, address: addressToSend });
+  };
+
+  const lookupCEP = async () => {
+    const raw = (cep || "").replace(/\D/g, "");
+    if (raw.length !== 8) return;
+    const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data?.erro) return;
+    setStreet(data?.logradouro || "");
+    setNeighborhood(data?.bairro || "");
+    setComplement(data?.complemento || "");
   };
 
   return (
@@ -85,22 +109,44 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           />
         </div>
         <div className="space-y-2">
-          <Label>Endereço</Label>
+          <Label>E-mail</Label>
           <Input
-            value={values.address}
+            value={values.email || ""}
             disabled={readOnly}
-            onChange={(e) => setField("address", e.target.value)}
-            placeholder="Rua, número, bairro, cidade"
+            onChange={(e) => setField("email", e.target.value)}
+            placeholder="email@exemplo.com"
           />
         </div>
         <div className="space-y-2">
-          <Label>Telefone</Label>
-          <Input
-            value={values.phone}
-            disabled={readOnly}
-            onChange={(e) => setField("phone", e.target.value)}
-            placeholder="(00) 00000-0000"
-          />
+          <Label>CEP</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              value={cep}
+              disabled={readOnly}
+              onChange={(e) => setCep(e.target.value)}
+              placeholder="00000-000"
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" disabled={readOnly} onClick={lookupCEP} className="bg-white text-black hover:bg-white/90">
+              🔍
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Rua</Label>
+          <Input value={street} disabled={readOnly} onChange={(e) => setStreet(e.target.value)} placeholder="Rua" />
+        </div>
+        <div className="space-y-2">
+          <Label>Número</Label>
+          <Input value={numberAddr} disabled={readOnly} onChange={(e) => setNumberAddr(e.target.value)} placeholder="Número" />
+        </div>
+        <div className="space-y-2">
+          <Label>Bairro</Label>
+          <Input value={neighborhood} disabled={readOnly} onChange={(e) => setNeighborhood(e.target.value)} placeholder="Bairro" />
+        </div>
+        <div className="space-y-2">
+          <Label>Complemento</Label>
+          <Input value={complement} disabled={readOnly} onChange={(e) => setComplement(e.target.value)} placeholder="Complemento" />
         </div>
       </div>
 

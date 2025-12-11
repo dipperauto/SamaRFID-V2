@@ -26,6 +26,7 @@ CSV_FIELDS = [
     "corporate_name",  # Razão Social
     "trade_name",      # Nome Fantasia
     "notes",
+    "email",           # ADDED
 ]
 
 
@@ -67,6 +68,7 @@ def _ensure_csv():
                     "corporate_name": row.get("corporate_name", ""),
                     "trade_name": row.get("trade_name", ""),
                     "notes": row.get("notes", ""),
+                    "email": row.get("email", ""),
                 }
                 writer.writerow(new_row)
 
@@ -137,6 +139,7 @@ def get_all_clients() -> List[Dict[str, str]]:
                 "corporate_name": row.get("corporate_name", ""),
                 "trade_name": row.get("trade_name", ""),
                 "notes": row.get("notes", ""),
+                "email": row.get("email", ""),
             })
     return result
 
@@ -154,6 +157,7 @@ def add_client(
     corporate_name: Optional[str] = None,
     trade_name: Optional[str] = None,
     notes: Optional[str] = None,
+    email: Optional[str] = None,
 ) -> Dict[str, str]:
     _ensure_csv()
     client_id = _next_id()
@@ -174,6 +178,7 @@ def add_client(
             "corporate_name": corporate_name or "",
             "trade_name": trade_name or "",
             "notes": notes or "",
+            "email": email or "",
         })
     return {
         "id": str(client_id),
@@ -189,6 +194,7 @@ def add_client(
         "corporate_name": corporate_name or "",
         "trade_name": trade_name or "",
         "notes": notes or "",
+        "email": email or "",
     }
 
 
@@ -206,6 +212,7 @@ def update_client(
     corporate_name: Optional[str] = None,
     trade_name: Optional[str] = None,
     notes: Optional[str] = None,
+    email: Optional[str] = None,
 ) -> Optional[Dict[str, str]]:
     _ensure_csv()
     updated = None
@@ -231,6 +238,7 @@ def update_client(
                     "corporate_name": corporate_name if corporate_name is not None else row.get("corporate_name", ""),
                     "trade_name": trade_name if trade_name is not None else row.get("trade_name", ""),
                     "notes": notes if notes is not None else row.get("notes", ""),
+                    "email": email if email is not None else row.get("email", ""),
                 }
                 rows.append(new_row)
                 updated = new_row
@@ -303,3 +311,34 @@ def delete_client_file(client_id: int, filename: str) -> bool:
         os.remove(full_path)
         return True
     return False
+
+
+def delete_client(client_id: int) -> bool:
+    """Remove cliente do CSV e apaga diretórios de mídia relacionados."""
+    _ensure_csv()
+    rows = []
+    removed = False
+    with open(CLIENTS_CSV_PATH, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("id") == str(client_id):
+                removed = True
+                continue
+            rows.append(row)
+    if not removed:
+        return False
+    with open(CLIENTS_CSV_PATH, "w", newline="", encoding="utf-8") as fw:
+        writer = csv.DictWriter(fw, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+    try:
+        # Apagar pasta de anexos e foto se existirem
+        files_dir = os.path.join(MEDIA_CLIENTS_FILES_DIR, str(client_id))
+        if os.path.isdir(files_dir):
+            import shutil
+            shutil.rmtree(files_dir, ignore_errors=True)
+        # Não deletamos a imagem do perfil para manter cache estático simples
+    except Exception:
+        pass
+    return True

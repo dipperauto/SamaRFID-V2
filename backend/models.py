@@ -82,6 +82,7 @@ class Client(BaseModel):
     corporate_name: Optional[str] = None  # Razão Social
     trade_name: Optional[str] = None      # Nome Fantasia
     notes: Optional[str] = None
+    email: Optional[str] = None
 
 
 class AddClientRequest(BaseModel):
@@ -97,6 +98,7 @@ class AddClientRequest(BaseModel):
     corporate_name: Optional[str] = None
     trade_name: Optional[str] = None
     notes: Optional[str] = None  # até 50 linhas (validado no front)
+    email: Optional[str] = None
 
 
 class UpdateClientRequest(BaseModel):
@@ -112,6 +114,7 @@ class UpdateClientRequest(BaseModel):
     corporate_name: Optional[str] = None
     trade_name: Optional[str] = None
     notes: Optional[str] = None
+    email: Optional[str] = None
 
 
 class AddClientResponse(BaseModel):
