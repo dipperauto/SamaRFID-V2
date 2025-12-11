@@ -161,7 +161,7 @@ const UsersPage: React.FC = () => {
         <Card className="rounded-3xl border border-white/20 ring-1 ring-white/10 bg-gradient-to-b from-[#0b1d3a]/60 to-[#0b1d3a]/40 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 shadow-2xl">
           <CardContent className="px-2 md:px-4 py-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <h1 className="text-xl md:text-2xl font-semibold">Usuários</h1>
+              <h1 className="text-xl md:text-2xl font-semibold text-white">Usuários</h1>
               <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
                 {/* Busca desktop */}
                 <div className="relative hidden md:block">
