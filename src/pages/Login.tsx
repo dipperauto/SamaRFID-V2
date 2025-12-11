@@ -112,7 +112,7 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-[#f26716] hover:bg-[#e46014] text-white">
+            <Button type="submit" className="w-full bg-[#2563eb] hover:bg-[#1e40af] text-white">
               <LogIn className="mr-2 h-4 w-4" />
               Entrar
             </Button>
@@ -120,7 +120,7 @@ const Login: React.FC = () => {
               <a
                 href="#"
                 onClick={(e) => e.preventDefault()}
-                className="text-sm text-[#f26716] hover:text-[#e46014] underline-offset-2 hover:underline"
+                className="text-sm text-[#2563eb] hover:text-[#1e40af] underline-offset-2 hover:underline"
               >
                 Esqueci a senha
               </a>

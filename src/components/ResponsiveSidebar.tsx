@@ -114,7 +114,7 @@ const ResponsiveSidebar: React.FC = () => {
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-slate-900 truncate">
                       Olá{" "}
-                      <span className="text-[#f26716] font-semibold">
+                      <span className="text-[#2563eb] font-semibold">
                         {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                       </span>
                     </div>
@@ -174,7 +174,7 @@ const ResponsiveSidebar: React.FC = () => {
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-slate-900 truncate">
                     Olá{" "}
-                    <span className="text-[#f26716] font-semibold">
+                    <span className="text-[#2563eb] font-semibold">
                       {(userInfo.full_name || userInfo.username || "").split(/[ \.@_]/)[0] || "fotógrafo"}
                     </span>
                   </div>
