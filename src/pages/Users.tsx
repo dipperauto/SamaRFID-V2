@@ -158,81 +158,83 @@ const UsersPage: React.FC = () => {
     <div className="min-h-screen w-full overflow-hidden p-4 text-white">
       <div className="relative z-10 space-y-4">
         {/* Top header com liquid glass */}
-        <div className="rounded-3xl px-2 md:px-4 py-3 border border-white/20 ring-1 ring-white/10 bg-gradient-to-b from-[#0b1d3a]/60 to-[#0b1d3a]/40 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 shadow-2xl">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <h1 className="text-xl md:text-2xl font-semibold">Usuários</h1>
-            <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
-              {/* Busca desktop */}
-              <div className="relative hidden md:block">
+        <Card className="rounded-3xl border border-white/20 ring-1 ring-white/10 bg-gradient-to-b from-[#0b1d3a]/60 to-[#0b1d3a]/40 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 shadow-2xl">
+          <CardContent className="px-2 md:px-4 py-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h1 className="text-xl md:text-2xl font-semibold">Usuários</h1>
+              <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
+                {/* Busca desktop */}
+                <div className="relative hidden md:block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Pesquisar por nome, e-mail, papel..."
+                    className="w-64 pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
+                  />
+                </div>
+                {/* Switch desktop */}
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="text-sm text-white/80">Modo edição</span>
+                  <Switch checked={editMode} onCheckedChange={setEditMode} />
+                </div>
+                {/* Botão - full width no mobile */}
+                {isAdmin && (
+                  <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full md:w-auto bg-white/20 text-white hover:bg-white/25">
+                        Cadastrar Usuário
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-3xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Novo Usuário</DialogTitle>
+                        <DialogDescription className="text-white/80">
+                          Preencha os dados abaixo para cadastrar um novo usuário.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <UserForm
+                        onSubmit={handleCreate}
+                        onCancel={() => setOpenCreate(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+
+              {/* Busca mobile */}
+              <div className="relative md:hidden">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Pesquisar por nome, e-mail, papel..."
-                  className="w-64 pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
+                  className="w-full pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
                 />
               </div>
-              {/* Switch desktop */}
-              <div className="hidden md:flex items-center gap-2">
+
+              {/* Switch mobile */}
+              <div className="flex items-center gap-2 md:hidden">
                 <span className="text-sm text-white/80">Modo edição</span>
                 <Switch checked={editMode} onCheckedChange={setEditMode} />
               </div>
-              {/* Botão - full width no mobile */}
-              {isAdmin && (
-                <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full md:w-auto bg-white/20 text-white hover:bg-white/25">
-                      Cadastrar Usuário
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Novo Usuário</DialogTitle>
-                      <DialogDescription className="text-white/80">
-                        Preencha os dados abaixo para cadastrar um novo usuário.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <UserForm
-                      onSubmit={handleCreate}
-                      onCancel={() => setOpenCreate(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              )}
             </div>
 
-            {/* Busca mobile */}
-            <div className="relative md:hidden">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Pesquisar por nome, e-mail, papel..."
-                className="w-full pl-9 bg-white/20 text-white placeholder:text-white/70 border-white/25 focus-visible:ring-white/50"
-              />
+            {/* Indicadores */}
+            <div className="mt-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-white/80 text-sm">Indicadores:</span>
+                <Badge variant="outline" className="bg-white/10 text-white">Total: {total}</Badge>
+                <Badge className="bg-white/20 text-white hover:bg-white/25">
+                  Encontrados: {users.length}
+                </Badge>
+                <Badge className="bg-white/20 text-white hover:bg-white/25">
+                  Administradores: {data?.users.filter((u) => (u.role || "").toLowerCase() === "administrador").length ?? 0}
+                </Badge>
+              </div>
             </div>
-
-            {/* Switch mobile */}
-            <div className="flex items-center gap-2 md:hidden">
-              <span className="text-sm text-white/80">Modo edição</span>
-              <Switch checked={editMode} onCheckedChange={setEditMode} />
-            </div>
-          </div>
-
-          {/* Indicadores */}
-          <div className="mt-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-white/80 text-sm">Indicadores:</span>
-              <Badge variant="outline" className="bg-white/10 text-white">Total: {total}</Badge>
-              <Badge className="bg-white/20 text-white hover:bg-white/25">
-                Encontrados: {users.length}
-              </Badge>
-              <Badge className="bg-white/20 text-white hover:bg-white/25">
-                Administradores: {data?.users.filter((u) => (u.role || "").toLowerCase() === "administrador").length ?? 0}
-              </Badge>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {users.map((u) => (
@@ -325,16 +327,24 @@ const UsersPage: React.FC = () => {
               variant="destructive"
               onClick={async () => {
                 if (!deleteTarget) return;
-                // Tenta POST /users/delete primeiro (mais compatível com proxies)
-                let ok = false;
-                let res = await fetch(`${API_URL}/api/users/delete`, {
+                // 1) Tenta POST no endpoint sem conflito
+                let res = await fetch(`${API_URL}/api/users/actions/delete`, {
                   method: "POST",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ username: deleteTarget.username }),
                 });
+                // 2) Fallback: POST /users/delete
                 if (!res.ok) {
-                  // Fallback para o DELETE clássico
+                  res = await fetch(`${API_URL}/api/users/delete`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: deleteTarget.username }),
+                  });
+                }
+                // 3) Fallback: DELETE /users/{username}
+                if (!res.ok) {
                   res = await fetch(`${API_URL}/api/users/${encodeURIComponent(deleteTarget.username)}`, {
                     method: "DELETE",
                     credentials: "include",
