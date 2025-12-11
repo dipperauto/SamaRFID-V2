@@ -169,7 +169,11 @@ const UsersPage: React.FC = () => {
               {/* Switch desktop */}
               <div className="hidden md:flex items-center gap-2">
                 <span className="text-sm text-white/80">Modo edição</span>
-                <Switch checked={editMode} onCheckedChange={setEditMode} />
+                <Switch
+                  checked={editMode}
+                  onCheckedChange={setEditMode}
+                  className="data-[state=checked]:bg-[#3b82f6] data-[state=unchecked]:bg-white/30"
+                />
               </div>
               {/* Botão - full width no mobile (apenas admin) */}
               {isAdmin && (
@@ -209,7 +213,11 @@ const UsersPage: React.FC = () => {
             {/* Switch mobile */}
             <div className="flex items-center gap-2 md:hidden">
               <span className="text-sm text-white/80">Modo edição</span>
-              <Switch checked={editMode} onCheckedChange={setEditMode} />
+              <Switch
+                checked={editMode}
+                onCheckedChange={setEditMode}
+                className="data-[state=checked]:bg-[#3b82f6] data-[state=unchecked]:bg-white/30"
+              />
             </div>
           </div>
 
