@@ -72,25 +72,26 @@ const Login: React.FC = () => {
       <AnimatedBackground />
       {/* Card com formulário de login */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-[#efeae3] ring-1 ring-[#efeae3]/60 bg-[#efeae3]/80 py-8 px-6 shadow-2xl backdrop-blur-xl text-slate-900">
+        <div className="rounded-2xl border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 py-8 px-6 shadow-2xl backdrop-blur-xl text-white">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
             <img src="/login.png" alt="Blink Fotos" className="h-20 md:h-24 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login" className="text-slate-700">Login</Label>
+              <Label htmlFor="login" className="text-white">Login</Label>
               <Input
                 id="login"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 placeholder="Seu usuário"
                 autoComplete="username"
+                className="bg-white/80 text-slate-900 placeholder:text-slate-700"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-700">Senha</Label>
+              <Label htmlFor="password" className="text-white">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -99,12 +100,12 @@ const Login: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Sua senha"
                   autoComplete="current-password"
-                  className="pr-10"
+                  className="pr-10 bg-white/80 text-slate-900 placeholder:text-slate-700"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-800"
+                  className="absolute inset-y-0 right-2 flex items-center text-white/80 hover:text-white"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -130,7 +131,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Debug técnico no canto da página */}
-      <div className="absolute bottom-3 right-3 z-20 text-[10px] text-black space-y-0.5 text-right">
+      <div className="absolute bottom-3 right-3 z-20 text-[10px] text-white space-y-0.5 text-right">
         <div>Backend: {API_URL}</div>
         <div>Conexão: {health && !healthErr ? "OK" : "Indisponível"}</div>
         <div>

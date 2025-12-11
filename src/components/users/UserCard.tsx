@@ -43,7 +43,7 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
   }, [user.role]);
 
   return (
-    <Card className="rounded-2xl border border-white/25 bg-black/40 shadow-xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">
+    <Card className="rounded-2xl border border-white/20 bg-[#0b1d3a]/50 shadow-xl ring-1 ring-white/10 backdrop-blur-2xl backdrop-saturate-150 text-white">
       <CardContent className="p-4">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="shrink-0">

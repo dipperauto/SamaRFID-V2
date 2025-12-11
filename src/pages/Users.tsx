@@ -178,10 +178,10 @@ const UsersPage: React.FC = () => {
                       Cadastrar Usuário
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-black/35 border border-white/25 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="sm:max-w-3xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-2xl text-white max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Novo Usuário</DialogTitle>
-                      <DialogDescription className="text-white/70">
+                      <DialogDescription className="text-white/80">
                         Preencha os dados abaixo para cadastrar um novo usuário.
                       </DialogDescription>
                     </DialogHeader>
@@ -250,7 +250,7 @@ const UsersPage: React.FC = () => {
 
       {/* View Dialog */}
       <Dialog open={openView} onOpenChange={(o) => { setOpenView(o); if (!o) setSelected(null); }}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#efeae3]/85 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Usuário</DialogTitle>
           </DialogHeader>
@@ -275,7 +275,7 @@ const UsersPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setSelected(null); }}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#efeae3]/85 border border-[#efeae3] ring-1 ring-[#efeae3]/60 backdrop-blur-xl text-slate-900 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
           </DialogHeader>
