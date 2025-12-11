@@ -18,7 +18,7 @@ const Home: React.FC = () => {
         <Card className="rounded-3xl border border-white/20 bg-[#0b1d3a]/50 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl text-white">
           <CardHeader>
             <CardTitle className="text-white">
-              Bem-vindo ao <span className="text-[#3b82f6] font-semibold">UniCosta Contabilidade</span>
+              Bem-vindo ao <span className="text-[#93c5fd] font-semibold">UniCosta Contabilidade</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
