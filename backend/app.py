@@ -364,6 +364,18 @@ def users_delete(username: str, request: Request):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
     return {"success": True, "message": "Usuário excluído com sucesso."}
 
+# NOVO: alias via POST para ambientes que bloqueiam DELETE em proxies
+@app.post("/users/delete")
+def users_delete_post(payload: dict, request: Request):
+    _require_admin(request)
+    username = str(payload.get("username") or "").strip()
+    if not username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username é obrigatório.")
+    ok = delete_user(username)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    return {"success": True, "message": "Usuário excluído com sucesso."}
+
 @app.post("/users/register", response_model=AddUserResponse)
 def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Header(None, alias="x-admin-token")):
     token = (x_admin_token or "").strip()

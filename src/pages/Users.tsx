@@ -157,8 +157,8 @@ const UsersPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full overflow-hidden p-4 text-white">
       <div className="relative z-10 space-y-4">
-        {/* Top header (sem Card) */}
-        <div className="rounded-3xl px-2 md:px-4 py-3">
+        {/* Top header com liquid glass */}
+        <div className="rounded-3xl px-2 md:px-4 py-3 border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/40 backdrop-blur-xl shadow-xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h1 className="text-xl md:text-2xl font-semibold">Usuários</h1>
             <div className="flex w-full md:w-auto items-center gap-3 md:justify-end">
@@ -325,10 +325,21 @@ const UsersPage: React.FC = () => {
               variant="destructive"
               onClick={async () => {
                 if (!deleteTarget) return;
-                const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(deleteTarget.username)}`, {
-                  method: "DELETE",
+                // Tenta POST /users/delete primeiro (mais compatível com proxies)
+                let ok = false;
+                let res = await fetch(`${API_URL}/api/users/delete`, {
+                  method: "POST",
                   credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ username: deleteTarget.username }),
                 });
+                if (!res.ok) {
+                  // Fallback para o DELETE clássico
+                  res = await fetch(`${API_URL}/api/users/${encodeURIComponent(deleteTarget.username)}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                  });
+                }
                 if (!res.ok) {
                   const detail = await res.json().catch(() => null);
                   toast.error(detail?.detail ?? "Falha ao excluir usuário.");
