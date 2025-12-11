@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import PhotoCropper from "@/components/PhotoCropper";
-import { toast } from "sonner";
 
 export type ClientFormValues = {
   full_name: string;
@@ -62,39 +61,17 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("[ClientForm] submit fired"); // DEBUG: submit iniciou
-
     if (readOnly) {
       onCancel?.();
       return;
     }
     const { full_name, doc, phone, notes } = values;
+    // Montar endereço final
     const parts = [street, numberAddr ? `nº ${numberAddr}` : "", neighborhood, complement].filter(Boolean);
     const finalAddress = parts.join(", ");
     const addressToSend = finalAddress || values.address;
-
-    if (!full_name) {
-      toast.error("Informe o nome do cliente.");
-      return;
-    }
-    if (!doc) {
-      toast.error("Informe o CPF/CNPJ.");
-      return;
-    }
-    if (!addressToSend) {
-      toast.error("Informe o endereço (preencha Rua/Bairro/Complemento ou utilize CEP).");
-      return;
-    }
-    if (!phone) {
-      toast.error("Informe o telefone.");
-      return;
-    }
-    if (notes && countLines(notes) > 50) {
-      toast.error("Notas devem ter no máximo 50 linhas.");
-      return;
-    }
-
-    console.log("[ClientForm] calling onSubmit", { addressToSend, values }); // DEBUG: enviando
+    if (!full_name || !doc || !addressToSend || !phone) return;
+    if (notes && countLines(notes) > 50) return;
     onSubmit({ ...values, address: addressToSend });
   };
 
@@ -138,24 +115,6 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
             disabled={readOnly}
             onChange={(e) => setField("email", e.target.value)}
             placeholder="email@exemplo.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Telefone</Label>
-          <Input
-            value={values.phone}
-            disabled={readOnly}
-            onChange={(e) => setField("phone", e.target.value)}
-            placeholder="(00) 00000-0000"
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label>Endereço</Label>
-          <Input
-            value={values.address}
-            disabled={readOnly}
-            onChange={(e) => setField("address", e.target.value)}
-            placeholder="Rua, número, bairro (preencha aqui se não usar o CEP)"
           />
         </div>
         <div className="space-y-2">
@@ -282,13 +241,7 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           </Button>
         )}
         {!readOnly && (
-          <Button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => console.log("[ClientForm] submit button clicked")} // DEBUG: clique no botão
-          >
-            Salvar
-          </Button>
+          <Button type="submit">Salvar</Button>
         )}
       </div>
     </form>

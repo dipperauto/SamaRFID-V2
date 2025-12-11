@@ -21,10 +21,9 @@ type Props = {
   onView: (user: AppUser) => void;
   onEdit?: (user: AppUser) => void;
   editMode?: boolean;
-  onDelete?: () => void;
 };
 
-const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = false, onDelete }) => {
+const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = false }) => {
   const photoUrl = React.useMemo(() => {
     const pRaw = user.profile_photo_path || "";
     if (!pRaw) return null;
@@ -83,15 +82,6 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
                   className="w-full sm:w-auto border-white/30 bg-white text-black hover:bg-white/90"
                 >
                   Editar
-                </Button>
-              )}
-              {editMode && (
-                <Button
-                  variant="destructive"
-                  onClick={onDelete}
-                  className="w-full sm:w-auto"
-                >
-                  Excluir
                 </Button>
               )}
             </div>

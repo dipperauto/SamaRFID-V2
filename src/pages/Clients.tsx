@@ -20,15 +20,13 @@ type ClientsResponse = {
 };
 
 const ClientsPage: React.FC = () => {
-  // Usar proxy de desenvolvimento: chamar rotas relativas (/api/...)
-  const API_URL = "";
-
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const queryClient = useQueryClient();
 
   const { data, refetch } = useQuery<ClientsResponse>({
     queryKey: ["clients"],
     queryFn: async () => {
-      const res = await fetch(`/api/clients`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/clients`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -51,7 +49,6 @@ const ClientsPage: React.FC = () => {
   }, []);
 
   const handleCreate = async (values: ClientFormValues) => {
-    console.log("[ClientsPage] handleCreate called", { API_URL, values });
     const required = [values.full_name, values.doc, values.address, values.phone].every(Boolean);
     if (!required) {
       toast.error("Preencha os campos obrigatórios.");
@@ -62,28 +59,21 @@ const ClientsPage: React.FC = () => {
       toast.error("Notas devem ter no máximo 50 linhas.");
       return;
     }
-    try {
-      console.log("[ClientsPage] sending POST /api/clients/register");
-      const res = await fetch(`/api/clients/register`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      console.log("[ClientsPage] POST /api/clients/register ->", res.status);
-      if (!res.ok) {
-        const detail = await res.json().catch(() => null);
-        toast.error(detail?.detail ?? "Falha ao cadastrar cliente.");
-        return;
-      }
-      toast.success("Cliente cadastrado com sucesso!");
-      setOpenCreate(false);
-      await refetch();
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    } catch (err) {
-      console.error("[ClientsPage] fetch error (create)", err);
-      toast.error("Erro de rede ao cadastrar cliente.");
+    const res = await fetch(`${API_URL}/api/clients/register`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao cadastrar cliente.");
+      return;
     }
+    toast.success("Cliente cadastrado com sucesso!");
+    setOpenCreate(false);
+    await refetch();
+    queryClient.invalidateQueries({ queryKey: ["clients"] });
   };
 
   const handleEdit = async (values: ClientFormValues) => {
@@ -93,29 +83,22 @@ const ClientsPage: React.FC = () => {
       toast.error("Notas devem ter no máximo 50 linhas.");
       return;
     }
-    try {
-      console.log("[ClientsPage] sending PUT /api/clients/", selected.id, " API_URL:", API_URL);
-      const res = await fetch(`/api/clients/${selected.id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      console.log("[ClientsPage] PUT /api/clients ->", res.status);
-      if (!res.ok) {
-        const detail = await res.json().catch(() => null);
-        toast.error(detail?.detail ?? "Falha ao atualizar cliente.");
-        return;
-      }
-      toast.success("Cliente atualizado com sucesso!");
-      setOpenEdit(false);
-      setSelected(null);
-      await refetch();
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-    } catch (err) {
-      console.error("[ClientsPage] fetch error (edit)", err);
-      toast.error("Erro de rede ao atualizar cliente.");
+    const res = await fetch(`${API_URL}/api/clients/${selected.id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao atualizar cliente.");
+      return;
     }
+    toast.success("Cliente atualizado com sucesso!");
+    setOpenEdit(false);
+    setSelected(null);
+    await refetch();
+    queryClient.invalidateQueries({ queryKey: ["clients"] });
   };
 
   const onView = (client: Client) => {
@@ -193,11 +176,7 @@ const ClientsPage: React.FC = () => {
                 {/* Switch desktop */}
                 <div className="hidden md:flex items-center gap-2">
                   <span className="text-sm text-white/80">Modo edição</span>
-                  <Switch
-                    checked={editMode}
-                    onCheckedChange={setEditMode}
-                    className="data-[state=checked]:bg-[#3b82f6] data-[state=unchecked]:bg-white/30"
-                  />
+                  <Switch checked={editMode} onCheckedChange={setEditMode} />
                 </div>
 
                 {/* Botão - full width no mobile */}
@@ -236,11 +215,7 @@ const ClientsPage: React.FC = () => {
               {/* Switch mobile */}
               <div className="flex items-center gap-2 md:hidden">
                 <span className="text-sm text-white/80">Modo edição</span>
-                <Switch
-                  checked={editMode}
-                  onCheckedChange={setEditMode}
-                  className="data-[state=checked]:bg-[#3b82f6] data-[state=unchecked]:bg-white/30"
-                />
+                <Switch checked={editMode} onCheckedChange={setEditMode} />
               </div>
             </div>
           </CardHeader>

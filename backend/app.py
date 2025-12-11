@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple
 from hashlib import sha256
 import hmac
 import secrets
@@ -11,7 +11,7 @@ import re
 from fastapi import Form
 
 from models import LoginRequest, LoginResponse, AddUserRequest, AddUserResponse, HashPasswordResponse, User, ListUsersResponse, UpdateUserRequest
-from storage import get_user, add_user, get_all_users, update_user, delete_user
+from storage import get_user, add_user, get_all_users, update_user
 from security import verify_password, hash_password
 from models import (
     Client,
@@ -88,10 +88,7 @@ load_env_files(
 app = FastAPI(title="Backend Dyad - Auth")
 
 frontend_url = os.environ.get("FRONTEND_URL")
-frontend_origin_regex = os.environ.get(
-    "FRONTEND_ORIGIN_REGEX",
-    r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
-)
+frontend_origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[frontend_url] if frontend_url else [],
@@ -161,10 +158,7 @@ async def security_headers(request: Request, call_next):
     # CORS fallback: reflete Origin válido (localhost com porta ou FRONTEND_URL)
     origin = request.headers.get("origin", "")
     frontend_url = os.environ.get("FRONTEND_URL", "").strip()
-    origin_regex = os.environ.get(
-        "FRONTEND_ORIGIN_REGEX",
-        r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
-    )
+    origin_regex = os.environ.get("FRONTEND_ORIGIN_REGEX", r"http://localhost:\d+$")
     try:
         if origin and (
             (frontend_url and origin == frontend_url) or
@@ -316,7 +310,7 @@ def auth_logout(response: Response, request: Request):
 def users_list(request: Request):
     _require_admin(request)
     raw = get_all_users()
-    users: List[User] = []
+    users: list[User] = []
     for u in raw:
         users.append(
             User(
@@ -362,13 +356,6 @@ def users_register_session(payload: AddUserRequest, request: Request):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-@app.delete("/users/{username}")
-def users_delete(username: str, request: Request):
-    _require_admin(request)
-    ok = delete_user(username)
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
-    return {"success": True, "message": "Usuário excluído com sucesso."}
 
 # ----- Usuários (token legado) -----
 
@@ -409,7 +396,7 @@ def clients_list(request: Request):
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     raw = get_all_clients()
-    clients: List[Client] = []
+    clients: list[Client] = []
     for row in raw:
         clients.append(
             Client(
@@ -659,7 +646,7 @@ def users_search_public(request: Request, q: Optional[str] = None):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
     raw = get_all_users()
     ql = (q or "").strip().lower()
-    users: List[PublicUser] = []
+    users: list[PublicUser] = []
     for u in raw:
         role = (u.get("role", "") or "").lower()
         # compat: considerar 'usuario' e 'usuário' também
@@ -1055,7 +1042,7 @@ def services_list(request: Request):
     return {"services": get_all_services()}
 
 @app.post("/services")
-def services_add(payload: Dict[str, Any], request: Request):
+def services_add(payload: Dict[str, any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1070,7 +1057,7 @@ def services_add(payload: Dict[str, Any], request: Request):
     return {"service": created}
 
 @app.put("/services/{service_id}")
-def services_update(service_id: int, payload: Dict[str, Any], request: Request):
+def services_update(service_id: int, payload: Dict[str, any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1105,7 +1092,7 @@ def client_services_list(request: Request):
     return {"assignments": list_assignments()}
 
 @app.post("/client-services")
-def client_services_add(payload: Dict[str, Any], request: Request):
+def client_services_add(payload: Dict[str, any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1116,7 +1103,7 @@ def client_services_add(payload: Dict[str, Any], request: Request):
     return {"assignment": created}
 
 @app.put("/client-services/{assignment_id}")
-def client_services_update(assignment_id: int, payload: Dict[str, Any], request: Request):
+def client_services_update(assignment_id: int, payload: Dict[str, any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
