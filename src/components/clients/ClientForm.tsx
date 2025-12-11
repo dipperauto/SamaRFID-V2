@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import PhotoCropper from "@/components/PhotoCropper";
+import { toast } from "sonner";
 
 export type ClientFormValues = {
   full_name: string;
@@ -66,12 +67,31 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
       return;
     }
     const { full_name, doc, phone, notes } = values;
-    // Montar endereço final
     const parts = [street, numberAddr ? `nº ${numberAddr}` : "", neighborhood, complement].filter(Boolean);
     const finalAddress = parts.join(", ");
     const addressToSend = finalAddress || values.address;
-    if (!full_name || !doc || !addressToSend || !phone) return;
-    if (notes && countLines(notes) > 50) return;
+
+    if (!full_name) {
+      toast.error("Informe o nome do cliente.");
+      return;
+    }
+    if (!doc) {
+      toast.error("Informe o CPF/CNPJ.");
+      return;
+    }
+    if (!addressToSend) {
+      toast.error("Informe o endereço (preencha Rua/Bairro/Complemento ou utilize CEP).");
+      return;
+    }
+    if (!phone) {
+      toast.error("Informe o telefone.");
+      return;
+    }
+    if (notes && countLines(notes) > 50) {
+      toast.error("Notas devem ter no máximo 50 linhas.");
+      return;
+    }
+
     onSubmit({ ...values, address: addressToSend });
   };
 
@@ -241,7 +261,7 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           </Button>
         )}
         {!readOnly && (
-          <Button type="submit">Salvar</Button>
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar</Button>
         )}
       </div>
     </form>
