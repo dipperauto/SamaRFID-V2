@@ -327,14 +327,23 @@ const UsersPage: React.FC = () => {
               variant="destructive"
               onClick={async () => {
                 if (!deleteTarget) return;
-                // 1) Tenta POST no endpoint sem conflito
-                let res = await fetch(`${API_URL}/api/users/actions/delete`, {
+                // 1) Preferir endpoint sem conflito
+                let res = await fetch(`${API_URL}/api/admin/users/delete`, {
                   method: "POST",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ username: deleteTarget.username }),
                 });
-                // 2) Fallback: POST /users/delete
+                // 2) Fallback: /users/actions/delete
+                if (!res.ok) {
+                  res = await fetch(`${API_URL}/api/users/actions/delete`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: deleteTarget.username }),
+                  });
+                }
+                // 3) Fallback: /users/delete
                 if (!res.ok) {
                   res = await fetch(`${API_URL}/api/users/delete`, {
                     method: "POST",
@@ -343,7 +352,7 @@ const UsersPage: React.FC = () => {
                     body: JSON.stringify({ username: deleteTarget.username }),
                   });
                 }
-                // 3) Fallback: DELETE /users/{username}
+                // 4) Fallback: DELETE /users/{username}
                 if (!res.ok) {
                   res = await fetch(`${API_URL}/api/users/${encodeURIComponent(deleteTarget.username)}`, {
                     method: "DELETE",
