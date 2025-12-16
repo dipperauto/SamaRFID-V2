@@ -1,8 +1,8 @@
 import os
-from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File
+from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 from hashlib import sha256
 import hmac
 import secrets
@@ -1072,8 +1072,6 @@ def finance_purchases(request: Request, start: Optional[str] = None, end: Option
 
 # === Serviços (catálogo) ===
 from typing import Dict
-from fastapi import Body
-from storage_services import get_all_services, add_service, update_service, delete_service
 
 @app.get("/services")
 def services_list(request: Request):
