@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header, Response, Request, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Any
 from hashlib import sha256
 import hmac
 import secrets
@@ -1071,7 +1071,8 @@ def finance_purchases(request: Request, start: Optional[str] = None, end: Option
     return {"count": len(lst), "purchases": lst}
 
 # === Serviços (catálogo) ===
-from typing import Dict
+from typing import Dict, Any
+from storage_services import get_all_services, add_service, update_service, delete_service
 
 @app.get("/services")
 def services_list(request: Request):
@@ -1081,7 +1082,7 @@ def services_list(request: Request):
     return {"services": get_all_services()}
 
 @app.post("/services")
-def services_add(payload: Dict[str, any], request: Request):
+def services_add(payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1096,7 +1097,7 @@ def services_add(payload: Dict[str, any], request: Request):
     return {"service": created}
 
 @app.put("/services/{service_id}")
-def services_update(service_id: int, payload: Dict[str, any], request: Request):
+def services_update(service_id: int, payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1131,7 +1132,7 @@ def client_services_list(request: Request):
     return {"assignments": list_assignments()}
 
 @app.post("/client-services")
-def client_services_add(payload: Dict[str, any], request: Request):
+def client_services_add(payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
@@ -1142,7 +1143,7 @@ def client_services_add(payload: Dict[str, any], request: Request):
     return {"assignment": created}
 
 @app.put("/client-services/{assignment_id}")
-def client_services_update(assignment_id: int, payload: Dict[str, any], request: Request):
+def client_services_update(assignment_id: int, payload: Dict[str, Any], request: Request):
     token = request.cookies.get("session")
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
