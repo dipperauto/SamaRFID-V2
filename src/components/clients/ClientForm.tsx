@@ -95,6 +95,33 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
     setField("doc", masked);
   };
 
+  // Formatação de telefone: celular (11 dígitos) => (00) 00000-0000; fixo (10 dígitos) => (00) 0000-0000
+  const formatPhone = (raw: string) => {
+    const d = onlyDigits(raw).slice(0, 11);
+    const area = d.slice(0, 2);
+    const rest = d.slice(2);
+    if (!area) return "";
+    let out = `(${area})`;
+    if (rest.length <= 8) {
+      // fixo (até 8 dígitos após DDD)
+      const p1 = rest.slice(0, 4);
+      const p2 = rest.slice(4, 8);
+      out += p1 ? ` ${p1}` : "";
+      out += p2 ? `-${p2}` : "";
+    } else {
+      // celular (9 dígitos após DDD)
+      const p1 = rest.slice(0, 5);
+      const p2 = rest.slice(5, 9);
+      out += p1 ? ` ${p1}` : "";
+      out += p2 ? `-${p2}` : "";
+    }
+    return out;
+  };
+
+  const handlePhoneChange = (raw: string) => {
+    setField("phone", formatPhone(raw));
+  };
+
   const countLines = (text: string) => (text ? text.split(/\r?\n/).length : 0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -201,9 +228,16 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           <Input
             value={values.phone}
             disabled={readOnly}
-            onChange={(e) => setField("phone", e.target.value)}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="(00) 00000-0000"
           />
+          <div className="text-xs text-gray-500">
+            {onlyDigits(values.phone).length >= 11
+              ? "Detectado: Celular"
+              : onlyDigits(values.phone).length >= 10
+              ? "Detectado: Fixo"
+              : "—"}
+          </div>
         </div>
         <div className="space-y-2">
           <Label>Chave Pix (opcional)</Label>
