@@ -10,6 +10,7 @@ export const PAGES: AppPage[] = [
   { key: "users", label: "Usuários", path: "/users", icon: "users" },
   { key: "clients", label: "Clientes", path: "/clients", icon: "users" },
   { key: "services", label: "Serviços", path: "/services", icon: "photo" },
+  { key: "expenses", label: "Gastos", path: "/expenses", icon: "photo" },
 ];
 
 export function pathToKey(pathname: string): string | null {

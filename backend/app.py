@@ -208,8 +208,8 @@ def _verify_session_token(token: str) -> Optional[dict]:
 def default_allowed_pages(role: Optional[str]) -> List[str]:
     # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
-      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services"]
-    return ["home", "teste", "clients", "kanban", "events", "parametros", "services"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services", "expenses"]
+    return ["home", "teste", "clients", "kanban", "events", "parametros", "services", "expenses"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -1149,6 +1149,135 @@ def services_delete(service_id: int, request: Request):
     ok = delete_service(service_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+    return {"success": True}
+
+# === Gastos (despesas) ===
+from storage_expenses import get_all_expenses, add_expense, update_expense, delete_expense
+from storage_expenses import list_expense_files, save_expense_file, delete_expense_file
+
+@app.get("/expenses")
+def expenses_list(request: Request, start: Optional[str] = None, end: Optional[str] = None, status: Optional[str] = None, sort: Optional[str] = None):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    items = get_all_expenses()
+
+    # filtros por data/status
+    def _parse_date(s: Optional[str]) -> Optional[datetime]:
+        if not s:
+            return None
+        try:
+            if len(s) == 10:
+                return datetime.fromisoformat(s + "T00:00:00+00:00")
+            return datetime.fromisoformat(s)
+        except Exception:
+            return None
+    sdt = _parse_date(start)
+    edt = _parse_date(end)
+    out = []
+    for it in items:
+        try:
+            ts = datetime.fromisoformat(it.get("created_at") or "")
+        except Exception:
+            ts = None
+        if sdt and ts and ts < sdt:
+            continue
+        if edt and ts and ts > edt:
+            continue
+        if status and status in ("ativo", "inativo") and (it.get("status") != status):
+            continue
+        out.append(it)
+
+    # ordenação
+    if sort == "date_asc":
+        out.sort(key=lambda x: x.get("created_at") or "")
+    elif sort == "date_desc":
+        out.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+    elif sort == "price_asc":
+        out.sort(key=lambda x: float(x.get("price_brl") or 0))
+    elif sort == "price_desc":
+        out.sort(key=lambda x: float(x.get("price_brl") or 0), reverse=True)
+
+    return {"count": len(out), "expenses": out}
+
+@app.post("/expenses")
+def expenses_add(payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    description = str(payload.get("description") or "").strip()
+    price_brl = float(payload.get("price_brl") or 0)
+    payment_type = str(payload.get("payment_type") or "avista")
+    installments_months = int(payload.get("installments_months") or 0)
+    down_payment = float(payload.get("down_payment") or 0)
+    status = str(payload.get("status") or "ativo")
+    if not name or price_brl <= 0:
+        raise HTTPException(status_code=400, detail="Nome e valor do gasto são obrigatórios.")
+    created = add_expense(name, description, price_brl, payment_type, installments_months, down_payment, status if status in ("ativo", "inativo") else "ativo")
+    return {"expense": created}
+
+@app.put("/expenses/{expense_id}")
+def expenses_update(expense_id: int, payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    updated = update_expense(
+        expense_id,
+        name=(payload.get("name") if payload.get("name") is not None else None),
+        description=(payload.get("description") if payload.get("description") is not None else None),
+        price_brl=(payload.get("price_brl") if payload.get("price_brl") is not None else None),
+        payment_type=(payload.get("payment_type") if payload.get("payment_type") is not None else None),
+        installments_months=(payload.get("installments_months") if payload.get("installments_months") is not None else None),
+        down_payment=(payload.get("down_payment") if payload.get("down_payment") is not None else None),
+        status=(payload.get("status") if payload.get("status") is not None else None),
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Gasto não encontrado.")
+    return {"expense": updated}
+
+@app.delete("/expenses/{expense_id}")
+def expenses_delete(expense_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    ok = delete_expense(expense_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Gasto não encontrado.")
+    return {"success": True}
+
+# anexos por gasto
+@app.get("/expenses/{expense_id}/files")
+def expenses_files_list(expense_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    files = list_expense_files(expense_id)
+    total = 0
+    try:
+        for f in files:
+            total += int(f.get("size_bytes") or 0)
+    except Exception:
+        pass
+    return {"files": files, "total_bytes": total}
+
+@app.post("/expenses/{expense_id}/files")
+async def expenses_file_upload(expense_id: int, request: Request, file: UploadFile = File(...)):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    content = await file.read()
+    name, size_bytes, url = save_expense_file(expense_id, file.filename, content)
+    return {"success": True, "file": {"name": name, "url": url, "size_bytes": size_bytes}}
+
+@app.delete("/expenses/{expense_id}/files/{filename}")
+def expenses_file_delete(expense_id: int, filename: str, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    ok = delete_expense_file(expense_id, filename)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
     return {"success": True}
 
 # === Vínculos Cliente-Serviço ===

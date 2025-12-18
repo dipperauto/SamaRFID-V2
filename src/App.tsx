@@ -12,6 +12,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 import ClientsPage from "./pages/Clients";
 import ServicesPage from "./pages/Services";
+import ExpensesPage from "./pages/Expenses";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             {/* ADDED: rotas novas */}
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/services" element={<ServicesPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
