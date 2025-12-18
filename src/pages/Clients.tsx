@@ -347,10 +347,20 @@ const ClientsPage: React.FC = () => {
               variant="destructive"
               onClick={async () => {
                 if (!deleteTarget) return;
-                const res = await fetch(`${API_URL}/api/clients/${deleteTarget.id}`, {
-                  method: "DELETE",
+                // Tenta primeiro POST /clients/delete (mais compatível)
+                let res = await fetch(`${API_URL}/api/clients/delete`, {
+                  method: "POST",
                   credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ client_id: deleteTarget.id }),
                 });
+                // Fallback: DELETE /clients/{id}
+                if (!res.ok) {
+                  res = await fetch(`${API_URL}/api/clients/${deleteTarget.id}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                  });
+                }
                 if (!res.ok) {
                   const detail = await res.json().catch(() => null);
                   toast.error(detail?.detail ?? "Falha ao excluir cliente.");
