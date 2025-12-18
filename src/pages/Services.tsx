@@ -9,9 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type Service = { id: number; name: string; description?: string; price_brl: number; payment_type: string; installments_months: number; down_payment: number };
-type Client = { id: number; full_name: string };
+type Client = { id: number; full_name: string; photo?: string };
 type Assignment = {
   id: number;
   client_id: number;
@@ -45,7 +48,11 @@ const ServicesPage: React.FC = () => {
         fetch(`${API_URL}/api/client-services`, { credentials: "include" }).then(r => r.json()),
       ]);
       setServices((sv?.services ?? []) as Service[]);
-      setClients(((cl?.clients ?? []) as any[]).map(c => ({ id: Number(c.id), full_name: String(c.full_name) })));
+      setClients(((cl?.clients ?? []) as any[]).map(c => ({
+        id: Number(c.id),
+        full_name: String(c.full_name),
+        photo: c.profile_photo_path ? String(c.profile_photo_path) : ""
+      })));
       setAssignments((asg?.assignments ?? []) as Assignment[]);
     } catch {
       toast.error("Falha ao carregar dados de serviços.");
@@ -150,10 +157,13 @@ const ServicesPage: React.FC = () => {
     await loadAll();
   };
 
-  // Atualizar status/discount da lista principal
+  // Estados para abas e edição/exclusão de vínculos
+  const [tab, setTab] = React.useState<"catalog" | "clients">("clients");
+  const [editAssignment, setEditAssignment] = React.useState<Assignment | null>(null);
+  const [deleteAssignmentTarget, setDeleteAssignmentTarget] = React.useState<Assignment | null>(null);
+
   const updateAssignment = async (row: Assignment) => {
-    const payload: any = { status: row.status, notes: row.notes ?? "" , discount_type: row.discount_type };
-    if (row.discount_type === "percent") payload.discount_percent = row.discount_percent; else payload.discount_value = row.discount_value;
+    const payload: any = { status: row.status };
     const res = await fetch(`${API_URL}/api/client-services/${row.id}`, {
       method: "PUT",
       credentials: "include",
@@ -161,20 +171,47 @@ const ServicesPage: React.FC = () => {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      toast.error("Falha ao atualizar vínculo.");
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao atualizar vínculo.");
       return;
     }
     toast.success("Vínculo atualizado.");
     await loadAll();
   };
 
-  const deleteAssignment = async (id: number) => {
-    const res = await fetch(`${API_URL}/api/client-services/${id}`, { method: "DELETE", credentials: "include" });
+  const saveAssignmentEdits = async (row: Assignment) => {
+    const payload: any = {
+      notes: row.notes ?? "",
+      discount_type: row.discount_type,
+    };
+    if (row.discount_type === "percent") payload.discount_percent = row.discount_percent;
+    else payload.discount_value = row.discount_value;
+    const res = await fetch(`${API_URL}/api/client-services/${row.id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     if (!res.ok) {
-      toast.error("Falha ao excluir vínculo.");
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao salvar alterações.");
+      return;
+    }
+    toast.success("Vínculo atualizado.");
+    setEditAssignment(null);
+    await loadAll();
+  };
+
+  const confirmDeleteAssignment = async () => {
+    if (!deleteAssignmentTarget) return;
+    const res = await fetch(`${API_URL}/api/client-services/${deleteAssignmentTarget.id}`, { method: "DELETE", credentials: "include" });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao excluir vínculo.");
       return;
     }
     toast.success("Vínculo excluído.");
+    setDeleteAssignmentTarget(null);
     await loadAll();
   };
 
@@ -193,9 +230,8 @@ const ServicesPage: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <CardTitle className="text-xl md:text-2xl">Serviços</CardTitle>
-
               <div className="flex items-center gap-2">
-                {/* Botão Cadastrar */}
+                {/* Cadastrar novo serviço (fica acessível na aba Catálogo) */}
                 <Dialog open={openNewService} onOpenChange={setOpenNewService}>
                   <DialogTrigger asChild>
                     <Button className="bg-white/20 text-white hover:bg-white/25">Cadastrar Serviço</Button>
@@ -248,21 +284,7 @@ const ServicesPage: React.FC = () => {
                   </DialogContent>
                 </Dialog>
 
-                {/* Botão Gerenciar Serviços */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="bg-white/20 text-white hover:bg-white/25">Gerenciar Serviços</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
-                    <DialogHeader>
-                      <DialogTitle>Catálogo</DialogTitle>
-                      <DialogDescription className="text-white/80">Filtre, edite ou exclua serviços.</DialogDescription>
-                    </DialogHeader>
-                    <ServiceManager services={services} onUpdate={updateService} onDelete={deleteService} />
-                  </DialogContent>
-                </Dialog>
-
-                {/* Botão vincular */}
+                {/* Vincular serviço a cliente (fica útil em ambas as abas) */}
                 <Dialog open={openAssign} onOpenChange={setOpenAssign}>
                   <DialogTrigger asChild>
                     <Button className="bg-white/20 text-white hover:bg-white/25">Vincular Serviço a Cliente</Button>
@@ -291,10 +313,6 @@ const ServicesPage: React.FC = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Observação</Label>
-                        <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observações do vínculo (opcional)" />
-                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
                           <Label>Tipo de desconto</Label>
@@ -310,6 +328,10 @@ const ServicesPage: React.FC = () => {
                           <Label>{discountType === "percent" ? "Desconto (%)" : "Desconto (R$)"}</Label>
                           <Input type="number" min={0} step={discountType === "percent" ? 1 : 0.01} value={discount} onChange={(e) => setDiscount(Number(e.target.value || 0))} />
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Observação</Label>
+                        <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observações do vínculo (opcional)" />
                       </div>
                       <div className="rounded-md border border-white/20 p-3">
                         <div className="text-sm">Resumo</div>
@@ -330,25 +352,187 @@ const ServicesPage: React.FC = () => {
           </CardHeader>
 
           <CardContent>
-            <div className="space-y-3">
-              {/* Indicadores e busca */}
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="bg-white/10 text-white">Serviços cadastrados: {services.length}</Badge>
-                <Badge className="bg-white/20 text-white">Vínculos: {assignments.length}</Badge>
-                <Badge className="bg-white/20 text-white">Recorrentes: {services.filter(s => s.payment_type === "recorrente").length}</Badge>
-                <div className="ml-auto flex items-center gap-2">
-                  <Input
-                    placeholder="Pesquisar por cliente ou serviço..."
-                    className="w-64 bg-white/20 text-white placeholder:text-white/70 border-white/25"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-              </div>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "catalog" | "clients")}>
+              <TabsList className="bg-white/10">
+                <TabsTrigger value="clients" className="text-white">Serviços com clientes</TabsTrigger>
+                <TabsTrigger value="catalog" className="text-white">Catálogo de serviços</TabsTrigger>
+              </TabsList>
 
-              {/* Lista de serviços cadastrados resumida */}
-              <div>
-                <div className="text-sm font-medium mb-2">Catálogo de serviços</div>
+              <TabsContent value="clients" className="mt-4 space-y-3">
+                {/* Indicadores e busca */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="bg-white/10 text-white">Vínculos: {assignments.length}</Badge>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Input
+                      placeholder="Pesquisar por cliente ou serviço..."
+                      className="w-64 bg-white/20 text-white placeholder:text-white/70 border-white/25"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {filteredAssignments.map((a) => {
+                    const clientInfo = clients.find(c => c.id === a.client_id);
+                    const photoUrl = clientInfo?.photo ? `${API_URL}/${clientInfo.photo}` : null;
+                    const isActive = a.status === "ativo";
+                    return (
+                      <div key={a.id} className="rounded-xl border border-white/20 bg-white/10 p-3 text-white">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-12 h-12 ring-1 ring-white/30">
+                            {photoUrl ? (
+                              <AvatarImage src={photoUrl} alt={clientInfo?.full_name || a.client_name} />
+                            ) : (
+                              <AvatarFallback className="bg-white/20">{(clientInfo?.full_name || a.client_name || "?").slice(0,1).toUpperCase()}</AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold truncate">{a.service_name}</div>
+                                <div className="text-xs text-white/80 truncate">Cliente: {a.client_name}</div>
+                                <div className="text-xs text-white/80">
+                                  Forma: {a.payment_type}{a.payment_type === "parcelado" ? ` • Meses: ${a.installments_months} • Entrada: R$ ${a.down_payment.toFixed(2)}` : ""}
+                                </div>
+                                <div className="text-xs text-white/80">
+                                  Valor base: R$ {a.base_price.toFixed(2)} • Desconto: {a.discount_type === "percent" ? `${a.discount_percent}%` : `R$ ${a.discount_value.toFixed(2)}`}
+                                </div>
+                                {a.notes && <div className="text-xs text-white/80">Obs: {a.notes}</div>}
+                                <div className="text-sm font-semibold">Total: R$ {a.total_value.toFixed(2)}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs">Ativo</span>
+                                  <Switch checked={isActive} onCheckedChange={(checked) => updateAssignment({ ...a, status: checked ? "ativo" : "pausado" })} />
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  className="bg-white text-black hover:bg-white/90"
+                                  onClick={() => setEditAssignment(a)}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => setDeleteAssignmentTarget(a)}
+                                >
+                                  Excluir
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredAssignments.length === 0 && <div className="text-sm text-white/80">Nenhum serviço vinculado.</div>}
+                </div>
+
+                {/* Modal de edição de vínculo */}
+                <Dialog open={!!editAssignment} onOpenChange={(o) => { if (!o) setEditAssignment(null); }}>
+                  <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+                    <DialogHeader>
+                      <DialogTitle>Editar vínculo</DialogTitle>
+                      <DialogDescription className="text-white/80">Atualize desconto e observação.</DialogDescription>
+                    </DialogHeader>
+                    {editAssignment && (
+                      <div className="space-y-3">
+                        <div className="text-sm">Cliente: {editAssignment.client_name}</div>
+                        <div className="text-sm">Serviço: {editAssignment.service_name}</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label>Tipo de desconto</Label>
+                            <Select
+                              value={editAssignment.discount_type}
+                              onValueChange={(v) => setEditAssignment({ ...editAssignment, discount_type: v as "percent" | "value" })}
+                            >
+                              <SelectTrigger className="bg-white text-black"><SelectValue /></SelectTrigger>
+                              <SelectContent className="bg-white text-black">
+                                <SelectItem value="percent">%</SelectItem>
+                                <SelectItem value="value">R$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{editAssignment.discount_type === "percent" ? "Desconto (%)" : "Desconto (R$)"}</Label>
+                            {editAssignment.discount_type === "percent" ? (
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={editAssignment.discount_percent}
+                                onChange={(e) => setEditAssignment({ ...editAssignment, discount_percent: Number(e.target.value || 0) })}
+                                className="bg-white text-black"
+                              />
+                            ) : (
+                              <Input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={editAssignment.discount_value}
+                                onChange={(e) => setEditAssignment({ ...editAssignment, discount_value: Number(e.target.value || 0) })}
+                                className="bg-white text-black"
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Observação</Label>
+                          <Input
+                            value={editAssignment.notes || ""}
+                            onChange={(e) => setEditAssignment({ ...editAssignment, notes: e.target.value })}
+                            className="bg-white text-black"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setEditAssignment(null)}>Cancelar</Button>
+                          <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white" onClick={() => saveAssignmentEdits(editAssignment)}>Salvar</Button>
+                        </div>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+
+                {/* Confirmação de exclusão */}
+                <Dialog open={!!deleteAssignmentTarget} onOpenChange={(o) => { if (!o) setDeleteAssignmentTarget(null); }}>
+                  <DialogContent className="sm:max-w-md rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+                    <DialogHeader>
+                      <DialogTitle>Excluir vínculo</DialogTitle>
+                      <DialogDescription className="text-white/80">
+                        Tem certeza que deseja excluir o vínculo do cliente {deleteAssignmentTarget?.client_name} com {deleteAssignmentTarget?.service_name}? Esta ação não pode ser desfeita.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setDeleteAssignmentTarget(null)}>Cancelar</Button>
+                      <Button variant="destructive" onClick={confirmDeleteAssignment}>Excluir</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </TabsContent>
+
+              <TabsContent value="catalog" className="mt-4 space-y-3">
+                {/* Indicadores rápidos */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="bg-white/10 text-white">Serviços cadastrados: {services.length}</Badge>
+                  <Badge className="bg-white/20 text-white">Recorrentes: {services.filter(s => s.payment_type === "recorrente").length}</Badge>
+                </div>
+
+                {/* Botão Gerenciar Serviços */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="bg-white/20 text-white hover:bg-white/25">Gerenciar Serviços</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+                    <DialogHeader>
+                      <DialogTitle>Catálogo</DialogTitle>
+                      <DialogDescription className="text-white/80">Filtre, edite ou exclua serviços.</DialogDescription>
+                    </DialogHeader>
+                    <ServiceManager services={services} onUpdate={updateService} onDelete={deleteService} />
+                  </DialogContent>
+                </Dialog>
+
+                {/* Lista resumida de serviços */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {services.map((s) => (
                     <div key={s.id} className="rounded-xl border border-white/20 bg-white/10 p-3 text-white">
@@ -362,91 +546,14 @@ const ServicesPage: React.FC = () => {
                         <div className="text-xs text-white/80">Meses: {s.installments_months} • Entrada: R$ {s.down_payment.toFixed(2)}</div>
                       )}
                       <div className="mt-2 flex items-center gap-2">
-                        <Button
-                          variant="destructive"
-                          onClick={() => deleteService(s.id)}
-                        >
-                          Excluir
-                        </Button>
+                        <Button variant="destructive" onClick={() => deleteService(s.id)}>Excluir</Button>
                       </div>
                     </div>
                   ))}
                   {services.length === 0 && <div className="text-sm text-white/80">Nenhum serviço cadastrado.</div>}
                 </div>
-              </div>
-
-              {/* Lista principal de vínculos cliente-serviço */}
-              <div>
-                <div className="text-sm font-medium mb-2">Serviços com clientes</div>
-                <div className="grid grid-cols-1 gap-2">
-                  {filteredAssignments.map((a) => (
-                    <div key={a.id} className="rounded-xl border border-white/20 bg-white/10 p-3 text-white">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="font-semibold truncate">{a.service_name}</div>
-                          <div className="text-xs text-white/80 truncate">Cliente: {a.client_name}</div>
-                          <div className="text-xs text-white/80">
-                            Forma: {a.payment_type}{a.payment_type === "parcelado" ? ` • Meses: ${a.installments_months} • Entrada: R$ ${a.down_payment.toFixed(2)}` : ""}
-                          </div>
-                          <div className="text-xs text-white/80">
-                            Valor base: R$ {a.base_price.toFixed(2)} • Desconto: {a.discount_type === "percent" ? `${a.discount_percent}%` : `R$ ${a.discount_value.toFixed(2)}`}
-                          </div>
-                          {a.notes && <div className="text-xs text-white/80">Obs: {a.notes}</div>}
-                          <div className="text-sm font-semibold">Total: R$ {a.total_value.toFixed(2)}</div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Select value={a.status} onValueChange={(v) => updateAssignment({ ...a, status: v as Assignment["status"] })}>
-                            <SelectTrigger className="bg-white text-black"><SelectValue /></SelectTrigger>
-                            <SelectContent className="bg-white text-black">
-                              <SelectItem value="ativo">Ativo</SelectItem>
-                              <SelectItem value="pausado">Pausado</SelectItem>
-                              <SelectItem value="cancelado">Cancelado</SelectItem>
-                              <SelectItem value="aguardo">Em aguardo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select value={a.discount_type} onValueChange={(v) => updateAssignment({ ...a, discount_type: v as "percent" | "value" })}>
-                            <SelectTrigger className="bg-white text-black"><SelectValue /></SelectTrigger>
-                            <SelectContent className="bg-white text-black">
-                              <SelectItem value="percent">%</SelectItem>
-                              <SelectItem value="value">R$</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {a.discount_type === "percent" ? (
-                            <Input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={a.discount_percent}
-                              onChange={(e) => updateAssignment({ ...a, discount_percent: Number(e.target.value || 0) })}
-                              className="w-24 bg-white text-black"
-                              title="Desconto (%)"
-                            />
-                          ) : (
-                            <Input
-                              type="number"
-                              min={0}
-                              step={0.01}
-                              value={a.discount_value}
-                              onChange={(e) => updateAssignment({ ...a, discount_value: Number(e.target.value || 0) })}
-                              className="w-24 bg-white text-black"
-                              title="Desconto (R$)"
-                            />
-                          )}
-                          <Input
-                            value={a.notes || ""}
-                            onChange={(e) => updateAssignment({ ...a, notes: e.target.value })}
-                            className="w-40 bg-white text-black"
-                            placeholder="Obs."
-                          />
-                          <Button variant="destructive" onClick={() => deleteAssignment(a.id)}>Excluir</Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {filteredAssignments.length === 0 && <div className="text-sm text-white/80">Nenhum serviço vinculado.</div>}
-                </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

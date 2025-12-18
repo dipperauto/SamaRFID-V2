@@ -1,0 +1,2 @@
+id,client_id,client_name,service_id,service_name,payment_type,installments_months,down_payment,base_price,discount_percent,discount_value,discount_type,total_value,status,notes
+1,1,José Ricardo Barros da Silva,1,Mensalidade,recorrente,0,0.0,350.0,0.0,0.0,percent,350.0,ativo,Mensalidade de Serviços
