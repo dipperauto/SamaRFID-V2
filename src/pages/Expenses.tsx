@@ -21,6 +21,7 @@ type Expense = {
   down_payment: number;
   status: "ativo" | "inativo";
   created_at: string;
+  due_date?: string;
 };
 
 type FileItem = { name: string; url: string; size_bytes: number };
@@ -67,13 +68,14 @@ const ExpensesPage: React.FC = () => {
   const [ptype, setPtype] = React.useState<"avista" | "parcelado" | "recorrente">("avista");
   const [months, setMonths] = React.useState<number>(0);
   const [down, setDown] = React.useState<number>(0);
+  const [dueDate, setDueDate] = React.useState<string>("");
 
   const saveExpense = async () => {
     if (!name.trim() || price <= 0) {
       toast.error("Informe nome e valor.");
       return;
     }
-    const payload = { name, description, price_brl: price, payment_type: ptype, installments_months: months, down_payment: down, status: "ativo" };
+    const payload = { name, description, price_brl: price, payment_type: ptype, installments_months: months, down_payment: down, status: "ativo", due_date: dueDate };
     const res = await fetch(`${API_URL}/api/expenses`, {
       method: "POST",
       credentials: "include",
@@ -87,7 +89,7 @@ const ExpensesPage: React.FC = () => {
     }
     toast.success("Gasto cadastrado.");
     setOpenNew(false);
-    setName(""); setDescription(""); setPrice(0); setPtype("avista"); setMonths(0); setDown(0);
+    setName(""); setDescription(""); setPrice(0); setPtype("avista"); setMonths(0); setDown(0); setDueDate("");
     await loadExpenses();
   };
 
@@ -216,6 +218,10 @@ const ExpensesPage: React.FC = () => {
                           </div>
                         </div>
                       )}
+                      <div className="space-y-2">
+                        <Label>Vencimento</Label>
+                        <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                      </div>
                       <div className="flex justify-end">
                         <Button onClick={saveExpense} className="bg-[#3b82f6] hover:bg-[#2563eb] text-white">Salvar</Button>
                       </div>

@@ -19,6 +19,7 @@ CSV_FIELDS = [
     "down_payment",          # para parcelado
     "status",                # ativo | inativo
     "created_at",            # ISO timestamp
+    "due_date",              # ADDED: vencimento
 ]
 
 STATUS_VALUES = {"ativo", "inativo"}
@@ -55,6 +56,7 @@ def _ensure_csv():
                     "down_payment": row.get("down_payment", "0"),
                     "status": row.get("status", "ativo"),
                     "created_at": row.get("created_at", ""),
+                    "due_date": row.get("due_date", ""),  # migração suave
                 })
 
 def _next_id() -> int:
@@ -87,10 +89,11 @@ def get_all_expenses() -> List[Dict]:
                 "down_payment": float(row.get("down_payment", "0") or 0),
                 "status": row.get("status", "ativo"),
                 "created_at": row.get("created_at", "") or "",
+                "due_date": row.get("due_date", "") or "",
             })
     return out
 
-def add_expense(name: str, description: str, price_brl: float, payment_type: str, installments_months: int, down_payment: float, status: str = "ativo") -> Dict:
+def add_expense(name: str, description: str, price_brl: float, payment_type: str, installments_months: int, down_payment: float, status: str = "ativo", due_date: str = "") -> Dict:
     _ensure_csv()
     eid = _next_id()
     created_at = datetime.utcnow().isoformat()
@@ -110,6 +113,7 @@ def add_expense(name: str, description: str, price_brl: float, payment_type: str
             "down_payment": str(down_payment or 0),
             "status": status,
             "created_at": created_at,
+            "due_date": due_date or "",
         })
     return {
         "id": eid,
@@ -121,9 +125,10 @@ def add_expense(name: str, description: str, price_brl: float, payment_type: str
         "down_payment": float(down_payment or 0),
         "status": status,
         "created_at": created_at,
+        "due_date": due_date or "",
     }
 
-def update_expense(expense_id: int, name: Optional[str] = None, description: Optional[str] = None, price_brl: Optional[float] = None, payment_type: Optional[str] = None, installments_months: Optional[int] = None, down_payment: Optional[float] = None, status: Optional[str] = None) -> Optional[Dict]:
+def update_expense(expense_id: int, name: Optional[str] = None, description: Optional[str] = None, price_brl: Optional[float] = None, payment_type: Optional[str] = None, installments_months: Optional[int] = None, down_payment: Optional[float] = None, status: Optional[str] = None, due_date: Optional[str] = None) -> Optional[Dict]:
     _ensure_csv()
     updated = None
     rows = []
@@ -141,6 +146,7 @@ def update_expense(expense_id: int, name: Optional[str] = None, description: Opt
                     "down_payment": str(down_payment if down_payment is not None else float(row.get("down_payment", "0") or 0)),
                     "status": (status if status is not None and status in STATUS_VALUES else row.get("status", "ativo")),
                     "created_at": row.get("created_at", ""),
+                    "due_date": (due_date if due_date is not None else row.get("due_date", "")) or "",
                 }
                 rows.append(new_row)
                 updated = {
@@ -153,6 +159,7 @@ def update_expense(expense_id: int, name: Optional[str] = None, description: Opt
                     "down_payment": float(new_row["down_payment"]),
                     "status": new_row["status"],
                     "created_at": new_row["created_at"],
+                    "due_date": new_row["due_date"],
                 }
             else:
                 rows.append(row)

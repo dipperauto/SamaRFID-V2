@@ -5,7 +5,7 @@ from storage_clients import get_all_clients
 from storage_services import get_all_services
 
 ASSIGN_CSV_PATH = os.path.join(os.path.dirname(__file__), "client_services.csv")
-CSV_FIELDS = ["id", "client_id", "client_name", "service_id", "service_name", "payment_type", "installments_months", "down_payment", "base_price", "discount_percent", "discount_value", "discount_type", "total_value", "status", "notes"]
+CSV_FIELDS = ["id", "client_id", "client_name", "service_id", "service_name", "payment_type", "installments_months", "down_payment", "base_price", "discount_percent", "discount_value", "discount_type", "total_value", "status", "notes", "start_due_date"]
 
 STATUS_VALUES = ["ativo", "pausado", "cancelado", "aguardo"]
 
@@ -48,6 +48,7 @@ def _ensure_csv():
           "total_value": row.get("total_value", "0"),
           "status": row.get("status", "ativo"),
           "notes": row.get("notes", ""),
+          "start_due_date": row.get("start_due_date", ""),
         })
 
 def _next_id() -> int:
@@ -86,10 +87,11 @@ def list_assignments() -> List[Dict]:
         "total_value": float(row.get("total_value", "0") or 0),
         "status": row.get("status", "ativo"),
         "notes": row.get("notes", "") or "",
+        "start_due_date": row.get("start_due_date", "") or "",
       })
   return out
 
-def add_assignment(client_id: int, service_id: int, discount_percent: float = 0.0, notes: str = "", discount_type: str = "percent", discount_value: float = 0.0) -> Dict:
+def add_assignment(client_id: int, service_id: int, discount_percent: float = 0.0, notes: str = "", discount_type: str = "percent", discount_value: float = 0.0, start_due_date: str = "") -> Dict:
   _ensure_csv()
   clients = get_all_clients()
   services = get_all_services()
@@ -125,6 +127,7 @@ def add_assignment(client_id: int, service_id: int, discount_percent: float = 0.
       "total_value": str(total),
       "status": "ativo",
       "notes": notes or "",
+      "start_due_date": start_due_date or "",
     })
   return {
     "id": aid,
@@ -142,9 +145,10 @@ def add_assignment(client_id: int, service_id: int, discount_percent: float = 0.
     "total_value": total,
     "status": "ativo",
     "notes": notes or "",
+    "start_due_date": start_due_date or "",
   }
 
-def update_assignment(assignment_id: int, status: Optional[str] = None, discount_percent: Optional[float] = None, notes: Optional[str] = None, discount_type: Optional[str] = None, discount_value: Optional[float] = None) -> Optional[Dict]:
+def update_assignment(assignment_id: int, status: Optional[str] = None, discount_percent: Optional[float] = None, notes: Optional[str] = None, discount_type: Optional[str] = None, discount_value: Optional[float] = None, start_due_date: Optional[str] = None) -> Optional[Dict]:
   _ensure_csv()
   updated = None
   rows = []
@@ -182,6 +186,7 @@ def update_assignment(assignment_id: int, status: Optional[str] = None, discount
           "total_value": str(total),
           "status": new_status,
           "notes": (notes if notes is not None else row.get("notes", "")) or "",
+          "start_due_date": (start_due_date if start_due_date is not None else row.get("start_due_date", "")) or "",
         }
         rows.append(new_row)
         updated = {
@@ -200,6 +205,7 @@ def update_assignment(assignment_id: int, status: Optional[str] = None, discount
           "total_value": float(new_row["total_value"]),
           "status": new_row["status"],
           "notes": new_row["notes"],
+          "start_due_date": new_row["start_due_date"],
         }
       else:
         rows.append(row)

@@ -13,6 +13,7 @@ import PageTransitionOverlay from "@/components/PageTransitionOverlay";
 import ClientsPage from "./pages/Clients";
 import ServicesPage from "./pages/Services";
 import ExpensesPage from "./pages/Expenses";
+import ControlePage from "./pages/Controle";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
+            <Route path="/control" element={<ControlePage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

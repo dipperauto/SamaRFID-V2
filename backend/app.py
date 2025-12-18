@@ -206,10 +206,9 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 def default_allowed_pages(role: Optional[str]) -> List[str]:
-    # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
-      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services", "expenses"]
-    return ["home", "teste", "clients", "kanban", "events", "parametros", "services", "expenses"]
+      return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services", "expenses", "control"]
+    return ["home", "teste", "clients", "kanban", "events", "parametros", "services", "expenses", "control"]
 
 def _require_admin(request: Request):
     token = request.cookies.get("session")
@@ -1212,9 +1211,10 @@ def expenses_add(payload: Dict[str, Any], request: Request):
     installments_months = int(payload.get("installments_months") or 0)
     down_payment = float(payload.get("down_payment") or 0)
     status = str(payload.get("status") or "ativo")
+    due_date = str(payload.get("due_date") or "").strip()
     if not name or price_brl <= 0:
         raise HTTPException(status_code=400, detail="Nome e valor do gasto são obrigatórios.")
-    created = add_expense(name, description, price_brl, payment_type, installments_months, down_payment, status if status in ("ativo", "inativo") else "ativo")
+    created = add_expense(name, description, price_brl, payment_type, installments_months, down_payment, status if status in ("ativo", "inativo") else "ativo", due_date)
     return {"expense": created}
 
 @app.put("/expenses/{expense_id}")
@@ -1231,6 +1231,7 @@ def expenses_update(expense_id: int, payload: Dict[str, Any], request: Request):
         installments_months=(payload.get("installments_months") if payload.get("installments_months") is not None else None),
         down_payment=(payload.get("down_payment") if payload.get("down_payment") is not None else None),
         status=(payload.get("status") if payload.get("status") is not None else None),
+        due_date=(payload.get("due_date") if payload.get("due_date") is not None else None),
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Gasto não encontrado.")
@@ -1301,7 +1302,8 @@ def client_services_add(payload: Dict[str, Any], request: Request):
     notes = str(payload.get("notes") or "")[:500]
     discount_type = str(payload.get("discount_type") or "percent")
     discount_value = float(payload.get("discount_value") or 0)
-    created = add_assignment(client_id, service_id, discount_percent, notes, discount_type, discount_value)
+    start_due_date = str(payload.get("start_due_date") or "").strip()
+    created = add_assignment(client_id, service_id, discount_percent, notes, discount_type, discount_value, start_due_date)
     return {"assignment": created}
 
 @app.put("/client-services/{assignment_id}")
@@ -1314,7 +1316,8 @@ def client_services_update(assignment_id: int, payload: Dict[str, Any], request:
                                 discount_percent=(payload.get("discount_percent") if payload.get("discount_percent") is not None else None),
                                 notes=(payload.get("notes") if payload.get("notes") is not None else None),
                                 discount_type=(payload.get("discount_type") if payload.get("discount_type") is not None else None),
-                                discount_value=(payload.get("discount_value") if payload.get("discount_value") is not None else None))
+                                discount_value=(payload.get("discount_value") if payload.get("discount_value") is not None else None),
+                                start_due_date=(payload.get("start_due_date") if payload.get("start_due_date") is not None else None))
     if not updated:
         raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
     return {"assignment": updated}
@@ -1328,6 +1331,41 @@ def client_services_delete(assignment_id: int, request: Request):
     if not ok:
         raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
     return {"success": True}
+
+# === Controle financeiro ===
+from storage_control import list_month_items, record_payment, month_summary
+
+@app.get("/control")
+def control_list(request: Request, month: Optional[str] = None, view: Optional[str] = "expenses"):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    m = month or datetime.utcnow().strftime("%Y-%m")
+    v = view if view in ("expenses", "services") else "expenses"
+    items = list_month_items(m, v)
+    return {"month": m, "view": v, "count": len(items), "items": items}
+
+@app.post("/control/pay")
+def control_pay(payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    tp = str(payload.get("type") or "")
+    ref_id = int(payload.get("ref_id") or 0)
+    due_date = str(payload.get("due_date") or "")
+    amount = float(payload.get("amount") or 0)
+    if not tp or ref_id <= 0 or not due_date or amount <= 0:
+        raise HTTPException(status_code=400, detail="Campos obrigatórios: type, ref_id, due_date, amount.")
+    res = record_payment(tp, ref_id, due_date, amount)
+    return res
+
+@app.get("/control/summary")
+def control_summary(request: Request, month: Optional[str] = None):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    m = month or datetime.utcnow().strftime("%Y-%m")
+    return month_summary(m)
 
 @app.post("/clients/{client_id}/delete")
 def clients_delete_id_post(client_id: int, request: Request):

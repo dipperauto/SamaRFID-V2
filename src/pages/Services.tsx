@@ -125,6 +125,7 @@ const ServicesPage: React.FC = () => {
   const [discount, setDiscount] = React.useState<number>(0);
   const [discountType, setDiscountType] = React.useState<"percent" | "value">("percent");
   const [notes, setNotes] = React.useState<string>("");
+  const [startDueDate, setStartDueDate] = React.useState<string>("");
 
   const currentService = React.useMemo(() => services.find(s => s.id === assignServiceId) || null, [services, assignServiceId]);
   const summaryTotal = React.useMemo(() => {
@@ -139,7 +140,7 @@ const ServicesPage: React.FC = () => {
       toast.error("Selecione cliente e serviço.");
       return;
     }
-    const body: any = { client_id: assignClientId, service_id: assignServiceId, notes, discount_type: discountType };
+    const body: any = { client_id: assignClientId, service_id: assignServiceId, notes, discount_type: discountType, start_due_date: startDueDate };
     if (discountType === "percent") body.discount_percent = discount; else body.discount_value = discount;
     const res = await fetch(`${API_URL}/api/client-services`, {
       method: "POST",
@@ -153,7 +154,7 @@ const ServicesPage: React.FC = () => {
     }
     toast.success("Serviço vinculado ao cliente.");
     setOpenAssign(false);
-    setAssignClientId(0); setAssignServiceId(0); setDiscount(0); setDiscountType("percent"); setNotes("");
+    setAssignClientId(0); setAssignServiceId(0); setDiscount(0); setDiscountType("percent"); setNotes(""); setStartDueDate("");
     await loadAll();
   };
 
@@ -332,6 +333,10 @@ const ServicesPage: React.FC = () => {
                       <div className="space-y-2">
                         <Label>Observação</Label>
                         <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observações do vínculo (opcional)" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Primeiro vencimento</Label>
+                        <Input type="date" value={startDueDate} onChange={(e) => setStartDueDate(e.target.value)} />
                       </div>
                       <div className="rounded-md border border-white/20 p-3">
                         <div className="text-sm">Resumo</div>
