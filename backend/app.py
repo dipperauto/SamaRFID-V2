@@ -564,6 +564,23 @@ def clients_delete_post(request: Request, payload: Dict[str, Any] = Body(...)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
     return {"success": True, "message": "Cliente excluído com sucesso."}
 
+# Alias adicional sem conflito para exclusão de clientes via POST
+@app.post("/clients/actions/delete")
+def clients_delete_action(request: Request, payload: dict = Body(...)):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    try:
+        client_id = int(payload.get("client_id") or 0)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="client_id inválido.")
+    if client_id <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="client_id obrigatório.")
+    ok = delete_client(client_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
+    return {"success": True, "message": "Cliente excluído com sucesso."}
+
 # ---------- Anexos por cliente ----------
 
 @app.get("/clients/{client_id}/files", response_model=ListClientFilesResponse)
