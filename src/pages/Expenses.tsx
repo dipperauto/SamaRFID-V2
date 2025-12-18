@@ -276,6 +276,7 @@ const ExpensesPage: React.FC = () => {
                           {e.payment_type === "parcelado" ? ` • Meses: ${e.installments_months} • Entrada: R$ ${e.down_payment.toFixed(2)}` : ""}
                         </div>
                         <div className="text-xs text-white/80">Data: {e.created_at?.slice(0, 19).replace("T", " ")}</div>
+                        {e.due_date && <div className="text-xs text-white/80">Vencimento: {e.due_date}</div>}
                         <div className="mt-1 flex items-center gap-2">
                           <Button
                             variant="outline"
@@ -411,6 +412,10 @@ const ExpensesPage: React.FC = () => {
                   </div>
                 </div>
               )}
+              <div className="space-y-2">
+                <Label>Vencimento</Label>
+                <Input type="date" value={editExp.due_date || ""} onChange={(e) => setEditExp({ ...editExp, due_date: e.target.value })} className="bg-white text-black" />
+              </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setEditExp(null)}>Cancelar</Button>
                 <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white" onClick={saveEdits}>Salvar</Button>

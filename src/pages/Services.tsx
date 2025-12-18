@@ -31,6 +31,7 @@ type Assignment = {
   total_value: number;
   status: "ativo" | "pausado" | "cancelado" | "aguardo";
   notes?: string;
+  start_due_date?: string;
 };
 
 const ServicesPage: React.FC = () => {
@@ -185,6 +186,7 @@ const ServicesPage: React.FC = () => {
     const payload: any = {
       notes: row.notes ?? "",
       discount_type: row.discount_type,
+      start_due_date: row.start_due_date ?? "",
     };
     if (row.discount_type === "percent") payload.discount_percent = row.discount_percent;
     else payload.discount_value = row.discount_value;
@@ -491,6 +493,15 @@ const ServicesPage: React.FC = () => {
                             className="bg-white text-black"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label>Primeiro vencimento</Label>
+                          <Input
+                            type="date"
+                            value={editAssignment.start_due_date || ""}
+                            onChange={(e) => setEditAssignment({ ...editAssignment, start_due_date: e.target.value })}
+                            className="bg-white text-black"
+                          />
+                        </div>
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setEditAssignment(null)}>Cancelar</Button>
                           <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white" onClick={() => saveAssignmentEdits(editAssignment)}>Salvar</Button>
@@ -538,7 +549,7 @@ const ServicesPage: React.FC = () => {
                   </DialogContent>
                 </Dialog>
 
-                {/* Lista resumida de serviços */}
+                {/* Lista resumida de serviços com edição por item */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {services.map((s) => (
                     <div key={s.id} className="rounded-xl border border-white/20 bg-white/10 p-3 text-white">
@@ -552,6 +563,13 @@ const ServicesPage: React.FC = () => {
                         <div className="text-xs text-white/80">Meses: {s.installments_months} • Entrada: R$ {s.down_payment.toFixed(2)}</div>
                       )}
                       <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          className="bg-white text-black hover:bg-white/90"
+                          onClick={() => setEditService(s)}
+                        >
+                          Editar
+                        </Button>
                         <Button variant="destructive" onClick={() => deleteService(s.id)}>Excluir</Button>
                       </div>
                     </div>
@@ -610,5 +628,60 @@ const ServiceManager: React.FC<{ services: Service[]; onUpdate: (s: Service) => 
     </div>
   );
 };
+
+// ADDED: Modal de edição individual para serviço (catálogo)
+<Dialog open={!!editService} onOpenChange={(o) => { if (!o) setEditService(null); }}>
+  <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+    <DialogHeader>
+      <DialogTitle>Editar Serviço</DialogTitle>
+      <DialogDescription className="text-white/80">Atualize os dados do serviço.</DialogDescription>
+    </DialogHeader>
+    {editService && (
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label>Nome</Label>
+          <Input value={editService.name} onChange={(e) => setEditService({ ...editService, name: e.target.value })} className="bg-white text-black" />
+        </div>
+        <div className="space-y-2">
+          <Label>Descrição</Label>
+          <Input value={editService.description || ""} onChange={(e) => setEditService({ ...editService, description: e.target.value })} className="bg-white text-black" />
+        </div>
+        <div className="space-y-2">
+          <Label>Valor (R$)</Label>
+          <Input type="number" min={0} step={0.01} value={editService.price_brl} onChange={(e) => setEditService({ ...editService, price_brl: Number(e.target.value || 0) })} className="bg-white text-black" />
+        </div>
+        <div className="space-y-2">
+          <Label>Forma de pagamento</Label>
+          <Select value={editService.payment_type} onValueChange={(v) => setEditService({ ...editService, payment_type: v })}>
+            <SelectTrigger className="bg-white text-black"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-white text-black">
+              <SelectItem value="avista">À vista</SelectItem>
+              <SelectItem value="parcelado">Parcelado</SelectItem>
+              <SelectItem value="recorrente">Recorrente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {editService.payment_type === "parcelado" && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label>Meses</Label>
+              <Input type="number" min={1} value={editService.installments_months} onChange={(e) => setEditService({ ...editService, installments_months: Number(e.target.value || 1) })} className="bg-white text-black" />
+            </div>
+            <div className="space-y-2">
+              <Label>Entrada (R$)</Label>
+              <Input type="number" min={0} step={0.01} value={editService.down_payment} onChange={(e) => setEditService({ ...editService, down_payment: Number(e.target.value || 0) })} className="bg-white text-black" />
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setEditService(null)}>Cancelar</Button>
+          <Button className="bg-[#3b82f6] hover:bg-[#2563eb] text-white" onClick={async () => { if (!editService) return; await updateService(editService); setEditService(null); }}>
+            Salvar
+          </Button>
+        </div>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
 
 export default ServicesPage;
