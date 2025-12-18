@@ -325,6 +325,48 @@ const ClientsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-gradient-to-b from-black/80 to-black/70 border border-white/30 ring-1 ring-white/20 backdrop-blur-3xl text-white">
+          <DialogHeader>
+            <DialogTitle>Excluir Cliente</DialogTitle>
+            <DialogDescription className="text-white/80">
+              Tem certeza que deseja excluir o cliente {deleteTarget?.full_name} (#{deleteTarget?.id})? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              className="text-black bg-white hover:bg-white/90"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const res = await fetch(`${API_URL}/api/clients/${deleteTarget.id}`, {
+                  method: "DELETE",
+                  credentials: "include",
+                });
+                if (!res.ok) {
+                  const detail = await res.json().catch(() => null);
+                  toast.error(detail?.detail ?? "Falha ao excluir cliente.");
+                  return;
+                }
+                toast.success("Cliente excluído com sucesso!");
+                setDeleteTarget(null);
+                await refetch();
+                queryClient.invalidateQueries({ queryKey: ["clients"] });
+              }}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
