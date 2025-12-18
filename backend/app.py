@@ -1087,13 +1087,14 @@ def services_add(payload: Dict[str, Any], request: Request):
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
     name = str(payload.get("name") or "").strip()
+    description = str(payload.get("description") or "").strip()
     price_brl = float(payload.get("price_brl") or 0)
     payment_type = str(payload.get("payment_type") or "avista")
     installments_months = int(payload.get("installments_months") or 0)
     down_payment = float(payload.get("down_payment") or 0)
-    if not name:
-        raise HTTPException(status_code=400, detail="Nome do serviço é obrigatório.")
-    created = add_service(name, price_brl, payment_type, installments_months, down_payment)
+    if not name or price_brl <= 0:
+        raise HTTPException(status_code=400, detail="Nome e valor do serviço são obrigatórios.")
+    created = add_service(name, price_brl, payment_type, installments_months, down_payment, description)
     return {"service": created}
 
 @app.put("/services/{service_id}")
@@ -1102,11 +1103,12 @@ def services_update(service_id: int, payload: Dict[str, Any], request: Request):
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
     updated = update_service(service_id,
-                             name=payload.get("name"),
-                             price_brl=payload.get("price_brl"),
-                             payment_type=payload.get("payment_type"),
-                             installments_months=payload.get("installments_months"),
-                             down_payment=payload.get("down_payment"))
+                             name=str(payload.get("name") or "") or None,
+                             price_brl=(payload.get("price_brl") if payload.get("price_brl") is not None else None),
+                             payment_type=str(payload.get("payment_type") or "") or None,
+                             installments_months=(payload.get("installments_months") if payload.get("installments_months") is not None else None),
+                             down_payment=(payload.get("down_payment") if payload.get("down_payment") is not None else None),
+                             description=str(payload.get("description") or "") or None)
     if not updated:
         raise HTTPException(status_code=404, detail="Serviço não encontrado.")
     return {"service": updated}
@@ -1139,7 +1141,10 @@ def client_services_add(payload: Dict[str, Any], request: Request):
     client_id = int(payload.get("client_id") or 0)
     service_id = int(payload.get("service_id") or 0)
     discount_percent = float(payload.get("discount_percent") or 0)
-    created = add_assignment(client_id, service_id, discount_percent)
+    notes = str(payload.get("notes") or "")[:500]
+    discount_type = str(payload.get("discount_type") or "percent")
+    discount_value = float(payload.get("discount_value") or 0)
+    created = add_assignment(client_id, service_id, discount_percent, notes, discount_type, discount_value)
     return {"assignment": created}
 
 @app.put("/client-services/{assignment_id}")
@@ -1149,7 +1154,10 @@ def client_services_update(assignment_id: int, payload: Dict[str, Any], request:
         raise HTTPException(status_code=401, detail="Não autenticado.")
     updated = update_assignment(assignment_id,
                                 status=payload.get("status"),
-                                discount_percent=payload.get("discount_percent"))
+                                discount_percent=(payload.get("discount_percent") if payload.get("discount_percent") is not None else None),
+                                notes=(payload.get("notes") if payload.get("notes") is not None else None),
+                                discount_type=(payload.get("discount_type") if payload.get("discount_type") is not None else None),
+                                discount_value=(payload.get("discount_value") if payload.get("discount_value") is not None else None))
     if not updated:
         raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
     return {"assignment": updated}
