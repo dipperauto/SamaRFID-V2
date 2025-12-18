@@ -206,6 +206,7 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 def default_allowed_pages(role: Optional[str]) -> List[str]:
+    # keys: "home","teste","clients","admin:add-user","users","kanban","events"
     if role == "administrador":
       return ["home", "teste", "clients", "admin:add-user", "users", "kanban", "events", "parametros", "services", "expenses", "control"]
     return ["home", "teste", "clients", "kanban", "events", "parametros", "services", "expenses", "control"]
@@ -1237,50 +1238,6 @@ def expenses_update(expense_id: int, payload: Dict[str, Any], request: Request):
         raise HTTPException(status_code=404, detail="Gasto não encontrado.")
     return {"expense": updated}
 
-@app.delete("/expenses/{expense_id}")
-def expenses_delete(expense_id: int, request: Request):
-    token = request.cookies.get("session")
-    if not token or not _verify_session_token(token):
-        raise HTTPException(status_code=401, detail="Não autenticado.")
-    ok = delete_expense(expense_id)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Gasto não encontrado.")
-    return {"success": True}
-
-# anexos por gasto
-@app.get("/expenses/{expense_id}/files")
-def expenses_files_list(expense_id: int, request: Request):
-    token = request.cookies.get("session")
-    if not token or not _verify_session_token(token):
-        raise HTTPException(status_code=401, detail="Não autenticado.")
-    files = list_expense_files(expense_id)
-    total = 0
-    try:
-        for f in files:
-            total += int(f.get("size_bytes") or 0)
-    except Exception:
-        pass
-    return {"files": files, "total_bytes": total}
-
-@app.post("/expenses/{expense_id}/files")
-async def expenses_file_upload(expense_id: int, request: Request, file: UploadFile = File(...)):
-    token = request.cookies.get("session")
-    if not token or not _verify_session_token(token):
-        raise HTTPException(status_code=401, detail="Não autenticado.")
-    content = await file.read()
-    name, size_bytes, url = save_expense_file(expense_id, file.filename, content)
-    return {"success": True, "file": {"name": name, "url": url, "size_bytes": size_bytes}}
-
-@app.delete("/expenses/{expense_id}/files/{filename}")
-def expenses_file_delete(expense_id: int, filename: str, request: Request):
-    token = request.cookies.get("session")
-    if not token or not _verify_session_token(token):
-        raise HTTPException(status_code=401, detail="Não autenticado.")
-    ok = delete_expense_file(expense_id, filename)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
-    return {"success": True}
-
 # === Vínculos Cliente-Serviço ===
 from storage_client_services import list_assignments, add_assignment, update_assignment, delete_assignment
 
@@ -1321,16 +1278,6 @@ def client_services_update(assignment_id: int, payload: Dict[str, Any], request:
     if not updated:
         raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
     return {"assignment": updated}
-
-@app.delete("/client-services/{assignment_id}")
-def client_services_delete(assignment_id: int, request: Request):
-    token = request.cookies.get("session")
-    if not token or not _verify_session_token(token):
-        raise HTTPException(status_code=401, detail="Não autenticado.")
-    ok = delete_assignment(assignment_id)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
-    return {"success": True}
 
 # === Controle financeiro ===
 from storage_control import list_month_items, record_payment, month_summary

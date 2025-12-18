@@ -60,7 +60,7 @@ const ControlePage: React.FC = () => {
     }
   }, [API_URL, month, view]);
 
-  React.useEffect(() => { loadData(); }, [loadData]);
+  React.useEffect(() => { loadData(); }, [loadData, month, view]);
 
   const prevMonth = () => {
     const [y, m] = month.split("-").map(Number);

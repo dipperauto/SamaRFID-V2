@@ -162,6 +162,7 @@ const ServicesPage: React.FC = () => {
   const [tab, setTab] = React.useState<"catalog" | "clients">("clients");
   const [editAssignment, setEditAssignment] = React.useState<Assignment | null>(null);
   const [deleteAssignmentTarget, setDeleteAssignmentTarget] = React.useState<Assignment | null>(null);
+  const [editService, setEditService] = React.useState<Service | null>(null);
 
   const updateAssignment = async (row: Assignment) => {
     const payload: any = { status: row.status };
