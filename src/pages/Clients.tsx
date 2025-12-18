@@ -347,14 +347,21 @@ const ClientsPage: React.FC = () => {
               variant="destructive"
               onClick={async () => {
                 if (!deleteTarget) return;
-                // 1) Tenta endpoint sem conflito
-                let res = await fetch(`${API_URL}/api/clients/actions/delete`, {
+                // 1) Tenta endpoint dedicado sem conflito
+                let res = await fetch(`${API_URL}/api/clients/${deleteTarget.id}/delete`, {
                   method: "POST",
                   credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ client_id: deleteTarget.id }),
                 });
-                // 2) Fallback: POST /clients/delete
+                // 2) Fallback: POST /clients/actions/delete
+                if (!res.ok) {
+                  res = await fetch(`${API_URL}/api/clients/actions/delete`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ client_id: deleteTarget.id }),
+                  });
+                }
+                // 3) Fallback: POST /clients/delete
                 if (!res.ok) {
                   res = await fetch(`${API_URL}/api/clients/delete`, {
                     method: "POST",
@@ -363,7 +370,7 @@ const ClientsPage: React.FC = () => {
                     body: JSON.stringify({ client_id: deleteTarget.id }),
                   });
                 }
-                // 3) Fallback: DELETE /clients/{id}
+                // 4) Fallback: DELETE clássico
                 if (!res.ok) {
                   res = await fetch(`${API_URL}/api/clients/${deleteTarget.id}`, {
                     method: "DELETE",

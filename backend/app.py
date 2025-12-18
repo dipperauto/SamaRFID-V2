@@ -1205,3 +1205,13 @@ def client_services_delete(assignment_id: int, request: Request):
     if not ok:
         raise HTTPException(status_code=404, detail="Vínculo não encontrado.")
     return {"success": True}
+
+@app.post("/clients/{client_id}/delete")
+def clients_delete_id_post(client_id: int, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado.")
+    ok = delete_client(client_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
+    return {"success": True, "message": "Cliente excluído com sucesso."}
