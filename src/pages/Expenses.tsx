@@ -235,10 +235,10 @@ const ExpensesPage: React.FC = () => {
                 <div className="flex items-center gap-2 ml-auto">
                   <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="bg-white/20 text-white" title="Início" />
                   <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-white/20 text-white" title="Fim" />
-                  <Select value={status} onValueChange={(v) => setStatus(v)}>
+                  <Select value={status ? status : "all"} onValueChange={(v) => setStatus(v === "all" ? "" : v)}>
                     <SelectTrigger className="bg-white text-black w-32"><SelectValue placeholder="Status" /></SelectTrigger>
                     <SelectContent className="bg-white text-black">
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="ativo">Ativo</SelectItem>
                       <SelectItem value="inativo">Inativo</SelectItem>
                     </SelectContent>
@@ -397,11 +397,11 @@ const ExpensesPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-2">
                     <Label>Parcelas (meses)</Label>
-                    <Input type="number" min={1} value={editExp.installments_months} onChange={(e) => setEditExp({ ...editExp, installments_months: Number(e.target.value || 1) })} className="bg-white text黑" />
+                    <Input type="number" min={1} value={editExp.installments_months} onChange={(e) => setEditExp({ ...editExp, installments_months: Number(e.target.value || 1) })} className="bg-white text-black" />
                   </div>
                   <div className="space-y-2">
                     <Label>Entrada (R$)</Label>
-                    <Input type="number" min={0} step={0.01} value={editExp.down_payment} onChange={(e) => setEditExp({ ...editExp, down_payment: Number(e.target.value || 0) })} className="bg-white text黑" />
+                    <Input type="number" min={0} step={0.01} value={editExp.down_payment} onChange={(e) => setEditExp({ ...editExp, down_payment: Number(e.target.value || 0) })} className="bg-white text-black" />
                   </div>
                 </div>
               )}
