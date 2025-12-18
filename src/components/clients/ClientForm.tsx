@@ -57,6 +57,44 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
     setValues((prev) => ({ ...prev, [k]: v as any }));
   };
 
+  // Mascara e detecção CPF/CNPJ
+  const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
+  const formatCPF = (digits: string) => {
+    const d = digits.slice(0, 11);
+    const p1 = d.slice(0, 3);
+    const p2 = d.slice(3, 6);
+    const p3 = d.slice(6, 9);
+    const p4 = d.slice(9, 11);
+    let out = p1;
+    if (p2) out += "." + p2;
+    if (p3) out += "." + p3;
+    if (p4) out += "-" + p4;
+    return out;
+  };
+  const formatCNPJ = (digits: string) => {
+    const d = digits.slice(0, 14);
+    const p1 = d.slice(0, 2);
+    const p2 = d.slice(2, 5);
+    const p3 = d.slice(5, 8);
+    const p4 = d.slice(8, 12);
+    const p5 = d.slice(12, 14);
+    let out = p1;
+    if (p2) out += "." + p2;
+    if (p3) out += "." + p3;
+    if (p4) out += "/" + p4;
+    if (p5) out += "-" + p5;
+    return out;
+  };
+  const formatCpfCnpj = (raw: string) => {
+    const digits = onlyDigits(raw);
+    if (digits.length <= 11) return formatCPF(digits);
+    return formatCNPJ(digits);
+  };
+  const handleDocChange = (raw: string) => {
+    const masked = formatCpfCnpj(raw);
+    setField("doc", masked);
+  };
+
   const countLines = (text: string) => (text ? text.split(/\r?\n/).length : 0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -104,9 +142,16 @@ const ClientForm: React.FC<Props> = ({ initial, readOnly = false, onSubmit, onCa
           <Input
             value={values.doc}
             disabled={readOnly}
-            onChange={(e) => setField("doc", e.target.value)}
-            placeholder="000.000.000-00 ou 00.000.000/0001-00"
+            onChange={(e) => handleDocChange(e.target.value)}
+            placeholder="000.000.000-00 ou 00.000.000/0000-00"
           />
+          <div className="text-xs text-gray-500">
+            {onlyDigits(values.doc).length === 0
+              ? "—"
+              : onlyDigits(values.doc).length > 11
+              ? "Detectado: CNPJ"
+              : "Detectado: CPF"}
+          </div>
         </div>
         <div className="space-y-2">
           <Label>E-mail</Label>
