@@ -1,6 +1,7 @@
 import csv
 import os
 import base64
+import time
 from typing import Optional, Dict, List, Tuple
 
 CLIENTS_CSV_PATH = os.environ.get(
@@ -111,7 +112,8 @@ def _save_profile_photo(basename_hint: str, photo_base64: Optional[str]) -> Opti
         except Exception:
             ext = "png"
     safe = _safe_filename(basename_hint)
-    file_path = os.path.join(MEDIA_CLIENTS_DIR, f"{safe}.{ext}")
+    unique = str(int(time.time() * 1000))
+    file_path = os.path.join(MEDIA_CLIENTS_DIR, f"{safe}_{unique}.{ext}")
     with open(file_path, "wb") as imgf:
         imgf.write(base64.b64decode(data_part))
     # retorna caminho acessível via /static
@@ -221,9 +223,20 @@ def update_client(
         reader = csv.DictReader(f)
         for row in reader:
             if row.get("id") == str(client_id):
-                new_photo_path = row.get("profile_photo_path", "")
+                old_photo_rel = row.get("profile_photo_path", "")
+                new_photo_path = old_photo_rel
                 if profile_photo_base64:
-                    new_photo_path = _save_profile_photo(f"client_{client_id}", profile_photo_base64) or new_photo_path
+                    new_photo_path = _save_profile_photo(f"client_{client_id}", profile_photo_base64) or old_photo_rel
+                    # remove foto antiga se diferente
+                    if old_photo_rel and new_photo_path and old_photo_rel != new_photo_path:
+                        try:
+                            if old_photo_rel.startswith("static/"):
+                                rel = old_photo_rel[len("static/"):]
+                                old_abs = os.path.join(MEDIA_ROOT, rel.replace("/", os.sep))
+                                if os.path.isfile(old_abs):
+                                    os.remove(old_abs)
+                        except Exception:
+                            pass
                 new_row = {
                     "id": str(client_id),
                     "full_name": full_name if full_name is not None else row.get("full_name", ""),
