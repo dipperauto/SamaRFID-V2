@@ -53,6 +53,8 @@ from storage_hierarchy import add_category as hierarchy_add_category, remove_cat
 # ADDED: assets & logs
 from storage_assets import list_assets as assets_list, add_asset as assets_add, update_asset as assets_update, delete_asset as assets_delete
 from storage_assets import list_categories as assets_list_categories, add_category as assets_add_category, remove_category as assets_remove_category
+// ADDED: import para buscar todos os ativos
+from storage_assets import get_all_assets_flat
 from storage_logs import append_log, list_logs as logs_list
 from models import Asset, AssetListResponse, AddAssetRequest, UpdateAssetRequest, CategoryListResponse, LogListResponse, LogItem
 
@@ -1454,7 +1456,12 @@ def hierarchy_delete_endpoint(node_id: str, request: Request):
 @app.get("/units/{unit_id}/assets", response_model=AssetListResponse)
 def unit_assets_list(unit_id: str, request: Request, q: Optional[str] = None, sort: Optional[str] = "name_asc"):
     _require_page_access(request, "hierarchy")
-    items = assets_list(unit_id)
+    # ADDED: endpoint para buscar todos os ativos
+    if unit_id == "all":
+        items = get_all_assets_flat()
+    else:
+        items = assets_list(unit_id)
+    # filtro q
     term = (q or "").strip().lower()
     if term:
         items = [it for it in items if term in (it.get("name","")+ " " + it.get("description","")+ " " + it.get("item_code","")).lower()]

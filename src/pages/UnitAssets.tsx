@@ -125,7 +125,7 @@ const UnitAssetsPage: React.FC = () => {
     try {
       // Se consolidado, busca todos os ativos de todas as unidades
       const endpoint = includeSubUnits
-        ? `${API_URL}/api/units/all/assets` // Endpoint hipotético, vamos simular no front por enquanto
+        ? `${API_URL}/api/units/all/assets`
         : `${API_URL}/api/units/${unitId}/assets`;
       
       const qs = new URLSearchParams({ q, sort });
@@ -134,33 +134,44 @@ const UnitAssetsPage: React.FC = () => {
       const data = await res.json();
       
       if (includeSubUnits) {
-        // Simulação no frontend: buscar hierarquia e filtrar
+        // Agora que o backend retorna tudo, apenas filtramos e mapeamos no frontend
         const hierarchyRes = await fetch(`${API_URL}/api/hierarchy`, { credentials: "include" });
         const hierarchyData = await hierarchyRes.json();
         const allNodes = hierarchyData.nodes || [];
         setAllUnits(allNodes);
 
-        const getSubUnitIds = (startId: string, nodes: any[]): string[] => {
-          const ids = [startId];
-          const map = new Map(nodes.map(n => [n.id, n]));
-          const queue = [startId];
+        const getSubUnitIds = (startId: string): string[] => {
+          const ids: string[] = [];
+          const queue: string[] = [startId];
+          const visited: Set<string> = new Set([startId]);
+          
+          const childrenMap = new Map<string, string[]>();
+          allNodes.forEach((node: any) => {
+            if (node.parentId) {
+              if (!childrenMap.has(node.parentId)) {
+                childrenMap.set(node.parentId, []);
+              }
+              childrenMap.get(node.parentId)!.push(node.id);
+            }
+          });
+
           while(queue.length > 0) {
-            const currentId = queue.shift();
-            const children = nodes.filter(n => n.parentId === currentId);
-            for (const child of children) {
-              ids.push(child.id);
-              queue.push(child.id);
+            const currentId = queue.shift()!;
+            ids.push(currentId);
+            const children = childrenMap.get(currentId) || [];
+            for (const childId of children) {
+              if (!visited.has(childId)) {
+                visited.add(childId);
+                queue.push(childId);
+              }
             }
           }
           return ids;
         };
         
-        const targetUnitIds = getSubUnitIds(unitId, allNodes);
+        const targetUnitIds = getSubUnitIds(unitId);
         
-        // Busca todos os ativos e filtra
-        const allAssetsRes = await fetch(`${API_URL}/api/units/all/assets`, { credentials: "include" });
-        const allAssetsData = await allAssetsRes.json();
-        const allAssets = (allAssetsData?.assets ?? []) as Asset[];
+        const allAssets = (data?.assets ?? []) as Asset[];
 
         const getUnitPath = (id: string, nodes: any[]): string => {
           const map = new Map(nodes.map(n => [n.id, n]));
