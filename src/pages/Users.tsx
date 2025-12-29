@@ -108,6 +108,11 @@ const UsersPage: React.FC = () => {
       password: values.password || undefined,
       profile_photo_base64: values.profile_photo_base64 || undefined,
       allowed_pages: values.allowed_pages,
+      cpf: values.cpf || undefined,
+      birth_date: values.birth_date || undefined,
+      rg: values.rg || undefined,
+      admission_date: values.admission_date || undefined,
+      sector: values.sector || undefined,
     };
     const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(selected.username)}`, {
       method: "PUT",
@@ -297,6 +302,11 @@ const UsersPage: React.FC = () => {
                 allowed_pages: selected.allowed_pages || [],
                 password: "",
                 profile_photo_base64: null,
+                cpf: (selected as any).cpf || "",
+                birth_date: (selected as any).birth_date || "",
+                rg: (selected as any).rg || "",
+                admission_date: (selected as any).admission_date || "",
+                sector: (selected as any).sector || "",
               }}
               isEdit
               onSubmit={handleEdit}

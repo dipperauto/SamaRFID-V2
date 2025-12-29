@@ -16,6 +16,12 @@ export type UserFormValues = {
   role: string;
   allowed_pages: string[];
   profile_photo_base64?: string | null;
+  // ADDED: extras opcionais
+  cpf?: string | null;
+  birth_date?: string | null;
+  rg?: string | null;
+  admission_date?: string | null;
+  sector?: string | null;
 };
 
 type Props = {
@@ -31,9 +37,15 @@ const UserForm: React.FC<Props> = ({ initial, readOnly = false, isEdit = false, 
     username: initial?.username ?? "",
     full_name: initial?.full_name ?? "",
     password: initial?.password ?? null,
-    role: (initial?.role === "usuario" ? "fotografo" : (initial?.role ?? "fotografo")),
+    role: initial?.role ?? "Gestor",
     allowed_pages: initial?.allowed_pages ?? [],
     profile_photo_base64: initial?.profile_photo_base64 ?? null,
+    // ADDED: extras
+    cpf: initial?.cpf ?? "",
+    birth_date: initial?.birth_date ?? "",
+    rg: initial?.rg ?? "",
+    admission_date: initial?.admission_date ?? "",
+    sector: initial?.sector ?? "",
   });
 
   const setField = (k: keyof UserFormValues, v: any) => {
@@ -102,10 +114,63 @@ const UserForm: React.FC<Props> = ({ initial, readOnly = false, isEdit = false, 
               <SelectValue placeholder="Selecione o papel" />
             </SelectTrigger>
             <SelectContent className="bg-white text-black">
-              <SelectItem value="administrador" className="text-black">Administrador</SelectItem>
-              <SelectItem value="fotografo" className="text-black">Fotógrafo</SelectItem>
+              <SelectItem value="Administrador" className="text-black">Administrador</SelectItem>
+              <SelectItem value="Gestor" className="text-black">Gestor</SelectItem>
+              <SelectItem value="Almoxarife" className="text-black">Almoxarife</SelectItem>
+              <SelectItem value="Auditor" className="text-black">Auditor</SelectItem>
+              <SelectItem value="Responsável" className="text-black">Responsável</SelectItem>
+              <SelectItem value="Supervisor" className="text-black">Supervisor</SelectItem>
+              <SelectItem value="Fotógrafo" className="text-black">Fotógrafo</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>CPF (opcional)</Label>
+          <Input
+            value={values.cpf || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("cpf", e.target.value)}
+            placeholder="000.000.000-00"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Data de Nascimento (opcional)</Label>
+          <Input
+            type="date"
+            value={values.birth_date || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("birth_date", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>RG (opcional)</Label>
+          <Input
+            value={values.rg || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("rg", e.target.value)}
+            placeholder="00.000.000-0"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Data de Admissão (opcional)</Label>
+          <Input
+            type="date"
+            value={values.admission_date || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("admission_date", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Setor (opcional)</Label>
+          <Input
+            value={values.sector || ""}
+            disabled={readOnly}
+            onChange={(e) => setField("sector", e.target.value)}
+            placeholder="Ex.: TI, Operações, Financeiro"
+          />
         </div>
       </div>
 

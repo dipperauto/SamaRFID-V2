@@ -321,6 +321,11 @@ def users_list(request: Request):
                 role=u.get("role", ""),
                 profile_photo_path=u.get("profile_photo_path") or None,
                 allowed_pages=u.get("allowed_pages") or [],
+                cpf=(u.get("cpf") or None),
+                birth_date=(u.get("birth_date") or None),
+                rg=(u.get("rg") or None),
+                admission_date=(u.get("admission_date") or None),
+                sector=(u.get("sector") or None),
             )
         )
     return ListUsersResponse(count=len(users), users=users)
@@ -335,6 +340,11 @@ def users_update(username: str, payload: UpdateUserRequest, request: Request):
         password=payload.password,
         profile_photo_base64=payload.profile_photo_base64,
         allowed_pages=payload.allowed_pages,
+        cpf=payload.cpf,
+        birth_date=payload.birth_date,
+        rg=payload.rg,
+        admission_date=payload.admission_date,
+        sector=payload.sector,
     )
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
@@ -353,6 +363,11 @@ def users_register_session(payload: AddUserRequest, request: Request):
             payload.full_name,
             payload.profile_photo_base64,
             pages,
+            payload.cpf,
+            payload.birth_date,
+            payload.rg,
+            payload.admission_date,
+            payload.sector,
         )
         return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.", profile_photo_path=photo_path)
     except ValueError as e:
@@ -417,6 +432,11 @@ def users_register(payload: AddUserRequest, x_admin_token: Optional[str] = Heade
             payload.full_name,
             payload.profile_photo_base64,
             pages,
+            payload.cpf,
+            payload.birth_date,
+            payload.rg,
+            payload.admission_date,
+            payload.sector,
         )
         return AddUserResponse(success=True, message="Usuário cadastrado com sucesso.", profile_photo_path=photo_path)
     except ValueError as e:
@@ -719,10 +739,6 @@ def users_search_public(request: Request, q: Optional[str] = None):
     ql = (q or "").strip().lower()
     users: list[PublicUser] = []
     for u in raw:
-        role = (u.get("role", "") or "").lower()
-        # compat: considerar 'usuario' e 'usuário' também
-        if role not in ("fotografo", "fotógrafo", "usuario", "usuário"):
-            continue
         uname = u.get("username", "")
         fname = u.get("full_name", "")
         if ql and (ql not in uname.lower() and ql not in fname.lower()):
@@ -735,7 +751,7 @@ def users_search_public(request: Request, q: Optional[str] = None):
                 profile_photo_path=u.get("profile_photo_path") or None,
             )
         )
-        if not ql and len(users) >= 20:
+        if not ql and len(users) >= 50:
             break
     return UsersSearchResponse(users=users)
 

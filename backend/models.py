@@ -24,6 +24,12 @@ class AddUserRequest(BaseModel):
     full_name: str = Field(min_length=1)
     profile_photo_base64: Optional[str] = None  # data URL (ex.: data:image/png;base64,xxx)
     allowed_pages: Optional[List[str]] = None
+    # ADDED: campos opcionais
+    cpf: Optional[str] = None
+    birth_date: Optional[str] = None  # YYYY-MM-DD
+    rg: Optional[str] = None
+    admission_date: Optional[str] = None  # YYYY-MM-DD
+    sector: Optional[str] = None
 
 
 class UpdateUserRequest(BaseModel):
@@ -32,6 +38,12 @@ class UpdateUserRequest(BaseModel):
     password: Optional[str] = None
     profile_photo_base64: Optional[str] = None
     allowed_pages: Optional[List[str]] = None
+    # ADDED: campos opcionais
+    cpf: Optional[str] = None
+    birth_date: Optional[str] = None  # YYYY-MM-DD
+    rg: Optional[str] = None
+    admission_date: Optional[str] = None  # YYYY-MM-DD
+    sector: Optional[str] = None
 
 
 class AddUserResponse(BaseModel):
@@ -50,6 +62,12 @@ class User(BaseModel):
     role: str
     profile_photo_path: Optional[str] = None
     allowed_pages: List[str] = []
+    # ADDED: campos opcionais
+    cpf: Optional[str] = None
+    birth_date: Optional[str] = None
+    rg: Optional[str] = None
+    admission_date: Optional[str] = None
+    sector: Optional[str] = None
 
 
 class ListUsersResponse(BaseModel):

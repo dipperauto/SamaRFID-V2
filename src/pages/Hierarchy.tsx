@@ -83,6 +83,28 @@ const HierarchyPage: React.FC = () => {
   const [primaryIndex, setPrimaryIndex] = React.useState<number>(-1);
   const [responsibleName, setResponsibleName] = React.useState("");
   const [responsibles, setResponsibles] = React.useState<Responsible[]>([]);
+  // ADDED: busca de usuários
+  const [userQuery, setUserQuery] = React.useState("");
+  const [userResults, setUserResults] = React.useState<{ username: string; full_name: string; role: string; profile_photo_path?: string | null }[]>([]);
+
+  const searchUsers = React.useCallback(async (term: string) => {
+    const q = term.trim();
+    if (!q) {
+      setUserResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/users/search-public?q=${encodeURIComponent(q)}`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setUserResults((data?.users ?? []) as any[]);
+    } catch {}
+  }, [API_URL]);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => searchUsers(userQuery), 250);
+    return () => clearTimeout(t);
+  }, [userQuery, searchUsers]);
 
   const loadHierarchy = React.useCallback(async () => {
     try {
@@ -440,11 +462,51 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Responsáveis</Label>
+              <div className="text-xs text-white/70">Pesquise usuários para associar e defina o principal.</div>
               <div className="flex items-center gap-2">
-                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Nome do responsável" className="bg-white text-black" />
-                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>
-                  Adicionar
-                </Button>
+                <Input
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                  placeholder="Buscar usuários por nome ou e-mail..."
+                  className="bg-white text-black"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {userResults.map((u) => {
+                  const photo = u.profile_photo_path
+                    ? `${API_URL}/${String(u.profile_photo_path).replace(/\\/g, "/").replace(/^media\//, "static/")}`
+                    : null;
+                  return (
+                    <button
+                      key={u.username}
+                      type="button"
+                      onClick={() => {
+                        const nm = u.full_name || u.username;
+                        if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) return;
+                        const next = [...responsibles, { name: nm }];
+                        setResponsibles(next);
+                        if (primaryIndex === -1) setPrimaryIndex(0);
+                      }}
+                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-left hover:bg-white/20"
+                      title={`Adicionar ${u.full_name}`}
+                    >
+                      <div className="h-8 w-8 rounded-full overflow-hidden border border-white/30 bg-white/20">
+                        {photo ? <img src={photo} alt={u.full_name} className="h-8 w-8 object-cover" /> : <div className="h-8 w-8 flex items-center justify-center text-white">👤</div>}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{u.full_name}</div>
+                        <div className="text-xs text-white/80 truncate">{u.username}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+                {userResults.length === 0 && (
+                  <div className="text-xs text-white/70">Nenhum usuário encontrado. Você pode adicionar manualmente abaixo.</div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Adicionar manualmente (opcional)" className="bg-white text-black" />
+                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>Adicionar</Button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {responsibles.map((r, idx) => (
@@ -521,14 +583,48 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Responsáveis</Label>
-              <div className="text-xs text-white/70">
-                Herdados do pai e ancestrais são listados abaixo. Você pode adicionar novos e escolher o principal.
+              <div className="text-xs text-white/70">Herdados do pai e dos níveis acima; você pode adicionar novos via busca.</div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                  placeholder="Buscar usuários por nome ou e-mail..."
+                  className="bg-white text-black"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {userResults.map((u) => {
+                  const photo = u.profile_photo_path
+                    ? `${API_URL}/${String(u.profile_photo_path).replace(/\\/g, "/").replace(/^media\//, "static/")}`
+                    : null;
+                  const nm = u.full_name || u.username;
+                  return (
+                    <button
+                      key={`child-${u.username}`}
+                      type="button"
+                      onClick={() => {
+                        if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) return;
+                        const next = [...responsibles, { name: nm }];
+                        setResponsibles(next);
+                        if (primaryIndex === -1) setPrimaryIndex(0);
+                      }}
+                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-left hover:bg-white/20"
+                      title={`Adicionar ${u.full_name}`}
+                    >
+                      <div className="h-8 w-8 rounded-full overflow-hidden border border-white/30 bg-white/20">
+                        {photo ? <img src={photo} alt={u.full_name} className="h-8 w-8 object-cover" /> : <div className="h-8 w-8 flex items-center justify-center text-white">👤</div>}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{u.full_name}</div>
+                        <div className="text-xs text-white/80 truncate">{u.username}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex items-center gap-2">
-                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Nome do responsável" className="bg-white text-black" />
-                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>
-                  Adicionar
-                </Button>
+                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Adicionar manualmente (opcional)" className="bg-white text-black" />
+                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>Adicionar</Button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {responsibles.map((r, idx) => (

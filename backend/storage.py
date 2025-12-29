@@ -11,7 +11,7 @@ USERS_CSV_PATH = os.environ.get(
 )
 
 MEDIA_USERS_DIR = os.path.join(os.path.dirname(__file__), "media", "users")
-CSV_FIELDS = ["username", "password_hash", "role", "full_name", "profile_photo_path", "allowed_pages"]
+CSV_FIELDS = ["username", "password_hash", "role", "full_name", "profile_photo_path", "allowed_pages", "cpf", "birth_date", "rg", "admission_date", "sector"]
 
 
 def _ensure_csv():
@@ -49,6 +49,12 @@ def _ensure_csv():
                     "full_name": row.get("full_name", ""),
                     "profile_photo_path": row.get("profile_photo_path", ""),
                     "allowed_pages": row.get("allowed_pages", ""),
+                    # ADDED: default vazio em migração
+                    "cpf": row.get("cpf", ""),
+                    "birth_date": row.get("birth_date", ""),
+                    "rg": row.get("rg", ""),
+                    "admission_date": row.get("admission_date", ""),
+                    "sector": row.get("sector", ""),
                 }
                 writer.writerow(new_row)
 
@@ -111,6 +117,12 @@ def get_user(username: str) -> Optional[Dict[str, str]]:
                     "full_name": row.get("full_name", ""),
                     "profile_photo_path": row.get("profile_photo_path", ""),
                     "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
+                    # ADDED: extras
+                    "cpf": row.get("cpf", "") or "",
+                    "birth_date": row.get("birth_date", "") or "",
+                    "rg": row.get("rg", "") or "",
+                    "admission_date": row.get("admission_date", "") or "",
+                    "sector": row.get("sector", "") or "",
                 }
     return None
 
@@ -128,18 +140,22 @@ def get_all_users() -> List[Dict[str, str]]:
                 "full_name": row.get("full_name", ""),
                 "profile_photo_path": row.get("profile_photo_path", ""),
                 "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
+                # ADDED: extras
+                "cpf": row.get("cpf", "") or "",
+                "birth_date": row.get("birth_date", "") or "",
+                "rg": row.get("rg", "") or "",
+                "admission_date": row.get("admission_date", "") or "",
+                "sector": row.get("sector", "") or "",
             })
     return out
 
 
-def add_user(username: str, password: str, role: str, full_name: str, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None) -> Optional[str]:
+def add_user(username: str, password: str, role: str, full_name: str, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None,
+             cpf: Optional[str] = None, birth_date: Optional[str] = None, rg: Optional[str] = None, admission_date: Optional[str] = None, sector: Optional[str] = None) -> Optional[str]:
     """
-    Adiciona usuário com a senha HASHEADA (não armazenamos senha em texto puro).
-    Salva opcionalmente uma foto de perfil em backend/media/users e grava o caminho relativo no CSV.
-    Também salva as páginas permitidas (allowed_pages).
+    Adiciona usuário com a senha HASHEADA. Inclui campos opcionais (cpf, nascimento, rg, admissão, setor).
     """
     _ensure_csv()
-    # Evita duplicatas
     existing = get_user(username)
     if existing:
         raise ValueError("Usuário já existe.")
@@ -154,13 +170,19 @@ def add_user(username: str, password: str, role: str, full_name: str, profile_ph
             "full_name": full_name,
             "profile_photo_path": photo_path or "",
             "allowed_pages": _serialize_pages(allowed_pages),
+            "cpf": (cpf or "").strip(),
+            "birth_date": (birth_date or "").strip(),
+            "rg": (rg or "").strip(),
+            "admission_date": (admission_date or "").strip(),
+            "sector": (sector or "").strip(),
         })
     return photo_path
 
 
-def update_user(username: str, full_name: Optional[str] = None, role: Optional[str] = None, password: Optional[str] = None, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None) -> Optional[Dict[str, str]]:
+def update_user(username: str, full_name: Optional[str] = None, role: Optional[str] = None, password: Optional[str] = None, profile_photo_base64: Optional[str] = None, allowed_pages: Optional[List[str]] = None,
+                cpf: Optional[str] = None, birth_date: Optional[str] = None, rg: Optional[str] = None, admission_date: Optional[str] = None, sector: Optional[str] = None) -> Optional[Dict[str, str]]:
     """
-    Atualiza dados do usuário. Retorna o registro atualizado ou None se não encontrado.
+    Atualiza dados do usuário, incluindo campos opcionais (cpf, nascimento, rg, admissão, setor).
     """
     _ensure_csv()
     updated = None
@@ -180,6 +202,18 @@ def update_user(username: str, full_name: Optional[str] = None, role: Optional[s
                     row["profile_photo_path"] = photo_path or ""
                 if allowed_pages is not None:
                     row["allowed_pages"] = _serialize_pages(allowed_pages)
+                # ADDED: extras
+                if cpf is not None:
+                    row["cpf"] = cpf.strip()
+                if birth_date is not None:
+                    row["birth_date"] = birth_date.strip()
+                if rg is not None:
+                    row["rg"] = rg.strip()
+                if admission_date is not None:
+                    row["admission_date"] = admission_date.strip()
+                if sector is not None:
+                    row["sector"] = sector.strip()
+
                 updated = {
                     "username": row.get("username", ""),
                     "password_hash": row.get("password_hash", ""),
@@ -187,6 +221,11 @@ def update_user(username: str, full_name: Optional[str] = None, role: Optional[s
                     "full_name": row.get("full_name", ""),
                     "profile_photo_path": row.get("profile_photo_path", ""),
                     "allowed_pages": _parse_pages(row.get("allowed_pages", "")),
+                    "cpf": row.get("cpf", "") or "",
+                    "birth_date": row.get("birth_date", "") or "",
+                    "rg": row.get("rg", "") or "",
+                    "admission_date": row.get("admission_date", "") or "",
+                    "sector": row.get("sector", "") or "",
                 }
             rows.append(row)
 

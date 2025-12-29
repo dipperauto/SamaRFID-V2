@@ -13,6 +13,12 @@ export type AppUser = {
   role: string;
   profile_photo_path?: string | null;
   allowed_pages: string[];
+  // ADDED: extras opcionais
+  cpf?: string | null;
+  birth_date?: string | null;
+  rg?: string | null;
+  admission_date?: string | null;
+  sector?: string | null;
 };
 
 type Props = {
