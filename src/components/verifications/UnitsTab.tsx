@@ -2,8 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCancel } from "@/components/ui/dialog";
-import { AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -96,7 +95,7 @@ export const UnitsTab: React.FC = () => {
             <Label htmlFor="include-sub-units">Incluir filiais</Label>
           </div>
           <DialogFooter>
-            <DialogCancel>Cancelar</DialogCancel>
+            <Button variant="outline" onClick={() => setOpenStart(false)}>Cancelar</Button>
             <Button onClick={handleStart}>Iniciar</Button>
           </DialogFooter>
         </DialogContent>
