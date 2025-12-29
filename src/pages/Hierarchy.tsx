@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Plus, Search, Layers, UserCheck } from "lucide-react";
+import { Plus, Search, MapPin, UserCheck } from "lucide-react";
 
 type Responsible = { name: string; isPrimary?: boolean };
 type LocationNode = {
@@ -319,8 +319,8 @@ const HierarchyPage: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <CardTitle className="text-xl md:text-2xl flex items-center gap-2">
-                <Layers className="h-5 w-5" />
-                Hierarquias de Localidades
+                <MapPin className="h-5 w-5" />
+                Unidades
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Button
@@ -335,8 +335,8 @@ const HierarchyPage: React.FC = () => {
             </div>
 
             <div className="mt-3 text-xs text-white/80">
-              Crie sua hierarquia de ambientes em cascata. Use o botão “Adicionar Raiz” para os primeiros níveis.
-              Depois, clique no “+” à direita de qualquer item para adicionar um dependente (filial) sob ele.
+              Crie sua hierarquia de ambientes em cascata. Use o botão "Adicionar Raiz" para os primeiros níveis.
+              Depois, clique no "+" à direita de qualquer item para adicionar um dependente (filial) sob ele.
               Cada novo ambiente pede nome, descrição, cor, responsáveis (defina o principal) e categoria.
               Filiais herdam responsáveis do ambiente pai e dos níveis acima, mantendo a ordem (principal primeiro).
             </div>
@@ -393,7 +393,7 @@ const HierarchyPage: React.FC = () => {
                 filteredRoots.map((root) => renderNode(root, 0))
               ) : (
                 <div className="text-sm text-white/80">
-                  Nenhum local cadastrado. Clique em “Adicionar Raiz” para começar.
+                  Nenhum local cadastrado. Clique em "Adicionar Raiz" para começar.
                 </div>
               )}
             </div>

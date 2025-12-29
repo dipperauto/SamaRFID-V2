@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "loc_1767046829447_5d1d62fd",
+      "name": "Teste",
+      "description": "dawdawdaw",
+      "color": "#0ea5e9",
+      "category": "Teste",
+      "responsibles": [
+        {
+          "name": "José",
+          "isPrimary": true
+        }
+      ],
+      "children": [
+        {
+          "id": "loc_1767046840100_a184ba47",
+          "name": "AAAA",
+          "description": "aaa",
+          "color": "#0ea5e9",
+          "category": "Teste",
+          "responsibles": [
+            {
+              "name": "José",
+              "isPrimary": true
+            },
+            {
+              "name": "oi",
+              "isPrimary": false
+            }
+          ],
+          "children": [],
+          "parentId": "loc_1767046829447_5d1d62fd"
+        }
+      ],
+      "parentId": null
+    }
+  ],
+  "categories": []
+}
