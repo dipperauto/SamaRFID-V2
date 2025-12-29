@@ -19,6 +19,8 @@ ASSET_FIELDS = [
     "category",
     "notes",
     "photo_path",
+    "quantity",
+    "unit",
     "created_at",
     "updated_at",
     "created_by",
@@ -26,7 +28,42 @@ ASSET_FIELDS = [
 
 def _ensure_store():
     os.makedirs(ASSETS_DIR, exist_ok=True)
+    # criar arquivo se não existir
     if not os.path.isfile(ASSETS_CSV):
+        with open(ASSETS_CSV, "w", newline="", encoding="utf-8") as f:
+            csv.DictWriter(f, fieldnames=ASSET_FIELDS).writeheader()
+    # MIGRAÇÃO: garantir cabeçalho com novos campos
+    try:
+        with open(ASSETS_CSV, "r", newline="", encoding="utf-8") as f:
+            r = csv.DictReader(f)
+            existing_fields = r.fieldnames or []
+            missing = [c for c in ASSET_FIELDS if c not in existing_fields]
+            rows = list(r) if missing else []
+        if missing:
+            with open(ASSETS_CSV, "w", newline="", encoding="utf-8") as fw:
+                w = csv.DictWriter(fw, fieldnames=ASSET_FIELDS)
+                w.writeheader()
+                for row in rows:
+                    new_row = {
+                        "id": row.get("id", ""),
+                        "unit_id": row.get("unit_id", ""),
+                        "name": row.get("name", ""),
+                        "description": row.get("description", ""),
+                        "qr_code": row.get("qr_code", ""),
+                        "rfid_code": row.get("rfid_code", ""),
+                        "item_code": row.get("item_code", ""),
+                        "category": row.get("category", ""),
+                        "notes": row.get("notes", ""),
+                        "photo_path": row.get("photo_path", ""),
+                        "quantity": row.get("quantity", "") if "quantity" in existing_fields else "",
+                        "unit": row.get("unit", "") if "unit" in existing_fields else "",
+                        "created_at": row.get("created_at", ""),
+                        "updated_at": row.get("updated_at", ""),
+                        "created_by": row.get("created_by", ""),
+                    }
+                    w.writerow(new_row)
+    except Exception:
+        # fallback: se der erro de leitura, reescreve cabeçalho vazio
         with open(ASSETS_CSV, "w", newline="", encoding="utf-8") as f:
             csv.DictWriter(f, fieldnames=ASSET_FIELDS).writeheader()
     if not os.path.isfile(CATS_JSON):
@@ -85,6 +122,11 @@ def list_assets(unit_id: str) -> List[Dict[str, Any]]:
         r = csv.DictReader(f)
         for row in r:
             if str(row.get("unit_id") or "") == str(unit_id):
+                qty_raw = row.get("quantity", "")
+                try:
+                    qty = float(qty_raw) if str(qty_raw).strip() != "" else None
+                except Exception:
+                    qty = None
                 out.append({
                     "id": int(row.get("id", "0") or 0),
                     "unit_id": row.get("unit_id"),
@@ -96,6 +138,8 @@ def list_assets(unit_id: str) -> List[Dict[str, Any]]:
                     "category": row.get("category", "") or "",
                     "notes": row.get("notes", "") or "",
                     "photo_path": row.get("photo_path", "") or "",
+                    "quantity": qty,
+                    "unit": row.get("unit", "") or "",
                     "created_at": row.get("created_at", "") or "",
                     "updated_at": row.get("updated_at", "") or "",
                     "created_by": row.get("created_by", "") or "",
@@ -107,6 +151,12 @@ def add_asset(unit_id: str, payload: Dict[str, Any], username: str) -> Dict[str,
     aid = _next_id()
     now = datetime.utcnow().isoformat()
     photo_path = save_photo_base64(unit_id, payload.get("photo_base64"))
+    # quantidade/unidade
+    try:
+        qty = float(payload.get("quantity")) if payload.get("quantity") is not None else None
+    except Exception:
+        qty = None
+    unit = str(payload.get("unit") or "").strip()
     row = {
         "id": str(aid),
         "unit_id": str(unit_id),
@@ -118,6 +168,8 @@ def add_asset(unit_id: str, payload: Dict[str, Any], username: str) -> Dict[str,
         "category": str(payload.get("category") or "").strip(),
         "notes": str(payload.get("notes") or "").strip(),
         "photo_path": photo_path or "",
+        "quantity": "" if qty is None else str(qty),
+        "unit": unit,
         "created_at": now,
         "updated_at": now,
         "created_by": username,
@@ -128,6 +180,7 @@ def add_asset(unit_id: str, payload: Dict[str, Any], username: str) -> Dict[str,
     return {
         **row,
         "id": aid,
+        "quantity": qty,
     }
 
 def update_asset(asset_id: int, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -139,13 +192,18 @@ def update_asset(asset_id: int, payload: Dict[str, Any]) -> Optional[Dict[str, A
         r = csv.DictReader(f)
         for row in r:
             if int(row.get("id", "0") or 0) == int(asset_id):
-                # photo update if provided
                 unit_id = row.get("unit_id", "")
                 photo_path = row.get("photo_path", "") or ""
                 if payload.get("photo_base64") is not None:
                     new_photo = save_photo_base64(unit_id, payload.get("photo_base64"))
                     if new_photo:
                         photo_path = new_photo
+                # quantidade/unidade
+                try:
+                    qty = float(payload.get("quantity")) if payload.get("quantity") is not None else None
+                except Exception:
+                    qty = None
+                new_unit = str(payload.get("unit")) if payload.get("unit") is not None else row.get("unit", "")
                 new_row = {
                     "id": row.get("id"),
                     "unit_id": row.get("unit_id"),
@@ -157,6 +215,8 @@ def update_asset(asset_id: int, payload: Dict[str, Any]) -> Optional[Dict[str, A
                     "category": str(payload.get("category") if payload.get("category") is not None else row.get("category", "")).strip(),
                     "notes": str(payload.get("notes") if payload.get("notes") is not None else row.get("notes", "")).strip(),
                     "photo_path": photo_path,
+                    "quantity": "" if qty is None else str(qty),
+                    "unit": new_unit,
                     "created_at": row.get("created_at", ""),
                     "updated_at": now,
                     "created_by": row.get("created_by", ""),
@@ -165,6 +225,7 @@ def update_asset(asset_id: int, payload: Dict[str, Any]) -> Optional[Dict[str, A
                 updated = {
                     **new_row,
                     "id": int(new_row["id"]),
+                    "quantity": qty,
                 }
             else:
                 rows.append(row)

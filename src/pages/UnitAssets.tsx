@@ -25,10 +25,15 @@ type Asset = {
   category?: string;
   notes?: string;
   photo_path?: string;
+  // ADDED: quantidade e unidade
+  quantity?: number | null;
+  unit?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string;
 };
+
+const unitsList = ["Unidade", "Kg", "g", "Metro", "cm", "Litros"];
 
 const UnitAssetsPage: React.FC = () => {
   const { unitId } = useParams();
@@ -51,6 +56,9 @@ const UnitAssetsPage: React.FC = () => {
   const [category, setCategory] = React.useState<string>("");
   const [notes, setNotes] = React.useState<string>("");
   const [photoBase64, setPhotoBase64] = React.useState<string | null>(null);
+  // ADDED: quantidade e unidade
+  const [quantity, setQuantity] = React.useState<number>(1);
+  const [unit, setUnit] = React.useState<string>("Unidade");
 
   const [openCatMgr, setOpenCatMgr] = React.useState<boolean>(false);
   const [newCategory, setNewCategory] = React.useState<string>("");
@@ -110,6 +118,9 @@ const UnitAssetsPage: React.FC = () => {
       category: category.trim() || undefined,
       notes: notes.trim() || undefined,
       photo_base64: photoBase64 || undefined,
+      // ADDED: quantidade e unidade
+      quantity: Number.isFinite(quantity) ? quantity : undefined,
+      unit: unit || undefined,
     };
     const res = await fetch(`${API_URL}/api/units/${unitId}/assets`, {
       method: "POST",
@@ -125,6 +136,7 @@ const UnitAssetsPage: React.FC = () => {
     toast.success("Ativo cadastrado com sucesso!");
     setOpenNew(false);
     setName(""); setDescription(""); setQrCode(""); setRfidCode(""); setItemCode(""); setCategory(""); setNotes(""); setPhotoBase64(null);
+    setQuantity(1); setUnit("Unidade");
     await loadData();
   };
 
@@ -220,7 +232,7 @@ const UnitAssetsPage: React.FC = () => {
                   <option value="">Todas as categorias</option>
                   {categories.map((c)=><option key={`f-cat-${c}`} value={c}>{c}</option>)}
                 </select>
-                <select value={sort} onChange={(e)=>setSort(e.target.value as any)} className="rounded-md border px-2 py-2 bg-white text-black">
+                <select value={sort} onChange={(e)=>setSort(e.target.value as any)} className="rounded-md border px-2 py-2 bg-white text:black">
                   <option value="name_asc">Nome ↑</option>
                   <option value="name_desc">Nome ↓</option>
                   <option value="created_desc">Mais recentes</option>
@@ -235,7 +247,7 @@ const UnitAssetsPage: React.FC = () => {
             {loading ? (
               <div className="text-sm text-white/80">Carregando...</div>
             ) : sorted.length === 0 ? (
-              <div className="text-sm text-white/80">Nenhum ativo encontrado.</div>
+              <div className="text-sm text:white/80">Nenhum ativo encontrado.</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {sorted.map((a) => (
@@ -247,11 +259,13 @@ const UnitAssetsPage: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="font-semibold truncate">{a.name}</div>
-                          {a.category ? <Badge variant="outline" className="bg-white/10 text-white">{a.category}</Badge> : null}
+                          {a.category ? <Badge variant="outline" className="bg-white/10 text:white">{a.category}</Badge> : null}
                         </div>
                         <div className="text-xs text-white/80 line-clamp-2">{a.description}</div>
                         <div className="text-xs text-white/70">Código: {a.item_code || "—"}</div>
                         <div className="text-xs text-white/70">QR: {a.qr_code || "—"} • RFID: {a.rfid_code || "—"}</div>
+                        {/* ADDED: quantidade e unidade */}
+                        <div className="text-xs text-white/70">Quantidade: {typeof a.quantity === "number" ? a.quantity : "—"} {a.unit || ""}</div>
                       </div>
                     </div>
                   </div>
@@ -280,7 +294,9 @@ const UnitAssetsPage: React.FC = () => {
                   <span className="text-sm">{c}</span>
                   <Button variant="destructive" size="sm" onClick={()=>removeCategory(c)}>Remover</Button>
                 </div>
-              )) : <div className="text-xs text-white/70">Nenhuma categoria cadastrada.</div>}
+              )) : (
+                <div className="text-xs text-white/70">Nenhuma categoria cadastrada.</div>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -288,7 +304,7 @@ const UnitAssetsPage: React.FC = () => {
 
       {/* Modal novo ativo */}
       <Dialog open={openNew} onOpenChange={setOpenNew}>
-        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text:white">
           <DialogHeader>
             <DialogTitle>Novo Ativo</DialogTitle>
             <DialogDescription>Preencha os dados do ativo da unidade.</DialogDescription>
@@ -311,6 +327,20 @@ const UnitAssetsPage: React.FC = () => {
             <div className="space-y-2">
               <Label>Descrição</Label>
               <Input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Descrição do ativo" className="bg-white text-black" />
+            </div>
+
+            {/* ADDED: quantidade e unidade */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <Input type="number" min={0} step={0.01} value={quantity} onChange={(e)=>setQuantity(Number(e.target.value || 0))} className="bg-white text-black" />
+              </div>
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <select value={unit} onChange={(e)=>setUnit(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                  {unitsList.map((u)=> <option key={`unit-${u}`} value={u}>{u}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

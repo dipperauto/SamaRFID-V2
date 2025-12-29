@@ -1455,11 +1455,9 @@ def hierarchy_delete_endpoint(node_id: str, request: Request):
 def unit_assets_list(unit_id: str, request: Request, q: Optional[str] = None, sort: Optional[str] = "name_asc"):
     _require_page_access(request, "hierarchy")
     items = assets_list(unit_id)
-    # filtro q
     term = (q or "").strip().lower()
     if term:
         items = [it for it in items if term in (it.get("name","")+ " " + it.get("description","")+ " " + it.get("item_code","")).lower()]
-    # ordenação
     if sort == "name_asc":
         items.sort(key=lambda x: x.get("name","").lower())
     elif sort == "name_desc":
