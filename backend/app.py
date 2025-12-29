@@ -1456,12 +1456,10 @@ def hierarchy_delete_endpoint(node_id: str, request: Request):
 @app.get("/units/{unit_id}/assets", response_model=AssetListResponse)
 def unit_assets_list(unit_id: str, request: Request, q: Optional[str] = None, sort: Optional[str] = "name_asc"):
     _require_page_access(request, "hierarchy")
-    # ADDED: endpoint para buscar todos os ativos
     if unit_id == "all":
         items = get_all_assets_flat()
     else:
         items = assets_list(unit_id)
-    # filtro q
     term = (q or "").strip().lower()
     if term:
         items = [it for it in items if term in (it.get("name","")+ " " + it.get("description","")+ " " + it.get("item_code","")).lower()]
@@ -1507,8 +1505,6 @@ def unit_assets_update(asset_id: int, payload: UpdateAssetRequest, request: Requ
 @app.delete("/assets/{asset_id}")
 def unit_assets_delete(asset_id: int, request: Request):
     user = _require_page_access(request, "hierarchy")
-    # Para log, precisamos buscar o ativo ANTES de deletar para pegar os detalhes
-    from storage_assets import get_all_assets_flat
     all_assets = get_all_assets_flat()
     asset_to_delete = next((a for a in all_assets if a.get("id") == asset_id), None)
     
