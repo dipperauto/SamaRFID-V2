@@ -495,6 +495,13 @@ const HierarchyPage: React.FC = () => {
     await loadHierarchy();
   };
 
+  // ADDED: estado de modo edição para evitar referência não definida
+  const [editMode, setEditMode] = React.useState<boolean>(false);
+
+  const [editTarget, setEditTarget] = React.useState<LocationNode | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<LocationNode | null>(null);
+  const [openEdit, setOpenEdit] = React.useState(false);
+
   return (
     <div className="min-h-screen w-full overflow-hidden p-4">
       <div className="relative z-10 space-y-4">
