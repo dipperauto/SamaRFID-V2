@@ -1,0 +1,16 @@
+{
+  "sessions": [
+    {
+      "id": "session_83d30f9f",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Sala de Cinema e filiais",
+      "target_id": "loc_1767049053648_71babbe6",
+      "include_sub_units": true,
+      "status": "finished",
+      "start_time": "2025-12-29T23:55:56.607406",
+      "end_time": "2025-12-29T23:57:07.165283",
+      "assets": []
+    }
+  ]
+}

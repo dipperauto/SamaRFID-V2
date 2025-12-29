@@ -14,6 +14,8 @@ type VerificationAsset = {
   id: number;
   name: string;
   item_code: string;
+  qr_code?: string;
+  rfid_code?: string;
   unit_id: string;
   unit_path: string;
   expected_quantity: number;
@@ -73,7 +75,7 @@ const VerificationSessionPage: React.FC = () => {
         body: JSON.stringify({ item_code: code, quantity }),
       });
       if (!res.ok) {
-        toast.error("Item não encontrado nesta lista.");
+        toast.error("Item não encontrado nesta lista de verificação.");
         return;
       }
       const data = await res.json();
@@ -108,6 +110,10 @@ const VerificationSessionPage: React.FC = () => {
   };
 
   const notVerifiedCount = session?.assets.filter(a => !a.verified).length || 0;
+  const missingItemsSummary = session?.assets
+    .filter(a => !a.verified)
+    .map(a => `${a.name} (Faltam ${a.expected_quantity - a.verified_quantity})`)
+    .join(", ");
 
   return (
     <div className="min-h-screen w-full p-4">
@@ -147,7 +153,7 @@ const VerificationSessionPage: React.FC = () => {
             </div>
             <div className="md:col-span-2 max-h-96 overflow-y-auto space-y-2">
               {session?.assets.map(asset => (
-                <div key={asset.id} className={`p-2 rounded-md ${asset.verified ? 'bg-green-500/20' : 'bg-white/10'}`}>
+                <div key={asset.id} className={`p-2 rounded-md ${asset.verified ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
                   <div className="font-medium">{asset.name}</div>
                   <div className="text-xs text-white/80">
                     {asset.unit_path} | Verificado: {asset.verified_quantity}/{asset.expected_quantity}
@@ -178,7 +184,7 @@ const VerificationSessionPage: React.FC = () => {
             <AlertDialogTitle>Finalizar Verificação?</AlertDialogTitle>
             <AlertDialogDescription>
               {notVerifiedCount > 0
-                ? `Ainda há ${notVerifiedCount} itens não verificados. Deseja finalizar mesmo assim?`
+                ? `Ainda há ${notVerifiedCount} itens não verificados. Itens faltantes: ${missingItemsSummary}. Deseja finalizar mesmo assim?`
                 : "Todos os itens foram verificados. Deseja finalizar?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
