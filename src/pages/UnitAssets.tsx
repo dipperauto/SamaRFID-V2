@@ -123,7 +123,6 @@ const UnitAssetsPage: React.FC = () => {
     if (!unitId) return;
     setLoading(true);
     try {
-      // Se consolidado, busca todos os ativos de todas as unidades
       const endpoint = includeSubUnits
         ? `${API_URL}/api/units/all/assets`
         : `${API_URL}/api/units/${unitId}/assets`;
@@ -134,7 +133,6 @@ const UnitAssetsPage: React.FC = () => {
       const data = await res.json();
       
       if (includeSubUnits) {
-        // Agora que o backend retorna tudo, apenas filtramos e mapeamos no frontend
         const hierarchyRes = await fetch(`${API_URL}/api/hierarchy`, { credentials: "include" });
         const hierarchyData = await hierarchyRes.json();
         const allNodes = hierarchyData.nodes || [];
@@ -143,8 +141,8 @@ const UnitAssetsPage: React.FC = () => {
         const getSubUnitIds = (startId: string): string[] => {
           const ids: string[] = [];
           const queue: string[] = [startId];
-          const visited: Set<string> = new Set([startId]);
-          
+          const visited: Set<string> = new Set();
+
           const childrenMap = new Map<string, string[]>();
           allNodes.forEach((node: any) => {
             if (node.parentId) {
@@ -154,19 +152,20 @@ const UnitAssetsPage: React.FC = () => {
               childrenMap.get(node.parentId)!.push(node.id);
             }
           });
-
-          while(queue.length > 0) {
-            const currentId = queue.shift()!;
-            ids.push(currentId);
-            const children = childrenMap.get(currentId) || [];
-            for (const childId of children) {
-              if (!visited.has(childId)) {
-                visited.add(childId);
-                queue.push(childId);
-              }
+          
+          const allChildrenOf = (id: string): string[] => {
+            const res: string[] = [];
+            const q = [id];
+            while(q.length > 0) {
+              const curr = q.shift()!;
+              const children = childrenMap.get(curr) || [];
+              res.push(...children);
+              q.push(...children);
             }
+            return res;
           }
-          return ids;
+
+          return [startId, ...allChildrenOf(startId)];
         };
         
         const targetUnitIds = getSubUnitIds(unitId);

@@ -53,7 +53,6 @@ from storage_hierarchy import add_category as hierarchy_add_category, remove_cat
 # ADDED: assets & logs
 from storage_assets import list_assets as assets_list, add_asset as assets_add, update_asset as assets_update, delete_asset as assets_delete
 from storage_assets import list_categories as assets_list_categories, add_category as assets_add_category, remove_category as assets_remove_category
-// ADDED: import para buscar todos os ativos
 from storage_assets import get_all_assets_flat
 from storage_logs import append_log, list_logs as logs_list
 from models import Asset, AssetListResponse, AddAssetRequest, UpdateAssetRequest, CategoryListResponse, LogListResponse, LogItem
