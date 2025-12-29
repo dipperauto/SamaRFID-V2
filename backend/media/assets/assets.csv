@@ -1,2 +1,3 @@
 id,unit_id,name,description,qr_code,rfid_code,item_code,category,notes,photo_path,quantity,unit,created_at,updated_at,created_by
 1,loc_1767049053648_71babbe6,Cadeira,AAAA,,,FZQ8ZMKBRC,aaa,,,,,2025-12-29T23:11:56.907164,2025-12-29T23:11:56.907164,jose@dipperauto.com
+2,loc_1767049098805_de86e2a1,Projetor de Vídeo,Equipamento de Projeção de Vídeo,,4902778230817,GDPDT55XZ5,Equipamentos,,,1.0,Unidade,2025-12-29T23:39:42.990567,2025-12-29T23:39:42.990567,jose@dipperauto.com

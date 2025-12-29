@@ -17,6 +17,8 @@ import ControlePage from "./pages/Controle";
 import HierarchyPage from "./pages/Hierarchy";
 import UnitAssetsPage from "./pages/UnitAssets";
 import LogPage from "./pages/Log";
+import VerificationPage from "./pages/Verification";
+import VerificationSessionPage from "./pages/VerificationSession";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/hierarchy" element={<HierarchyPage />} />
             <Route path="/units/:unitId/assets" element={<UnitAssetsPage />} />
             <Route path="/log" element={<LogPage />} />
+            <Route path="/verifications" element={<VerificationPage />} />
+            <Route path="/verifications/session/:sessionId" element={<VerificationSessionPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

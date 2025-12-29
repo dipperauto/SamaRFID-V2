@@ -56,6 +56,11 @@ from storage_assets import list_categories as assets_list_categories, add_catego
 from storage_assets import get_all_assets_flat
 from storage_logs import append_log, list_logs as logs_list
 from models import Asset, AssetListResponse, AddAssetRequest, UpdateAssetRequest, CategoryListResponse, LogListResponse, LogItem
+# ADDED: verifications
+from storage_verifications import (
+    get_custom_lists, add_custom_list, delete_custom_list,
+    get_sessions, get_session, start_session, update_session_status, verify_item_in_session
+)
 
 # ADD: importar funções de eventos usadas abaixo
 from storage_events import get_events_for_user, add_event, update_event, delete_event, get_event_by_id
@@ -1552,3 +1557,89 @@ def list_logs_endpoint(request: Request, start: Optional[str] = None, end: Optio
     rows = logs_list(start, end, user, action, q)
     items = [LogItem(**r) for r in rows]
     return LogListResponse(count=len(items), logs=items)
+
+# === Verificações ===
+@app.get("/verifications/custom-lists")
+def verification_get_custom_lists(request: Request):
+    _require_page_access(request, "hierarchy")
+    return {"lists": get_custom_lists()}
+
+@app.post("/verifications/custom-lists")
+def verification_add_custom_list(request: Request, payload: Dict[str, Any] = Body(...)):
+    _require_page_access(request, "hierarchy")
+    name = str(payload.get("name") or "")
+    asset_ids = list(payload.get("asset_ids") or [])
+    if not name or not asset_ids:
+        raise HTTPException(status_code=400, detail="Nome e IDs de ativos são obrigatórios.")
+    new_list = add_custom_list(name, payload.get("description", ""), asset_ids)
+    return {"list": new_list}
+
+@app.delete("/verifications/custom-lists/{list_id}")
+def verification_delete_custom_list(list_id: str, request: Request):
+    _require_page_access(request, "hierarchy")
+    if not delete_custom_list(list_id):
+        raise HTTPException(status_code=404, detail="Lista não encontrada.")
+    return {"success": True}
+
+@app.get("/verifications/sessions")
+def verification_get_sessions(request: Request):
+    _require_page_access(request, "hierarchy")
+    return {"sessions": get_sessions()}
+
+@app.get("/verifications/sessions/{session_id}")
+def verification_get_session(session_id: str, request: Request):
+    _require_page_access(request, "hierarchy")
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada.")
+    return {"session": session}
+
+@app.post("/verifications/sessions/start")
+def verification_start_session(request: Request, payload: Dict[str, Any] = Body(...)):
+    user = _require_page_access(request, "hierarchy")
+    session = start_session(
+        user=user["username"],
+        type=payload["type"],
+        name=payload["name"],
+        include_sub_units=payload.get("include_sub_units"),
+        target_id=payload["target_id"],
+        assets_to_verify=payload["assets_to_verify"]
+    )
+    append_log(user["username"], "verification:start", payload.get("target_id"), None, f"Iniciada verificação: {payload['name']}")
+    return {"session": session}
+
+@app.post("/verifications/sessions/{session_id}/verify-item")
+def verification_verify_item(session_id: str, request: Request, payload: Dict[str, Any] = Body(...)):
+    _require_page_access(request, "hierarchy")
+    item_code = str(payload.get("item_code") or "")
+    quantity = float(payload.get("quantity", 1.0))
+    verified_item = verify_item_in_session(session_id, item_code, quantity)
+    if not verified_item:
+        raise HTTPException(status_code=404, detail="Item não encontrado na lista de verificação.")
+    return {"item": verified_item}
+
+@app.post("/verifications/sessions/{session_id}/finish")
+def verification_finish_session(session_id: str, request: Request):
+    user = _require_page_access(request, "hierarchy")
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada.")
+    
+    all_verified = all(a.get("verified", False) for a in session["assets"])
+    status_log = "OK" if all_verified else "Not OK"
+    details = f"Verificação finalizada: {session['name']} - Status: {status_log}"
+    
+    updated_session = update_session_status(session_id, "finished")
+    append_log(user["username"], "verification:finish", session.get("target_id"), None, details)
+    return {"session": updated_session}
+
+@app.post("/verifications/sessions/{session_id}/cancel")
+def verification_cancel_session(session_id: str, request: Request):
+    user = _require_page_access(request, "hierarchy")
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada.")
+    
+    updated_session = update_session_status(session_id, "canceled")
+    append_log(user["username"], "verification:cancel", session.get("target_id"), None, f"Verificação cancelada: {session['name']}")
+    return {"session": updated_session}
