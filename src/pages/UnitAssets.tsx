@@ -13,6 +13,10 @@ import { toast } from "sonner";
 import { Search, Plus, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import PhotoCropper from "@/components/PhotoCropper";
+// ADDED: edição e confirmação
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 type Asset = {
   id: number;
@@ -48,6 +52,13 @@ const UnitAssetsPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = React.useState<string>("");
 
   const [openNew, setOpenNew] = React.useState<boolean>(false);
+  // ADDED: modo edição, edição e seleção
+  const [editMode, setEditMode] = React.useState<boolean>(false);
+  const [openEdit, setOpenEdit] = React.useState<boolean>(false);
+  const [editId, setEditId] = React.useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<number>>(new Set());
+
   const [name, setName] = React.useState<string>("");
   const [description, setDescription] = React.useState<string>("");
   const [qrCode, setQrCode] = React.useState<string>("");
@@ -68,6 +79,38 @@ const UnitAssetsPage: React.FC = () => {
     let code = "";
     for (let i = 0; i < 10; i++) code += chars[Math.floor(Math.random() * chars.length)];
     setItemCode(code);
+  };
+
+  // Helpers de seleção
+  const toggleSelected = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  const deleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    // confirma via dialog
+    setDeleteTarget(-1); // -1 como marcador para bulk
+  };
+
+  // Abrir edição com dados
+  const openEditAsset = (a: Asset) => {
+    setEditId(a.id);
+    setName(a.name);
+    setDescription(a.description);
+    setQrCode(a.qr_code || "");
+    setRfidCode(a.rfid_code || "");
+    setItemCode(a.item_code || "");
+    setCategory(a.category || "");
+    setNotes(a.notes || "");
+    setPhotoBase64(null);
+    setQuantity(typeof a.quantity === "number" ? a.quantity : 1);
+    setUnit(a.unit || "Unidade");
+    setOpenEdit(true);
   };
 
   const loadData = React.useCallback(async () => {
@@ -138,6 +181,70 @@ const UnitAssetsPage: React.FC = () => {
     setName(""); setDescription(""); setQrCode(""); setRfidCode(""); setItemCode(""); setCategory(""); setNotes(""); setPhotoBase64(null);
     setQuantity(1); setUnit("Unidade");
     await loadData();
+  };
+
+  const saveEdit = async () => {
+    if (!editId) return;
+    if (!name.trim() || !description.trim() || !itemCode.trim()) {
+      toast.error("Preencha os campos obrigatórios (Nome, Descrição, Código do Item).");
+      return;
+    }
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      qr_code: qrCode.trim() || undefined,
+      rfid_code: rfidCode.trim() || undefined,
+      item_code: itemCode.trim(),
+      category: category.trim() || undefined,
+      notes: notes.trim() || undefined,
+      photo_base64: photoBase64 || undefined,
+      quantity: Number.isFinite(quantity) ? quantity : undefined,
+      unit: unit || undefined,
+    };
+    const res = await fetch(`${API_URL}/api/assets/${editId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao atualizar ativo.");
+      return;
+    }
+    toast.success("Ativo atualizado!");
+    setOpenEdit(false);
+    setEditId(null);
+    await loadData();
+  };
+
+  const deleteOne = async (id: number) => {
+    const res = await fetch(`${API_URL}/api/assets/${id}`, { method: "DELETE", credentials: "include" });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao excluir ativo.");
+      return;
+    }
+    toast.success("Ativo excluído.");
+    await loadData();
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    if (deleteTarget === -1) {
+      // bulk
+      const ids = Array.from(selectedIds);
+      for (const id of ids) {
+        await fetch(`${API_URL}/api/assets/${id}`, { method: "DELETE", credentials: "include" });
+      }
+      toast.success("Exclusão em massa concluída.");
+      clearSelection();
+      setDeleteTarget(null);
+      await loadData();
+      return;
+    }
+    await deleteOne(deleteTarget);
+    setDeleteTarget(null);
   };
 
   const filtered = React.useMemo(() => {
@@ -216,12 +323,18 @@ const UnitAssetsPage: React.FC = () => {
                 <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => setOpenCatMgr(true)}>
                   Categorias
                 </Button>
+                {/* Toggle de modo edição */}
+                <div className="flex items-center gap-2 pl-2">
+                  <span className="text-xs text-white/80">Modo edição</span>
+                  <Switch checked={editMode} onCheckedChange={setEditMode} />
+                </div>
               </div>
             </div>
             <div className="mt-3 text-xs text-white/80">Cadastre e gerencie ativos desta unidade. Use pesquisa, filtros e ordenação para localizar itens rapidamente.</div>
           </CardHeader>
 
           <CardContent>
+            {/* Filtros */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -232,7 +345,7 @@ const UnitAssetsPage: React.FC = () => {
                   <option value="">Todas as categorias</option>
                   {categories.map((c)=><option key={`f-cat-${c}`} value={c}>{c}</option>)}
                 </select>
-                <select value={sort} onChange={(e)=>setSort(e.target.value as any)} className="rounded-md border px-2 py-2 bg-white text:black">
+                <select value={sort} onChange={(e)=>setSort(e.target.value as any)} className="rounded-md border px-2 py-2 bg-white text-black">
                   <option value="name_asc">Nome ↑</option>
                   <option value="name_desc">Nome ↓</option>
                   <option value="created_desc">Mais recentes</option>
@@ -240,6 +353,17 @@ const UnitAssetsPage: React.FC = () => {
                 </select>
                 <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={loadData}>Aplicar</Button>
               </div>
+              {/* Ações em massa quando modo edição */}
+              {editMode && (
+                <div className="flex items-center gap-2">
+                  <Button variant="destructive" disabled={selectedIds.size === 0} onClick={deleteSelected}>
+                    Excluir selecionados ({selectedIds.size})
+                  </Button>
+                  <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={clearSelection}>
+                    Limpar seleção
+                  </Button>
+                </div>
+              )}
             </div>
 
             <Separator className="my-4 bg-white/20" />
@@ -268,6 +392,26 @@ const UnitAssetsPage: React.FC = () => {
                         <div className="text-xs text-white/70">Quantidade: {typeof a.quantity === "number" ? a.quantity : "—"} {a.unit || ""}</div>
                       </div>
                     </div>
+                    {/* Ações em modo edição */}
+                    {editMode && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedIds.has(a.id)}
+                            onCheckedChange={(c)=> toggleSelected(a.id, !!c)}
+                          />
+                          <span className="text-xs">Selecionar</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={()=>openEditAsset(a)}>
+                            Editar
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={()=>setDeleteTarget(a.id)}>
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -281,11 +425,11 @@ const UnitAssetsPage: React.FC = () => {
         <DialogContent className="sm:max-w-md rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
           <DialogHeader>
             <DialogTitle>Categorias de Ativos</DialogTitle>
-            <DialogDescription>Gerencie a lista de categorias.</DialogDescription>
+            <DialogDescription className="text-white/80">Gerencie a lista de categorias.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Input value={newCategory} onChange={(e)=>setNewCategory(e.target.value)} placeholder="Nova categoria" className="bg-white text-black" />
+              <Input value={newCategory} onChange={(e)=>setNewCategory(e.target.value)} placeholder="Nova categoria" className="bg-white text-black w-full" />
               <Button className="bg-white/20 text-white hover:bg-white/25" onClick={addCategory}>Adicionar</Button>
             </div>
             <div className="space-y-2">
@@ -302,23 +446,23 @@ const UnitAssetsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal novo ativo */}
+      {/* Modal novo ativo (fix de classes e layout) */}
       <Dialog open={openNew} onOpenChange={setOpenNew}>
-        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text:white">
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
           <DialogHeader>
             <DialogTitle>Novo Ativo</DialogTitle>
-            <DialogDescription>Preencha os dados do ativo da unidade.</DialogDescription>
+            <DialogDescription className="text-white/80">Preencha os dados do ativo da unidade.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nome</Label>
-                <Input value={name} onChange={(e)=>setName(e.target.value)} placeholder="Nome do ativo" className="bg-white text-black" />
+                <Input value={name} onChange={(e)=>setName(e.target.value)} placeholder="Nome do ativo" className="bg-white text-black w-full" />
               </div>
               <div className="space-y-2">
                 <Label>Código do Item</Label>
                 <div className="flex items-center gap-2">
-                  <Input value={itemCode} onChange={(e)=>setItemCode(e.target.value)} placeholder="Código (10 dígitos)" className="bg-white text-black" />
+                  <Input value={itemCode} onChange={(e)=>setItemCode(e.target.value)} placeholder="Código (10 dígitos)" className="bg-white text-black w-full" />
                   <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={genItemCode}>Gerar</Button>
                 </div>
               </div>
@@ -326,18 +470,18 @@ const UnitAssetsPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Descrição do ativo" className="bg-white text-black" />
+              <Input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Descrição do ativo" className="bg-white text-black w-full" />
             </div>
 
-            {/* ADDED: quantidade e unidade */}
+            {/* Quantidade e Unidade com largura correta */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
-                <Input type="number" min={0} step={0.01} value={quantity} onChange={(e)=>setQuantity(Number(e.target.value || 0))} className="bg-white text-black" />
+                <Input type="number" min={0} step={0.01} value={quantity} onChange={(e)=>setQuantity(Number(e.target.value || 0))} className="bg-white text-black w-full" />
               </div>
               <div className="space-y-2">
                 <Label>Unidade</Label>
-                <select value={unit} onChange={(e)=>setUnit(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                <select value={unit} onChange={(e)=>setUnit(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black w-full">
                   {unitsList.map((u)=> <option key={`unit-${u}`} value={u}>{u}</option>)}
                 </select>
               </div>
@@ -346,11 +490,11 @@ const UnitAssetsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>QR Code</Label>
-                <Input value={qrCode} onChange={(e)=>setQrCode(e.target.value)} placeholder="Código QR (opcional)" className="bg-white text-black" />
+                <Input value={qrCode} onChange={(e)=>setQrCode(e.target.value)} placeholder="Código QR (opcional)" className="bg-white text-black w-full" />
               </div>
               <div className="space-y-2">
                 <Label>RFID</Label>
-                <Input value={rfidCode} onChange={(e)=>setRfidCode(e.target.value)} placeholder="Código RFID (opcional)" className="bg-white text:black" />
+                <Input value={rfidCode} onChange={(e)=>setRfidCode(e.target.value)} placeholder="Código RFID (opcional)" className="bg-white text-black w-full" />
               </div>
             </div>
 
@@ -358,7 +502,7 @@ const UnitAssetsPage: React.FC = () => {
               <div className="space-y-2">
                 <Label>Categoria</Label>
                 <div className="flex items-center gap-2">
-                  <select value={category} onChange={(e)=>setCategory(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                  <select value={category} onChange={(e)=>setCategory(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black w-full">
                     <option value="">Selecione</option>
                     {categories.map((c)=><option key={`cat-${c}`} value={c}>{c}</option>)}
                   </select>
@@ -367,7 +511,7 @@ const UnitAssetsPage: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label>Observação</Label>
-                <Input value={notes} onChange={(e)=>setNotes(e.target.value)} placeholder="Observações (opcional)" className="bg-white text-black" />
+                <Input value={notes} onChange={(e)=>setNotes(e.target.value)} placeholder="Observações (opcional)" className="bg-white text-black w-full" />
               </div>
             </div>
 
@@ -383,6 +527,104 @@ const UnitAssetsPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal editar ativo (mesmo layout do novo, com dados) */}
+      <Dialog open={openEdit} onOpenChange={(o)=>{ setOpenEdit(o); if (!o) setEditId(null); }}>
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+          <DialogHeader>
+            <DialogTitle>Editar Ativo</DialogTitle>
+            <DialogDescription className="text-white/80">Atualize os dados do ativo.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {/* Repetir os mesmos campos do modal de novo ativo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={name} onChange={(e)=>setName(e.target.value)} placeholder="Nome do ativo" className="bg-white text-black w-full" />
+              </div>
+              <div className="space-y-2">
+                <Label>Código do Item</Label>
+                <div className="flex items-center gap-2">
+                  <Input value={itemCode} onChange={(e)=>setItemCode(e.target.value)} placeholder="Código (10 dígitos)" className="bg-white text-black w-full" />
+                  <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={genItemCode}>Gerar</Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Descrição do ativo" className="bg-white text-black w-full" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <Input type="number" min={0} step={0.01} value={quantity} onChange={(e)=>setQuantity(Number(e.target.value || 0))} className="bg-white text-black w-full" />
+              </div>
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <select value={unit} onChange={(e)=>setUnit(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black w-full">
+                  {unitsList.map((u)=> <option key={`unit-edit-${u}`} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>QR Code</Label>
+                <Input value={qrCode} onChange={(e)=>setQrCode(e.target.value)} placeholder="Código QR (opcional)" className="bg-white text-black w-full" />
+              </div>
+              <div className="space-y-2">
+                <Label>RFID</Label>
+                <Input value={rfidCode} onChange={(e)=>setRfidCode(e.target.value)} placeholder="Código RFID (opcional)" className="bg-white text-black w-full" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <div className="flex items-center gap-2">
+                  <select value={category} onChange={(e)=>setCategory(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black w-full">
+                    <option value="">Selecione</option>
+                    {categories.map((c)=><option key={`cat-edit-${c}`} value={c}>{c}</option>)}
+                  </select>
+                  <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={()=>setOpenCatMgr(true)}>Gerenciar</Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Observação</Label>
+                <Input value={notes} onChange={(e)=>setNotes(e.target.value)} placeholder="Observações (opcional)" className="bg-white text-black w-full" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Foto do Item</Label>
+              <PhotoCropper initialImage={null} onChange={(data)=>setPhotoBase64(data)} />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={()=>setOpenEdit(false)}>Cancelar</Button>
+              <Button onClick={saveEdit}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de exclusão (individual ou massa) */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o)=>{ if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Ativo{deleteTarget === -1 ? "s selecionados" : ""}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Confirma a exclusão {deleteTarget === -1 ? "dos ativos selecionados" : "deste ativo"}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
