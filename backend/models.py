@@ -294,12 +294,15 @@ class Asset(BaseModel):
     category: Optional[str] = None
     notes: Optional[str] = None
     photo_path: Optional[str] = None
-    # ADDED: quantidade e unidade
     quantity: Optional[float] = None
     unit: Optional[str] = None
     created_at: str
     updated_at: str
     created_by: Optional[str] = None
+
+class AssetListResponse(BaseModel):
+    count: int
+    assets: List[Asset]
 
 class AddAssetRequest(BaseModel):
     name: str = Field(min_length=1)
@@ -310,7 +313,6 @@ class AddAssetRequest(BaseModel):
     category: Optional[str] = None
     notes: Optional[str] = None
     photo_base64: Optional[str] = None
-    # ADDED
     quantity: Optional[float] = None
     unit: Optional[str] = None
 
@@ -323,7 +325,6 @@ class UpdateAssetRequest(BaseModel):
     category: Optional[str] = None
     notes: Optional[str] = None
     photo_base64: Optional[str] = None
-    # ADDED
     quantity: Optional[float] = None
     unit: Optional[str] = None
 
