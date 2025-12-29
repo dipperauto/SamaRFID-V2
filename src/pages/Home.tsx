@@ -33,6 +33,18 @@ const Home: React.FC = () => {
                 e documentos organizados em um só lugar. Automatize rotinas, reduza erros e ganhe agilidade para tomar decisões com confiança.
               </p>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-white/90">
+                O SamaRFID é uma plataforma SaaS de Controle Patrimonial que utiliza tecnologia RFID para rastrear ativos com precisão e em tempo real.
+                Com integração simples de etiquetas e leitores, você automatiza inventários, acompanha movimentações e garante governança sobre todo o ciclo de vida dos bens.
+              </p>
+              <p className="text-white/90">
+                Oferecemos dashboards em tempo real, trilhas de auditoria, alertas de conformidade e APIs para integração com sistemas corporativos.
+                O SamaRFID eleva a eficiência operacional, reduz perdas e aumenta a confiabilidade dos dados patrimoniais.
+              </p>
+            </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-white/80 text-sm">Status:</span>
