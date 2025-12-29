@@ -74,7 +74,7 @@ const Login: React.FC = () => {
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-white/20 ring-1 ring-white/10 bg-[#0b1d3a]/50 py-8 px-6 shadow-2xl backdrop-blur-xl text-white">
           <div className="mb-10 md:mb-12 flex flex-col items-center">
-            <img src="/Sama.png" alt="SamaRFID" className="h-20 md:h-24 w-auto" />
+            <img src="/Sama.png" alt="SamaRFID" className="h-24 md:h-28 w-auto" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
