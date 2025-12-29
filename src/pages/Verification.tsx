@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, MapPin, List, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-// ... (Componentes para as abas serão criados a seguir)
+import { UnitsTab } from "@/components/verifications/UnitsTab";
+import { CustomListsTab } from "@/components/verifications/CustomListsTab";
+import { HistoryTab } from "@/components/verifications/HistoryTab";
 
 const VerificationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,16 +31,13 @@ const VerificationPage: React.FC = () => {
                 <TabsTrigger value="history" className="text-white">Histórico</TabsTrigger>
               </TabsList>
               <TabsContent value="units">
-                {/* Componente da aba Unidades será inserido aqui */}
-                <p className="text-white/80">Inicie verificações baseadas na hierarquia de unidades.</p>
+                <UnitsTab />
               </TabsContent>
               <TabsContent value="custom">
-                {/* Componente da aba Personalizadas será inserido aqui */}
-                <p className="text-white/80">Crie e gerencie listas de verificação com ativos específicos.</p>
+                <CustomListsTab />
               </TabsContent>
               <TabsContent value="history">
-                {/* Componente da aba Histórico será inserido aqui */}
-                <p className="text-white/80">Veja o histórico de todas as verificações realizadas.</p>
+                <HistoryTab />
               </TabsContent>
             </Tabs>
           </CardContent>

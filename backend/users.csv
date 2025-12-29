@@ -1,3 +1,3 @@
 username,password_hash,role,full_name,profile_photo_path,allowed_pages,cpf,birth_date,rg,admission_date,sector
-jose@dipperauto.com,pbkdf2_sha256$310000$e19d27306cb82800e6f8fc874ba7a5f3$54dc0ee8c13851f5dd26cd61133f375fa86b00dd7bc9c757897ade5d5202e38b,administrador,José Barros,media\users\jose_dipperauto_com.png,"clients,control,events,expenses,hierarchy,home,kanban,log,parametros,services,users",,,,,
+jose@dipperauto.com,pbkdf2_sha256$310000$e19d27306cb82800e6f8fc874ba7a5f3$54dc0ee8c13851f5dd26cd61133f375fa86b00dd7bc9c757897ade5d5202e38b,administrador,José Barros,media\users\jose_dipperauto_com.png,"clients,control,events,expenses,hierarchy,home,kanban,log,parametros,services,users,verifications",,,,,
 ladeira@dipperauto.com,pbkdf2_sha256$310000$492980e6ddf0b0b712281ac092264cca$7b72f2ff436bda4e9dce21b293fd5db5d87aca8a4120c6e014abbd8ee9154b65,usuario,Pedro Ladeira,media\users\ladeira_dipperauto_com.png,"clients,home",,,,,
