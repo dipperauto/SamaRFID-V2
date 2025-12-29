@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus, Search, MapPin, UserCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type Responsible = { name: string; username?: string; photo_rel?: string | null; isPrimary?: boolean };
@@ -367,16 +369,31 @@ const HierarchyPage: React.FC = () => {
             </div>
           </div>
           {/* Botão adicionar dependente */}
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
+              variant="outline" size="sm"
               className="border-white/30 bg-white/10 text-white hover:bg-white/20"
-              onClick={() => openChildDialog(node)}
-              title="Adicionar filial (dependente)"
+              onClick={() => openChildDialog(node)} title="Adicionar filial (dependente)"
             >
               <Plus className="h-4 w-4" />
             </Button>
+            {editMode && (
+              <>
+                <Button
+                  variant="outline" size="sm"
+                  className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+                  onClick={() => openEditDialog(node)} title="Editar unidade"
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive" size="sm"
+                  onClick={() => setDeleteTarget(node)} title="Excluir unidade"
+                >
+                  Excluir
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -428,6 +445,56 @@ const HierarchyPage: React.FC = () => {
     toast.success("Categoria removida.");
   };
 
+  const openEditDialog = (node: LocationNode) => {
+    setEditTarget(node);
+    setName(node.name || "");
+    setDescription(node.description || "");
+    setColor(node.color || "#0ea5e9");
+    setCategoryInput(node.category || "");
+    const rs = Array.isArray(node.responsibles) ? node.responsibles : [];
+    setResponsibles(rs);
+    const pi = rs.findIndex((r) => r.isPrimary);
+    setPrimaryIndex(pi >= 0 ? pi : (rs.length ? 0 : -1));
+    setUserQuery("");
+    setUserResults([]);
+    setOpenEdit(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editTarget) return;
+    if (!name.trim()) { toast.error("Informe o nome da unidade."); return; }
+    if (responsibles.length === 0) { toast.error("Informe ao menos um responsável."); return; }
+    const finalResponsibles = responsibles.map((r, i) => ({ ...r, isPrimary: i === primaryIndex }));
+    const payload = { name: name.trim(), description: description.trim(), color, category: categoryInput.trim(), responsibles: finalResponsibles };
+    const res = await fetch(`${API_URL}/api/hierarchy/${encodeURIComponent(editTarget.id)}`, {
+      method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao salvar edição.");
+      return;
+    }
+    toast.success("Unidade atualizada com sucesso!");
+    setOpenEdit(false);
+    setEditTarget(null);
+    await loadHierarchy();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const res = await fetch(`${API_URL}/api/hierarchy/${encodeURIComponent(deleteTarget.id)}`, {
+      method: "DELETE", credentials: "include",
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao excluir unidade.");
+      return;
+    }
+    toast.success("Unidade excluída.");
+    setDeleteTarget(null);
+    await loadHierarchy();
+  };
+
   return (
     <div className="min-h-screen w-full overflow-hidden p-4">
       <div className="relative z-10 space-y-4">
@@ -439,23 +506,17 @@ const HierarchyPage: React.FC = () => {
                 Unidades
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button
-                  className="bg-white/20 text-white hover:bg-white/25"
-                  onClick={openRootDialog}
-                  title="Adicionar unidade raiz"
-                >
+                <Button className="bg-white/20 text-white hover:bg-white/25" onClick={openRootDialog} title="Adicionar unidade raiz">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Raiz
                 </Button>
-                {/* Gerenciar categorias */}
-                <Button
-                  variant="outline"
-                  className="border-white/30 bg-white/10 text-white hover:bg-white/20"
-                  onClick={() => setOpenCatManager(true)}
-                  title="Gerenciar categorias"
-                >
+                <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => setOpenCatManager(true)} title="Gerenciar categorias">
                   Categorias
                 </Button>
+                <div className="flex items-center gap-2 pl-2">
+                  <span className="text-xs text-white/80">Modo edição</span>
+                  <Switch checked={editMode} onCheckedChange={setEditMode} />
+                </div>
               </div>
             </div>
 
@@ -759,6 +820,104 @@ const HierarchyPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de edição */}
+      <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setEditTarget(null); }}>
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+          <DialogHeader>
+            <DialogTitle>Editar Unidade</DialogTitle>
+            <DialogDescription className="text-white/80">Atualize os dados desta unidade.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome da unidade" className="bg-white text-black" />
+              </div>
+              <div className="space-y-2">
+                <Label>Cor</Label>
+                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-full rounded-md border border-white/20" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Resumo" className="bg-white text-black" />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <div className="flex items-center gap-2">
+                <select value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                  <option value="">Selecione</option>
+                  {categories.map((c) => (
+                    <option key={`edit-cat-${c}`} value={c}>{c}</option>
+                  ))}
+                </select>
+                <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => setOpenCatManager(true)}>
+                  Gerenciar
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Responsáveis</Label>
+              <div className="flex items-center gap-2">
+                <Input value={userQuery} onChange={(e) => setUserQuery(e.target.value)} placeholder="Buscar usuários por nome ou e-mail..." className="bg-white text-black" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {userResults.map((u) => {
+                  const photoRel = normalizePhotoRel(u.profile_photo_path || null);
+                  const url = photoRel ? `${API_URL}/${photoRel}` : null;
+                  return (
+                    <button
+                      key={`edit-${u.username}`} type="button" onClick={() => addResponsibleFromUser(u)}
+                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-left hover:bg-white/20" title={`Adicionar ${u.full_name}`}
+                    >
+                      <Avatar className="h-8 w-8">{url ? <AvatarImage src={url} alt={u.full_name} /> : <AvatarFallback>👤</AvatarFallback>}</Avatar>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{u.full_name}</div>
+                        <div className="text-xs text-white/80 truncate">{u.username}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {responsibles.map((r, idx) => {
+                  const url = r.photo_rel ? `${API_URL}/${r.photo_rel}` : null;
+                  return (
+                    <div key={`edit-resp-${r.username || r.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1">
+                      <button type="button" className={`text-xs rounded-sm px-2 py-0.5 ${primaryIndex === idx ? "bg-[#10b981] text-white" : "bg-white/20 text-white"}`} onClick={() => setPrimary(idx)} title="Definir como principal">
+                        {primaryIndex === idx ? "Principal" : "Tornar principal"}
+                      </button>
+                      <Avatar className="h-6 w-6">{url ? <AvatarImage src={url} alt={r.name} /> : <AvatarFallback>👤</AvatarFallback>}</Avatar>
+                      <span className="text-xs">{r.name}</span>
+                      <button type="button" className="text-xs text-red-300 hover:text-red-400" onClick={() => removeResponsible(idx)} title="Remover">Remover</button>
+                    </div>
+                  );
+                })}
+                {responsibles.length === 0 && <span className="text-xs text-white/70">Nenhum responsável ainda.</span>}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setOpenEdit(false)}>Cancelar</Button>
+              <Button onClick={saveEdit}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de exclusão */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Unidade</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita. Confirma a exclusão da unidade "{deleteTarget?.name}" e suas dependências?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal de gerenciamento de categorias */}
       <Dialog open={openCatManager} onOpenChange={setOpenCatManager}>

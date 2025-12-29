@@ -34,7 +34,26 @@
         }
       ],
       "parentId": null
+    },
+    {
+      "id": "loc_1767048766323_c3f91520",
+      "name": "sfsef",
+      "description": "fsefsef",
+      "color": "#0ea5e9",
+      "category": "aaa",
+      "responsibles": [
+        {
+          "name": "José Barros",
+          "username": "jose@dipperauto.com",
+          "photo_rel": "static/users/jose_dipperauto_com.png",
+          "isPrimary": true
+        }
+      ],
+      "children": [],
+      "parentId": null
     }
   ],
-  "categories": []
+  "categories": [
+    "aaa"
+  ]
 }
