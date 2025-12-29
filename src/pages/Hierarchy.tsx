@@ -68,13 +68,46 @@ const HierarchyPage: React.FC = () => {
       setUserResults([]);
       return;
     }
+    // 1) Tenta endpoint público
     try {
       const res = await fetch(`${API_URL}/api/users/search-public?q=${encodeURIComponent(q)}`, { credentials: "include" });
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = (data?.users ?? []) as any[];
-      setUserResults(list.slice(0, 3)); // máximo 3 sugestões
-    } catch {}
+      let list: any[] = [];
+      if (res.ok) {
+        const data = await res.json();
+        list = (data?.users ?? []) as any[];
+      }
+      // Se vazio, tenta fallback admin (lista completa)
+      if (!list.length) {
+        const adminRes = await fetch(`${API_URL}/api/users`, { credentials: "include" });
+        if (adminRes.ok) {
+          const adminData = await adminRes.json();
+          const all = (adminData?.users ?? []) as any[];
+          // filtra por nome/email contendo a query
+          list = all.filter((u) => {
+            const name = (u.full_name || "").toLowerCase();
+            const email = (u.username || "").toLowerCase();
+            const qq = q.toLowerCase();
+            return name.includes(qq) || email.includes(qq);
+          });
+          // normaliza forma (compatível com público)
+          list = list.map((u) => ({
+            username: u.username,
+            full_name: u.full_name,
+            role: u.role,
+            profile_photo_path: u.profile_photo_path || null,
+          }));
+        }
+      }
+      // Ordena alfabeticamente por nome (fallback para username)
+      list.sort((a, b) => {
+        const na = (a.full_name || a.username || "").toLowerCase();
+        const nb = (b.full_name || b.username || "").toLowerCase();
+        return na.localeCompare(nb);
+      });
+      setUserResults(list.slice(0, 3));
+    } catch {
+      setUserResults([]);
+    }
   }, [API_URL]);
 
   React.useEffect(() => {
