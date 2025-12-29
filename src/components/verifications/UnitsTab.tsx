@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCancel } from "@/components/ui/dialog";
+import { AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
