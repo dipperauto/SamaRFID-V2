@@ -1,46 +1,11 @@
 {
   "nodes": [
     {
-      "id": "loc_1767046829447_5d1d62fd",
-      "name": "Teste",
-      "description": "dawdawdaw",
+      "id": "loc_1767049053648_71babbe6",
+      "name": "Sala de Cinema",
+      "description": "Sala de Filmes e Lazer",
       "color": "#0ea5e9",
-      "category": "Teste",
-      "responsibles": [
-        {
-          "name": "José",
-          "isPrimary": true
-        }
-      ],
-      "children": [
-        {
-          "id": "loc_1767046840100_a184ba47",
-          "name": "AAAA",
-          "description": "aaa",
-          "color": "#0ea5e9",
-          "category": "Teste",
-          "responsibles": [
-            {
-              "name": "José",
-              "isPrimary": true
-            },
-            {
-              "name": "oi",
-              "isPrimary": false
-            }
-          ],
-          "children": [],
-          "parentId": "loc_1767046829447_5d1d62fd"
-        }
-      ],
-      "parentId": null
-    },
-    {
-      "id": "loc_1767048766323_c3f91520",
-      "name": "sfsef",
-      "description": "fsefsef",
-      "color": "#0ea5e9",
-      "category": "aaa",
+      "category": "Extra",
       "responsibles": [
         {
           "name": "José Barros",
@@ -49,11 +14,35 @@
           "isPrimary": true
         }
       ],
-      "children": [],
+      "children": [
+        {
+          "id": "loc_1767049098805_de86e2a1",
+          "name": "Sala do Projetor",
+          "description": "Ambiente do Técnico dos Equipamentos de Vídeo e Audio",
+          "color": "#0ea5e9",
+          "category": "Extra",
+          "responsibles": [
+            {
+              "name": "José Barros",
+              "username": "jose@dipperauto.com",
+              "photo_rel": "static/users/jose_dipperauto_com.png",
+              "isPrimary": true
+            },
+            {
+              "name": "Pedro Ladeira",
+              "username": "ladeira@dipperauto.com",
+              "photo_rel": "static/users/ladeira_dipperauto_com.png",
+              "isPrimary": false
+            }
+          ],
+          "children": [],
+          "parentId": "loc_1767049053648_71babbe6"
+        }
+      ],
       "parentId": null
     }
   ],
   "categories": [
-    "aaa"
+    "Extra"
   ]
 }

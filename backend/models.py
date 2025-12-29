@@ -281,3 +281,58 @@ class AddLUTResponse(BaseModel):
 class DeleteLUTResponse(BaseModel):
     success: bool
     message: Optional[str] = None
+
+
+class Asset(BaseModel):
+    id: int
+    unit_id: str
+    name: str
+    description: str
+    qr_code: Optional[str] = None
+    rfid_code: Optional[str] = None
+    item_code: Optional[str] = None
+    category: Optional[str] = None
+    notes: Optional[str] = None
+    photo_path: Optional[str] = None
+    created_at: str
+    updated_at: str
+    created_by: Optional[str] = None
+
+class AssetListResponse(BaseModel):
+    count: int
+    assets: List[Asset]
+
+class AddAssetRequest(BaseModel):
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    qr_code: Optional[str] = None
+    rfid_code: Optional[str] = None
+    item_code: Optional[str] = None
+    category: Optional[str] = None
+    notes: Optional[str] = None
+    photo_base64: Optional[str] = None
+
+class UpdateAssetRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    qr_code: Optional[str] = None
+    rfid_code: Optional[str] = None
+    item_code: Optional[str] = None
+    category: Optional[str] = None
+    notes: Optional[str] = None
+    photo_base64: Optional[str] = None
+
+class CategoryListResponse(BaseModel):
+    categories: List[str]
+
+class LogItem(BaseModel):
+    timestamp: str
+    username: str
+    action: str
+    unit_id: Optional[str] = None
+    asset_id: Optional[str] = None
+    details: Optional[str] = None
+
+class LogListResponse(BaseModel):
+    count: int
+    logs: List[LogItem]

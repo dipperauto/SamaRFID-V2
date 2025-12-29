@@ -15,6 +15,8 @@ import ServicesPage from "./pages/Services";
 import ExpensesPage from "./pages/Expenses";
 import ControlePage from "./pages/Controle";
 import HierarchyPage from "./pages/Hierarchy";
+import UnitAssetsPage from "./pages/UnitAssets";
+import LogPage from "./pages/Log";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/home" element={<Home />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/hierarchy" element={<HierarchyPage />} />
+            <Route path="/units/:unitId/assets" element={<UnitAssetsPage />} />
+            <Route path="/log" element={<LogPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

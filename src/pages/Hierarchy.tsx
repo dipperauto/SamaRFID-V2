@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus, Search, MapPin, UserCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -28,6 +29,7 @@ type LocationNode = {
 
 const HierarchyPage: React.FC = () => {
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const navigate = useNavigate();
 
   const [nodes, setNodes] = React.useState<LocationNode[]>([]);
   const [categories, setCategories] = React.useState<string[]>([]);
@@ -368,7 +370,6 @@ const HierarchyPage: React.FC = () => {
               </div>
             </div>
           </div>
-          {/* Botão adicionar dependente */}
           <div className="shrink-0 flex items-center gap-2">
             <Button
               variant="outline" size="sm"
@@ -376,6 +377,14 @@ const HierarchyPage: React.FC = () => {
               onClick={() => openChildDialog(node)} title="Adicionar filial (dependente)"
             >
               <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+              onClick={() => navigate(`/units/${encodeURIComponent(node.id)}/assets`)}
+              title="Abrir página da unidade"
+            >
+              Abrir
             </Button>
             {editMode && (
               <>
