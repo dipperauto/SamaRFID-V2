@@ -160,7 +160,7 @@ const ResponsiveSidebar: React.FC = () => {
       >
         <div className="flex flex-col w-full h-full text-white">
           <div className="flex items-center justify-center px-4 py-4 border-b border-white/20">
-            <img src="/Sama.png" alt="SamaRFID" className="h-12 w-auto" />
+            <img src="/Sama.png" alt="SamaRFID" className="h-16 w-auto" />
           </div>
           {/* User section (desktop) */}
           {userInfo && (
