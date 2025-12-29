@@ -1,3 +1,2 @@
 id,unit_id,name,description,qr_code,rfid_code,item_code,category,notes,photo_path,quantity,unit,created_at,updated_at,created_by
 1,loc_1767049053648_71babbe6,Cadeira,AAAA,,,FZQ8ZMKBRC,aaa,,,,,2025-12-29T23:11:56.907164,2025-12-29T23:11:56.907164,jose@dipperauto.com
-3,loc_1767049098805_de86e2a1,testeeee,dawdawdw,,7897256245445,V5FUPB4I40,aaa,,,1.0,Unidade,2025-12-29T23:35:08.670101,2025-12-29T23:35:08.670101,jose@dipperauto.com
