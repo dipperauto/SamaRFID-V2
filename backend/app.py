@@ -46,6 +46,8 @@ from storage_luts import get_luts_for_user, add_lut, get_lut_by_id, delete_lut
 from storage_events import get_event_by_id
 from storage_gallery import list_gallery_for_event, add_images_to_event, apply_lut_for_event_images, delete_event_images, set_event_images_discarded
 from storage_finance import record_purchase, get_finance_summary, list_finance_purchases
+# ADDED: storage_hierarchy
+from storage_hierarchy import list_all as hierarchy_list_all, add_root as hierarchy_add_root, add_child as hierarchy_add_child, update_node as hierarchy_update_node, delete_node as hierarchy_delete_node
 
 # ADD: importar funções de eventos usadas abaixo
 from storage_events import get_events_for_user, add_event, update_event, delete_event, get_event_by_id
@@ -1313,6 +1315,84 @@ def control_summary(request: Request, month: Optional[str] = None):
         raise HTTPException(status_code=401, detail="Não autenticado.")
     m = month or datetime.utcnow().strftime("%Y-%m")
     return month_summary(m)
+
+# === Hierarquia de localidades (autenticado) ===
+@app.get("/hierarchy")
+def hierarchy_list(request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    return hierarchy_list_all()
+
+@app.post("/hierarchy/root")
+def hierarchy_add_root_endpoint(payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome é obrigatório.")
+    responsibles = list(payload.get("responsibles") or [])
+    if not responsibles:
+        raise HTTPException(status_code=400, detail="Informe pelo menos um responsável.")
+    node = hierarchy_add_root(
+        name=name,
+        description=str(payload.get("description") or ""),
+        color=str(payload.get("color") or ""),
+        category=str(payload.get("category") or ""),
+        responsibles=responsibles,
+    )
+    return {"node": node}
+
+@app.post("/hierarchy/{parent_id}/child")
+def hierarchy_add_child_endpoint(parent_id: str, payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome é obrigatório.")
+    responsibles = list(payload.get("responsibles") or [])
+    if not responsibles:
+        raise HTTPException(status_code=400, detail="Informe pelo menos um responsável.")
+    node = hierarchy_add_child(
+        parent_id=parent_id,
+        name=name,
+        description=str(payload.get("description") or ""),
+        color=str(payload.get("color") or ""),
+        category=str(payload.get("category") or ""),
+        responsibles=responsibles,
+    )
+    if not node:
+        raise HTTPException(status_code=404, detail="Pai não encontrado.")
+    return {"node": node}
+
+@app.put("/hierarchy/{node_id}")
+def hierarchy_update_endpoint(node_id: str, payload: Dict[str, Any], request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    node = hierarchy_update_node(
+        node_id=node_id,
+        name=payload.get("name"),
+        description=payload.get("description"),
+        color=payload.get("color"),
+        category=payload.get("category"),
+        responsibles=payload.get("responsibles"),
+    )
+    if not node:
+        raise HTTPException(status_code=404, detail="Nó não encontrado.")
+    return {"node": node}
+
+@app.delete("/hierarchy/{node_id}")
+def hierarchy_delete_endpoint(node_id: str, request: Request):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    ok = hierarchy_delete_node(node_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Nó não encontrado.")
+    return {"success": True}
 
 @app.post("/clients/{client_id}/delete")
 def clients_delete_id_post(client_id: int, request: Request):

@@ -15,54 +15,16 @@ type Responsible = { name: string; isPrimary?: boolean };
 type LocationNode = {
   id: string;
   name: string;
-  description?: string;
-  color?: string;
-  category?: string;
+  description?: string | null;
+  color?: string | null;
+  category?: string | null;
   responsibles: Responsible[];
   children: LocationNode[];
   parentId?: string | null;
 };
 
-const LS_NODES = "hierarchy.nodes";
-const LS_CATEGORIES = "hierarchy.categories";
+const genId = () => `loc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-function genId() {
-  return `loc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
-}
-
-function loadNodes(): LocationNode[] {
-  try {
-    const raw = localStorage.getItem(LS_NODES);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data)) return [];
-    return data;
-  } catch {
-    return [];
-  }
-}
-
-function saveNodes(nodes: LocationNode[]) {
-  localStorage.setItem(LS_NODES, JSON.stringify(nodes));
-}
-
-function loadCategories(): string[] {
-  try {
-    const raw = localStorage.getItem(LS_CATEGORIES);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data)) return [];
-    return data;
-  } catch {
-    return [];
-  }
-}
-
-function saveCategories(categories: string[]) {
-  localStorage.setItem(LS_CATEGORIES, JSON.stringify(categories));
-}
-
-// Monta cadeia de responsáveis herdada: pai (principal primeiro), depois demais, e ancestrais acima, sem duplicar
 function buildInheritedResponsibles(nodes: LocationNode[], parentId: string | null | undefined): Responsible[] {
   if (!parentId) return [];
   const map = new Map<string, LocationNode>();
@@ -84,7 +46,6 @@ function buildInheritedResponsibles(nodes: LocationNode[], parentId: string | nu
   const ordered: Responsible[] = [];
   const added = new Set<string>();
   for (const loc of chain) {
-    // principal primeiro
     const primary = loc.responsibles.find((r) => r.isPrimary);
     if (primary && !added.has(primary.name)) {
       ordered.push({ name: primary.name, isPrimary: false });
@@ -101,8 +62,10 @@ function buildInheritedResponsibles(nodes: LocationNode[], parentId: string | nu
 }
 
 const HierarchyPage: React.FC = () => {
-  const [nodes, setNodes] = React.useState<LocationNode[]>(() => loadNodes());
-  const [categories, setCategories] = React.useState<string[]>(() => loadCategories());
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
+  const [nodes, setNodes] = React.useState<LocationNode[]>([]);
+  const [categories, setCategories] = React.useState<string[]>([]);
 
   const [search, setSearch] = React.useState("");
   const [filterCategory, setFilterCategory] = React.useState<string>("");
@@ -115,19 +78,27 @@ const HierarchyPage: React.FC = () => {
   // Form state
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [color, setColor] = React.useState("#0ea5e9"); // default azul
+  const [color, setColor] = React.useState("#0ea5e9");
   const [categoryInput, setCategoryInput] = React.useState("");
   const [primaryIndex, setPrimaryIndex] = React.useState<number>(-1);
   const [responsibleName, setResponsibleName] = React.useState("");
   const [responsibles, setResponsibles] = React.useState<Responsible[]>([]);
 
-  React.useEffect(() => {
-    saveNodes(nodes);
-  }, [nodes]);
+  const loadHierarchy = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/hierarchy`, { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setNodes((data?.nodes ?? []) as LocationNode[]);
+      setCategories((data?.categories ?? []) as string[]);
+    } catch {
+      toast.error("Falha ao carregar hierarquia.");
+    }
+  }, [API_URL]);
 
   React.useEffect(() => {
-    saveCategories(categories);
-  }, [categories]);
+    loadHierarchy();
+  }, [loadHierarchy]);
 
   const resetForm = () => {
     setName("");
@@ -141,11 +112,7 @@ const HierarchyPage: React.FC = () => {
 
   const openChildDialog = (parent: LocationNode) => {
     setParentForNewChild(parent);
-    // Herdar responsáveis do pai e ancestrais
     const inherited = buildInheritedResponsibles(nodes, parent.id);
-    setResponsibles(inherited);
-    setPrimaryIndex(inherited.length > 0 ? 0 : -1); // principal inicial herdado (primeiro da lista)
-    resetForm(); // reseta campos, mas mantém herdados
     setResponsibles(inherited);
     setPrimaryIndex(inherited.length > 0 ? 0 : -1);
     setOpenNewChild(true);
@@ -158,13 +125,13 @@ const HierarchyPage: React.FC = () => {
   };
 
   const addResponsible = () => {
-    const nameTrim = responsibleName.trim();
-    if (!nameTrim) return;
-    if (responsibles.find((r) => r.name.toLowerCase() === nameTrim.toLowerCase())) {
+    const nm = responsibleName.trim();
+    if (!nm) return;
+    if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) {
       toast.error("Responsável já adicionado.");
       return;
     }
-    const next = [...responsibles, { name: nameTrim }];
+    const next = [...responsibles, { name: nm }];
     setResponsibles(next);
     if (primaryIndex === -1) setPrimaryIndex(0);
     setResponsibleName("");
@@ -178,70 +145,87 @@ const HierarchyPage: React.FC = () => {
     else if (primaryIndex > idx) setPrimaryIndex(primaryIndex - 1);
   };
 
-  const setPrimary = (idx: number) => {
-    setPrimaryIndex(idx);
-  };
+  const setPrimary = (idx: number) => setPrimaryIndex(idx);
 
-  const ensureCategoryInList = (cat: string) => {
-    const c = cat.trim();
-    if (!c) return;
-    if (!categories.find((x) => x.toLowerCase() === c.toLowerCase())) {
-      setCategories((prev) => [...prev, c]);
+  const ensurePrimaryExists = () => {
+    if (responsibles.length === 0) return false;
+    if (primaryIndex < 0 || primaryIndex >= responsibles.length) {
+      setPrimaryIndex(0);
     }
+    return true;
   };
 
-  const handleSave = (isChild: boolean) => {
-    const nm = name.trim();
-    if (!nm) {
+  const saveRoot = async () => {
+    if (!name.trim()) {
       toast.error("Informe o nome do local.");
       return;
     }
-    // marcar principal
-    const finalResponsibles: Responsible[] = responsibles.map((r, i) => ({ ...r, isPrimary: i === primaryIndex }));
-    if (finalResponsibles.length === 0) {
+    if (!ensurePrimaryExists()) {
       toast.error("Informe pelo menos um responsável.");
       return;
     }
-    const cat = categoryInput.trim();
-    if (cat) ensureCategoryInList(cat);
-
-    const node: LocationNode = {
-      id: genId(),
-      name: nm,
-      description: description.trim() || undefined,
+    const finalResponsibles: Responsible[] = responsibles.map((r, i) => ({ ...r, isPrimary: i === primaryIndex }));
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
       color,
-      category: cat || undefined,
+      category: categoryInput.trim(),
       responsibles: finalResponsibles,
-      children: [],
-      parentId: isChild && parentForNewChild ? parentForNewChild.id : null,
     };
-
-    setNodes((prev) => {
-      if (!isChild || !parentForNewChild) {
-        return [...prev, node];
-      }
-      // inserir como filho do pai
-      const addChild = (list: LocationNode[]): LocationNode[] =>
-        list.map((n) => {
-          if (n.id === parentForNewChild.id) {
-            return { ...n, children: [...n.children, node] };
-          }
-          if (n.children?.length) {
-            return { ...n, children: addChild(n.children) };
-          }
-          return n;
-        });
-      return addChild(prev);
+    const res = await fetch(`${API_URL}/api/hierarchy/root`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-
-    toast.success(isChild ? "Filial adicionada com sucesso!" : "Local raiz adicionado com sucesso!");
-    setOpenNewChild(false);
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao salvar local raiz.");
+      return;
+    }
+    toast.success("Local raiz adicionado com sucesso!");
     setOpenNewRoot(false);
-    setParentForNewChild(null);
     resetForm();
+    await loadHierarchy();
   };
 
-  // Filtros e busca aplicados ao render
+  const saveChild = async () => {
+    if (!parentForNewChild) return;
+    if (!name.trim()) {
+      toast.error("Informe o nome do local.");
+      return;
+    }
+    if (!ensurePrimaryExists()) {
+      toast.error("Informe pelo menos um responsável.");
+      return;
+    }
+    const finalResponsibles: Responsible[] = responsibles.map((r, i) => ({ ...r, isPrimary: i === primaryIndex }));
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      color,
+      category: categoryInput.trim(),
+      responsibles: finalResponsibles,
+    };
+    const res = await fetch(`${API_URL}/api/hierarchy/${encodeURIComponent(parentForNewChild.id)}/child`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao salvar dependente.");
+      return;
+    }
+    toast.success("Filial adicionada com sucesso!");
+    setOpenNewChild(false);
+    setParentForNewChild(null);
+    resetForm();
+    await loadHierarchy();
+  };
+
+  // Filtros e busca
   const matchFilters = (node: LocationNode): boolean => {
     const term = search.trim().toLowerCase();
     const cat = filterCategory.trim().toLowerCase();
@@ -261,10 +245,8 @@ const HierarchyPage: React.FC = () => {
     return okSearch && okCat && okResp;
   };
 
-  // Render recursivo da árvore com item
   const renderNode = (node: LocationNode, level: number = 0): React.ReactNode => {
     const inherited = buildInheritedResponsibles(nodes, node.parentId);
-    // Cadeia completa: principal do próprio primeiro
     const chainNames: string[] = [];
     const ownPrimary = node.responsibles.find((r) => r.isPrimary)?.name;
     const remainderOwn = node.responsibles.filter((r) => !r.isPrimary).map((r) => r.name);
@@ -341,7 +323,6 @@ const HierarchyPage: React.FC = () => {
                 Hierarquias de Localidades
               </CardTitle>
               <div className="flex items-center gap-2">
-                {/* Botão separado para adicionar locais raiz */}
                 <Button
                   className="bg-white/20 text-white hover:bg-white/25"
                   onClick={openRootDialog}
@@ -353,7 +334,6 @@ const HierarchyPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Ajuda lúdica */}
             <div className="mt-3 text-xs text-white/80">
               Crie sua hierarquia de ambientes em cascata. Use o botão “Adicionar Raiz” para os primeiros níveis.
               Depois, clique no “+” à direita de qualquer item para adicionar um dependente (filial) sob ele.
@@ -363,7 +343,6 @@ const HierarchyPage: React.FC = () => {
           </CardHeader>
 
           <CardContent>
-            {/* Filtros e busca */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -388,7 +367,6 @@ const HierarchyPage: React.FC = () => {
                   className="w-56 bg-white/20 text-white placeholder:text-white/70 border-white/25"
                 />
               </div>
-              {/* Lista rápida de categorias para clique */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/70">Categorias:</span>
                 <div className="flex flex-wrap gap-1">
@@ -410,7 +388,6 @@ const HierarchyPage: React.FC = () => {
 
             <Separator className="my-4 bg-white/20" />
 
-            {/* Árvore de raízes */}
             <div className="space-y-3">
               {filteredRoots.length ? (
                 filteredRoots.map((root) => renderNode(root, 0))
@@ -451,19 +428,16 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <div className="flex items-center gap-2">
-                <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
-                <div className="flex flex-wrap gap-1">
-                  {categories.map((c) => (
-                    <button key={`root-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
-                      {c}
-                    </button>
-                  ))}
-                </div>
+              <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
+              <div className="flex flex-wrap gap-1 mt-1">
+                {categories.map((c) => (
+                  <button key={`root-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
+                    {c}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Responsáveis */}
             <div className="space-y-2">
               <Label>Responsáveis</Label>
               <div className="flex items-center gap-2">
@@ -500,7 +474,7 @@ const HierarchyPage: React.FC = () => {
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setOpenNewRoot(false)}>Cancelar</Button>
-              <Button onClick={() => handleSave(false)}>Salvar</Button>
+              <Button onClick={saveRoot}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
@@ -535,19 +509,16 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <div className="flex items-center gap-2">
-                <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
-                <div className="flex flex-wrap gap-1">
-                  {categories.map((c) => (
-                    <button key={`child-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
-                      {c}
-                    </button>
-                  ))}
-                </div>
+              <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
+              <div className="flex flex-wrap gap-1 mt-1">
+                {categories.map((c) => (
+                  <button key={`child-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
+                    {c}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Responsáveis (herdáveis + novos) */}
             <div className="space-y-2">
               <Label>Responsáveis</Label>
               <div className="text-xs text-white/70">
@@ -587,7 +558,7 @@ const HierarchyPage: React.FC = () => {
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setOpenNewChild(false)}>Cancelar</Button>
-              <Button onClick={() => handleSave(true)}>Salvar</Button>
+              <Button onClick={saveChild}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
