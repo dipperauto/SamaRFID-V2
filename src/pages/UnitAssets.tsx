@@ -144,7 +144,18 @@ const UnitAssetsPage: React.FC = () => {
           const visited: Set<string> = new Set();
 
           const childrenMap = new Map<string, string[]>();
-          allNodes.forEach((node: any) => {
+          const flatNodes: any[] = [];
+          const flatten = (nodes: any[]) => {
+            for (const node of nodes) {
+              flatNodes.push(node);
+              if (node.children) {
+                flatten(node.children);
+              }
+            }
+          };
+          flatten(allNodes);
+
+          flatNodes.forEach((node: any) => {
             if (node.parentId) {
               if (!childrenMap.has(node.parentId)) {
                 childrenMap.set(node.parentId, []);
@@ -153,19 +164,19 @@ const UnitAssetsPage: React.FC = () => {
             }
           });
           
-          const allChildrenOf = (id: string): string[] => {
-            const res: string[] = [];
-            const q = [id];
-            while(q.length > 0) {
-              const curr = q.shift()!;
-              const children = childrenMap.get(curr) || [];
-              res.push(...children);
-              q.push(...children);
+          while(queue.length > 0) {
+            const currentId = queue.shift()!;
+            if (visited.has(currentId)) continue;
+            visited.add(currentId);
+            ids.push(currentId);
+            const children = childrenMap.get(currentId) || [];
+            for (const childId of children) {
+              if (!visited.has(childId)) {
+                queue.push(childId);
+              }
             }
-            return res;
           }
-
-          return [startId, ...allChildrenOf(startId)];
+          return ids;
         };
         
         const targetUnitIds = getSubUnitIds(unitId);
