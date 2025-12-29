@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Search, Plus, Image as ImageIcon } from "lucide-react";
+import { Search, Plus, Image as ImageIcon, ChevronsRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import PhotoCropper from "@/components/PhotoCropper";
 // ADDED: edição e confirmação
@@ -29,12 +29,13 @@ type Asset = {
   category?: string;
   notes?: string;
   photo_path?: string;
-  // ADDED: quantidade e unidade
   quantity?: number | null;
   unit?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string;
+  // ADDED: para visão consolidada
+  unit_path?: string;
 };
 
 const unitsList = ["Unidade", "Kg", "g", "Metro", "cm", "Litros"];
@@ -47,6 +48,11 @@ const UnitAssetsPage: React.FC = () => {
   const [loading, setLoading] = React.useState<boolean>(false);
   const [q, setQ] = React.useState<string>("");
   const [sort, setSort] = React.useState<"name_asc"|"name_desc"|"created_desc"|"created_asc">("name_asc");
+
+  // ADDED: visão consolidada
+  const [includeSubUnits, setIncludeSubUnits] = React.useState<boolean>(false);
+  const [hierarchyFilter, setHierarchyFilter] = React.useState<string>("");
+  const [allUnits, setAllUnits] = React.useState<any[]>([]);
 
   const [categories, setCategories] = React.useState<string[]>([]);
   const [filterCategory, setFilterCategory] = React.useState<string>("");
@@ -117,17 +123,72 @@ const UnitAssetsPage: React.FC = () => {
     if (!unitId) return;
     setLoading(true);
     try {
+      // Se consolidado, busca todos os ativos de todas as unidades
+      const endpoint = includeSubUnits
+        ? `${API_URL}/api/units/all/assets` // Endpoint hipotético, vamos simular no front por enquanto
+        : `${API_URL}/api/units/${unitId}/assets`;
+      
       const qs = new URLSearchParams({ q, sort });
-      const res = await fetch(`${API_URL}/api/units/${unitId}/assets?${qs.toString()}`, { credentials: "include" });
+      const res = await fetch(`${endpoint}?${qs.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setAssets((data?.assets ?? []) as Asset[]);
+      
+      if (includeSubUnits) {
+        // Simulação no frontend: buscar hierarquia e filtrar
+        const hierarchyRes = await fetch(`${API_URL}/api/hierarchy`, { credentials: "include" });
+        const hierarchyData = await hierarchyRes.json();
+        const allNodes = hierarchyData.nodes || [];
+        setAllUnits(allNodes);
+
+        const getSubUnitIds = (startId: string, nodes: any[]): string[] => {
+          const ids = [startId];
+          const map = new Map(nodes.map(n => [n.id, n]));
+          const queue = [startId];
+          while(queue.length > 0) {
+            const currentId = queue.shift();
+            const children = nodes.filter(n => n.parentId === currentId);
+            for (const child of children) {
+              ids.push(child.id);
+              queue.push(child.id);
+            }
+          }
+          return ids;
+        };
+        
+        const targetUnitIds = getSubUnitIds(unitId, allNodes);
+        
+        // Busca todos os ativos e filtra
+        const allAssetsRes = await fetch(`${API_URL}/api/units/all/assets`, { credentials: "include" });
+        const allAssetsData = await allAssetsRes.json();
+        const allAssets = (allAssetsData?.assets ?? []) as Asset[];
+
+        const getUnitPath = (id: string, nodes: any[]): string => {
+          const map = new Map(nodes.map(n => [n.id, n]));
+          let path = [];
+          let current = map.get(id);
+          while(current) {
+            path.unshift(current.name);
+            current = current.parentId ? map.get(current.parentId) : null;
+          }
+          return path.join(" > ");
+        };
+
+        const filteredAssets = allAssets
+          .filter(a => targetUnitIds.includes(a.unit_id))
+          .map(a => ({ ...a, unit_path: getUnitPath(a.unit_id, allNodes) }));
+
+        setAssets(filteredAssets);
+
+      } else {
+        setAssets((data?.assets ?? []) as Asset[]);
+      }
+
     } catch {
       toast.error("Falha ao carregar ativos.");
     } finally {
       setLoading(false);
     }
-  }, [API_URL, unitId, q, sort]);
+  }, [API_URL, unitId, q, sort, includeSubUnits]);
 
   const loadCategories = React.useCallback(async () => {
     try {
@@ -249,13 +310,15 @@ const UnitAssetsPage: React.FC = () => {
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
+    const hFilter = hierarchyFilter.trim().toLowerCase();
     return assets.filter(a => {
       const text = [a.name, a.description, a.item_code || "", a.category || ""].join(" ").toLowerCase();
       const okTerm = term ? text.includes(term) : true;
       const okCat = filterCategory ? (a.category || "").toLowerCase() === filterCategory.toLowerCase() : true;
-      return okTerm && okCat;
+      const okHierarchy = includeSubUnits && hFilter ? (a.unit_path || "").toLowerCase().includes(hFilter) : true;
+      return okTerm && okCat && okHierarchy;
     });
-  }, [assets, q, filterCategory]);
+  }, [assets, q, filterCategory, includeSubUnits, hierarchyFilter]);
 
   const sorted = React.useMemo(() => {
     const list = [...filtered];
@@ -353,17 +416,16 @@ const UnitAssetsPage: React.FC = () => {
                 </select>
                 <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={loadData}>Aplicar</Button>
               </div>
-              {/* Ações em massa quando modo edição */}
-              {editMode && (
+              {/* ADDED: toggle e filtro de hierarquia */}
+              <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <Button variant="destructive" disabled={selectedIds.size === 0} onClick={deleteSelected}>
-                    Excluir selecionados ({selectedIds.size})
-                  </Button>
-                  <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={clearSelection}>
-                    Limpar seleção
-                  </Button>
+                  <span className="text-xs text-white/80">Incluir filiais</span>
+                  <Switch checked={includeSubUnits} onCheckedChange={setIncludeSubUnits} />
                 </div>
-              )}
+                {includeSubUnits && (
+                  <Input value={hierarchyFilter} onChange={(e)=>setHierarchyFilter(e.target.value)} placeholder="Filtrar por unidade..." className="w-48 bg-white/20 text-white placeholder:text-white/70 border-white/25" />
+                )}
+              </div>
             </div>
 
             <Separator className="my-4 bg-white/20" />
@@ -390,6 +452,12 @@ const UnitAssetsPage: React.FC = () => {
                         <div className="text-xs text-white/70">QR: {a.qr_code || "—"} • RFID: {a.rfid_code || "—"}</div>
                         {/* ADDED: quantidade e unidade */}
                         <div className="text-xs text-white/70">Quantidade: {typeof a.quantity === "number" ? a.quantity : "—"} {a.unit || ""}</div>
+                        {/* ADDED: caminho da unidade */}
+                        {includeSubUnits && a.unit_path && (
+                          <div className="text-xs text-cyan-300 mt-1 flex items-center gap-1">
+                            <ChevronsRight className="h-3 w-3" /> {a.unit_path}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {/* Ações em modo edição */}

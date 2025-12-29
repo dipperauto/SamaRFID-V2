@@ -1474,7 +1474,10 @@ def unit_assets_add(unit_id: str, payload: AddAssetRequest, request: Request):
     user = _require_page_access(request, "hierarchy")
     created = assets_add(unit_id, payload.dict(), user["username"])
     try:
-        append_log(user["username"], "asset:create", unit_id, int(created.get("id") or 0), f"Novo ativo: {created.get('name')}")
+        details = f"Novo ativo: {created.get('name')}"
+        if created.get("quantity") is not None:
+            details += f" (Qtd: {created.get('quantity')} {created.get('unit') or ''})"
+        append_log(user["username"], "asset:create", unit_id, int(created.get("id") or 0), details)
     except Exception:
         pass
     return Asset(**created)
@@ -1486,7 +1489,10 @@ def unit_assets_update(asset_id: int, payload: UpdateAssetRequest, request: Requ
     if not updated:
         raise HTTPException(status_code=404, detail="Ativo não encontrado.")
     try:
-        append_log(user["username"], "asset:update", updated.get("unit_id"), int(updated.get("id") or 0), f"Atualizado: {updated.get('name')}")
+        details = f"Atualizado: {updated.get('name')}"
+        if updated.get("quantity") is not None:
+            details += f" (Qtd: {updated.get('quantity')} {updated.get('unit') or ''})"
+        append_log(user["username"], "asset:update", updated.get("unit_id"), int(updated.get("id") or 0), details)
     except Exception:
         pass
     return Asset(**updated)
@@ -1494,21 +1500,23 @@ def unit_assets_update(asset_id: int, payload: UpdateAssetRequest, request: Requ
 @app.delete("/assets/{asset_id}")
 def unit_assets_delete(asset_id: int, request: Request):
     user = _require_page_access(request, "hierarchy")
-    # para log precisamos buscar unit_id
-    items = []
-    try:
-        # procura registro para log
-        for it in assets_list_categories():  # placeholder incorreto, não temos index; log sem unit
-            pass
-    except Exception:
-        pass
+    # Para log, precisamos buscar o ativo ANTES de deletar para pegar os detalhes
+    from storage_assets import get_all_assets_flat
+    all_assets = get_all_assets_flat()
+    asset_to_delete = next((a for a in all_assets if a.get("id") == asset_id), None)
+    
     ok = assets_delete(asset_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Ativo não encontrado.")
-    try:
-        append_log(user["username"], "asset:delete", None, int(asset_id), "Excluído")
-    except Exception:
-        pass
+    
+    if asset_to_delete:
+        try:
+            details = f"Excluído: {asset_to_delete.get('name')}"
+            if asset_to_delete.get("quantity") is not None:
+                details += f" (Qtd: {asset_to_delete.get('quantity')} {asset_to_delete.get('unit') or ''})"
+            append_log(user["username"], "asset:delete", asset_to_delete.get("unit_id"), asset_id, details)
+        except Exception:
+            pass
     return {"success": True}
 
 # Categorias de ativos (separadas das de Unidades)
