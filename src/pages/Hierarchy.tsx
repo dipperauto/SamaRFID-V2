@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus, Search, MapPin, UserCheck } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-type Responsible = { name: string; isPrimary?: boolean };
+type Responsible = { name: string; username?: string; photo_rel?: string | null; isPrimary?: boolean };
 type LocationNode = {
   id: string;
   name: string;
@@ -22,44 +23,6 @@ type LocationNode = {
   children: LocationNode[];
   parentId?: string | null;
 };
-
-const genId = () => `loc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
-
-function buildInheritedResponsibles(nodes: LocationNode[], parentId: string | null | undefined): Responsible[] {
-  if (!parentId) return [];
-  const map = new Map<string, LocationNode>();
-  const indexAll = (list: LocationNode[]) => {
-    for (const n of list) {
-      map.set(n.id, n);
-      if (n.children?.length) indexAll(n.children);
-    }
-  };
-  indexAll(nodes);
-
-  const chain: LocationNode[] = [];
-  let cur = parentId ? map.get(parentId) || null : null;
-  while (cur) {
-    chain.push(cur);
-    cur = cur.parentId ? map.get(cur.parentId) || null : null;
-  }
-
-  const ordered: Responsible[] = [];
-  const added = new Set<string>();
-  for (const loc of chain) {
-    const primary = loc.responsibles.find((r) => r.isPrimary);
-    if (primary && !added.has(primary.name)) {
-      ordered.push({ name: primary.name, isPrimary: false });
-      added.add(primary.name);
-    }
-    for (const r of loc.responsibles) {
-      if (!added.has(r.name)) {
-        ordered.push({ name: r.name, isPrimary: false });
-        added.add(r.name);
-      }
-    }
-  }
-  return ordered;
-}
 
 const HierarchyPage: React.FC = () => {
   const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
@@ -75,17 +38,29 @@ const HierarchyPage: React.FC = () => {
   const [openNewChild, setOpenNewChild] = React.useState(false);
   const [parentForNewChild, setParentForNewChild] = React.useState<LocationNode | null>(null);
 
+  // Gerenciador de categorias
+  const [openCatManager, setOpenCatManager] = React.useState(false);
+  const [newCategory, setNewCategory] = React.useState("");
+
   // Form state
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [color, setColor] = React.useState("#0ea5e9");
   const [categoryInput, setCategoryInput] = React.useState("");
   const [primaryIndex, setPrimaryIndex] = React.useState<number>(-1);
-  const [responsibleName, setResponsibleName] = React.useState("");
   const [responsibles, setResponsibles] = React.useState<Responsible[]>([]);
-  // ADDED: busca de usuários
+
+  // Busca de usuários para responsáveis (com foto)
   const [userQuery, setUserQuery] = React.useState("");
   const [userResults, setUserResults] = React.useState<{ username: string; full_name: string; role: string; profile_photo_path?: string | null }[]>([]);
+
+  const normalizePhotoRel = (raw?: string | null) => {
+    if (!raw) return null;
+    const p = String(raw).replace(/\\/g, "/").replace(/^\/+/, "");
+    if (p.startsWith("static/")) return p;
+    if (p.startsWith("media/")) return p.replace(/^media\//, "static/");
+    return `static/${p}`;
+  };
 
   const searchUsers = React.useCallback(async (term: string) => {
     const q = term.trim();
@@ -97,7 +72,8 @@ const HierarchyPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/users/search-public?q=${encodeURIComponent(q)}`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
-      setUserResults((data?.users ?? []) as any[]);
+      const list = (data?.users ?? []) as any[];
+      setUserResults(list.slice(0, 3)); // máximo 3 sugestões
     } catch {}
   }, [API_URL]);
 
@@ -114,7 +90,7 @@ const HierarchyPage: React.FC = () => {
       setNodes((data?.nodes ?? []) as LocationNode[]);
       setCategories((data?.categories ?? []) as string[]);
     } catch {
-      toast.error("Falha ao carregar hierarquia.");
+      toast.error("Falha ao carregar Unidades.");
     }
   }, [API_URL]);
 
@@ -128,9 +104,47 @@ const HierarchyPage: React.FC = () => {
     setColor("#0ea5e9");
     setCategoryInput("");
     setPrimaryIndex(-1);
-    setResponsibleName("");
     setResponsibles([]);
+    setUserQuery("");
+    setUserResults([]);
   };
+
+  const buildInheritedResponsibles = React.useCallback((nodesList: LocationNode[], parentId: string | null | undefined): Responsible[] => {
+    if (!parentId) return [];
+    const map = new Map<string, LocationNode>();
+    const indexAll = (list: LocationNode[]) => {
+      for (const n of list) {
+        map.set(n.id, n);
+        if (n.children?.length) indexAll(n.children);
+      }
+    };
+    indexAll(nodesList);
+
+    const chain: LocationNode[] = [];
+    let cur = parentId ? map.get(parentId) || null : null;
+    while (cur) {
+      chain.push(cur);
+      cur = cur.parentId ? map.get(cur.parentId) || null : null;
+    }
+
+    const ordered: Responsible[] = [];
+    const added = new Set<string>(); // preferir dedupe por username se disponível
+    for (const loc of chain) {
+      const primary = loc.responsibles.find((r) => r.isPrimary);
+      const keyPrimary = (primary?.username || primary?.name || "").toLowerCase();
+      if (primary && keyPrimary && !added.has(keyPrimary)) {
+        ordered.push({ ...primary, isPrimary: false });
+        added.add(keyPrimary);
+      }
+      for (const r of loc.responsibles) {
+        const key = (r.username || r.name || "").toLowerCase();
+        if (!key || added.has(key)) continue;
+        ordered.push({ ...r, isPrimary: false });
+        added.add(key);
+      }
+    }
+    return ordered;
+  }, []);
 
   const openChildDialog = (parent: LocationNode) => {
     setParentForNewChild(parent);
@@ -146,17 +160,22 @@ const HierarchyPage: React.FC = () => {
     setOpenNewRoot(true);
   };
 
-  const addResponsible = () => {
-    const nm = responsibleName.trim();
-    if (!nm) return;
-    if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) {
-      toast.error("Responsável já adicionado.");
-      return;
+  const ensurePrimaryExists = () => {
+    if (responsibles.length === 0) return false;
+    if (primaryIndex < 0 || primaryIndex >= responsibles.length) {
+      setPrimaryIndex(0);
     }
-    const next = [...responsibles, { name: nm }];
+    return true;
+  };
+
+  const addResponsibleFromUser = (u: { username: string; full_name: string; profile_photo_path?: string | null }) => {
+    const nm = u.full_name || u.username;
+    const key = (u.username || nm).toLowerCase();
+    if (responsibles.find((r) => (r.username || r.name || "").toLowerCase() === key)) return;
+    const photoRel = normalizePhotoRel(u.profile_photo_path || null);
+    const next = [...responsibles, { name: nm, username: u.username, photo_rel: photoRel }];
     setResponsibles(next);
     if (primaryIndex === -1) setPrimaryIndex(0);
-    setResponsibleName("");
   };
 
   const removeResponsible = (idx: number) => {
@@ -169,17 +188,9 @@ const HierarchyPage: React.FC = () => {
 
   const setPrimary = (idx: number) => setPrimaryIndex(idx);
 
-  const ensurePrimaryExists = () => {
-    if (responsibles.length === 0) return false;
-    if (primaryIndex < 0 || primaryIndex >= responsibles.length) {
-      setPrimaryIndex(0);
-    }
-    return true;
-  };
-
   const saveRoot = async () => {
     if (!name.trim()) {
-      toast.error("Informe o nome do local.");
+      toast.error("Informe o nome da unidade.");
       return;
     }
     if (!ensurePrimaryExists()) {
@@ -202,10 +213,10 @@ const HierarchyPage: React.FC = () => {
     });
     if (!res.ok) {
       const detail = await res.json().catch(() => null);
-      toast.error(detail?.detail ?? "Falha ao salvar local raiz.");
+      toast.error(detail?.detail ?? "Falha ao salvar unidade raiz.");
       return;
     }
-    toast.success("Local raiz adicionado com sucesso!");
+    toast.success("Unidade raiz adicionada com sucesso!");
     setOpenNewRoot(false);
     resetForm();
     await loadHierarchy();
@@ -214,7 +225,7 @@ const HierarchyPage: React.FC = () => {
   const saveChild = async () => {
     if (!parentForNewChild) return;
     if (!name.trim()) {
-      toast.error("Informe o nome do local.");
+      toast.error("Informe o nome da unidade.");
       return;
     }
     if (!ensurePrimaryExists()) {
@@ -247,7 +258,7 @@ const HierarchyPage: React.FC = () => {
     await loadHierarchy();
   };
 
-  // Filtros e busca
+  // Filtros e busca no render
   const matchFilters = (node: LocationNode): boolean => {
     const term = search.trim().toLowerCase();
     const cat = filterCategory.trim().toLowerCase();
@@ -263,19 +274,38 @@ const HierarchyPage: React.FC = () => {
 
     const okSearch = term ? text.includes(term) : true;
     const okCat = cat ? (node.category || "").toLowerCase() === cat : true;
-    const okResp = resp ? node.responsibles.some((r) => r.name.toLowerCase().includes(resp)) : true;
+    const okResp = resp ? node.responsibles.some((r) => (r.name || "").toLowerCase().includes(resp) || (r.username || "").toLowerCase().includes(resp)) : true;
     return okSearch && okCat && okResp;
   };
 
+  const filteredRoots = nodes.filter((n) => !n.parentId);
+
+  const renderRespBadge = (r: Responsible, idx: number, idKey: string) => {
+    const url = r.photo_rel ? `${API_URL}/${r.photo_rel}` : null;
+    return (
+      <div key={`${idKey}-resp-${idx}`} className="flex items-center gap-1 rounded-md border border-white/20 bg-white/10 px-2 py-1">
+        <Avatar className="h-6 w-6">
+          {url ? <AvatarImage src={url} alt={r.name} /> : <AvatarFallback>👤</AvatarFallback>}
+        </Avatar>
+        <span className="text-xs">{idx + 1}. {r.name}{idx === 0 ? " (principal)" : ""}</span>
+      </div>
+    );
+  };
+
   const renderNode = (node: LocationNode, level: number = 0): React.ReactNode => {
-    const inherited = buildInheritedResponsibles(nodes, node.parentId);
-    const chainNames: string[] = [];
-    const ownPrimary = node.responsibles.find((r) => r.isPrimary)?.name;
-    const remainderOwn = node.responsibles.filter((r) => !r.isPrimary).map((r) => r.name);
-    if (ownPrimary) chainNames.push(ownPrimary);
-    chainNames.push(...remainderOwn);
+    // Monta cadeia completa de responsáveis (próprios + herdados sem duplicar)
+    const inherited = ((): Responsible[] => {
+      if (!node.parentId) return [];
+      return buildInheritedResponsibles(nodes, node.parentId);
+    })();
+    const chain: Responsible[] = [];
+    const ownPrimary = node.responsibles.find((r) => r.isPrimary);
+    const remainderOwn = node.responsibles.filter((r) => !r.isPrimary);
+    if (ownPrimary) chain.push(ownPrimary);
+    chain.push(...remainderOwn);
     for (const inh of inherited) {
-      if (!chainNames.includes(inh.name)) chainNames.push(inh.name);
+      const key = (inh.username || inh.name || "").toLowerCase();
+      if (!chain.find(c => (c.username || c.name || "").toLowerCase() === key)) chain.push(inh);
     }
 
     const visible = matchFilters(node);
@@ -296,15 +326,10 @@ const HierarchyPage: React.FC = () => {
             <div className="mt-2 text-xs">
               <div className="font-medium flex items-center gap-1">
                 <UserCheck className="h-3 w-3" />
-                Responsáveis (em ordem de colocação):
+                Responsáveis (ordem):
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1">
-                {chainNames.map((nm, idx) => (
-                  <Badge key={`${node.id}-resp-${nm}-${idx}`} variant={idx === 0 ? "default" : "outline"} className={idx === 0 ? "bg-[#10b981] text-white" : "bg-white/10 text-white"}>
-                    {idx + 1}. {nm}{idx === 0 ? " (principal)" : ""}
-                  </Badge>
-                ))}
-                {chainNames.length === 0 && <span className="text-white/70">—</span>}
+                {chain.length ? chain.map((r, idx) => renderRespBadge(r, idx, node.id)) : <span className="text-white/70">—</span>}
               </div>
             </div>
           </div>
@@ -332,7 +357,43 @@ const HierarchyPage: React.FC = () => {
     );
   };
 
-  const filteredRoots = nodes.filter((n) => !n.parentId);
+  // Categoria: gerenciador (modal)
+  const addCategory = async () => {
+    const nm = newCategory.trim();
+    if (!nm) return;
+    const res = await fetch(`${API_URL}/api/hierarchy/categories`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nm }),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao adicionar categoria.");
+      return;
+    }
+    const data = await res.json();
+    setCategories((data?.categories ?? []) as string[]);
+    setNewCategory("");
+    toast.success("Categoria adicionada.");
+  };
+
+  const removeCategory = async (nm: string) => {
+    const res = await fetch(`${API_URL}/api/hierarchy/categories`, {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nm }),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      toast.error(detail?.detail ?? "Falha ao remover categoria.");
+      return;
+    }
+    const data = await res.json();
+    setCategories((data?.categories ?? []) as string[]);
+    toast.success("Categoria removida.");
+  };
 
   return (
     <div className="min-h-screen w-full overflow-hidden p-4">
@@ -348,10 +409,19 @@ const HierarchyPage: React.FC = () => {
                 <Button
                   className="bg-white/20 text-white hover:bg-white/25"
                   onClick={openRootDialog}
-                  title="Adicionar local raiz"
+                  title="Adicionar unidade raiz"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Raiz
+                </Button>
+                {/* Gerenciar categorias */}
+                <Button
+                  variant="outline"
+                  className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+                  onClick={() => setOpenCatManager(true)}
+                  title="Gerenciar categorias"
+                >
+                  Categorias
                 </Button>
               </div>
             </div>
@@ -359,7 +429,7 @@ const HierarchyPage: React.FC = () => {
             <div className="mt-3 text-xs text-white/80">
               Crie sua hierarquia de ambientes em cascata. Use o botão "Adicionar Raiz" para os primeiros níveis.
               Depois, clique no "+" à direita de qualquer item para adicionar um dependente (filial) sob ele.
-              Cada novo ambiente pede nome, descrição, cor, responsáveis (defina o principal) e categoria.
+              Cada nova unidade pede nome, descrição, cor, responsáveis (defina o principal) e categoria.
               Filiais herdam responsáveis do ambiente pai e dos níveis acima, mantendo a ordem (principal primeiro).
             </div>
           </CardHeader>
@@ -427,8 +497,8 @@ const HierarchyPage: React.FC = () => {
       <Dialog open={openNewRoot} onOpenChange={setOpenNewRoot}>
         <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
           <DialogHeader>
-            <DialogTitle>Novo Local Raiz</DialogTitle>
-            <DialogDescription className="text-white/80">Preencha os dados do ambiente.</DialogDescription>
+            <DialogTitle>Nova Unidade (Raiz)</DialogTitle>
+            <DialogDescription className="text-white/80">Preencha os dados da unidade.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -445,21 +515,25 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Resumo do ambiente" className="bg-white text-black" />
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Resumo do ambiente" className="bg:white text-black" />
             </div>
 
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
-              <div className="flex flex-wrap gap-1 mt-1">
-                {categories.map((c) => (
-                  <button key={`root-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
-                    {c}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <select value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                  <option value="">Selecione</option>
+                  {categories.map((c) => (
+                    <option key={`cat-${c}`} value={c}>{c}</option>
+                  ))}
+                </select>
+                <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => setOpenCatManager(true)}>
+                  Gerenciar
+                </Button>
               </div>
             </div>
 
+            {/* Responsáveis via busca */}
             <div className="space-y-2">
               <Label>Responsáveis</Label>
               <div className="text-xs text-white/70">Pesquise usuários para associar e defina o principal.</div>
@@ -473,26 +547,19 @@ const HierarchyPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {userResults.map((u) => {
-                  const photo = u.profile_photo_path
-                    ? `${API_URL}/${String(u.profile_photo_path).replace(/\\/g, "/").replace(/^media\//, "static/")}`
-                    : null;
+                  const photoRel = normalizePhotoRel(u.profile_photo_path || null);
+                  const url = photoRel ? `${API_URL}/${photoRel}` : null;
                   return (
                     <button
                       key={u.username}
                       type="button"
-                      onClick={() => {
-                        const nm = u.full_name || u.username;
-                        if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) return;
-                        const next = [...responsibles, { name: nm }];
-                        setResponsibles(next);
-                        if (primaryIndex === -1) setPrimaryIndex(0);
-                      }}
+                      onClick={() => addResponsibleFromUser(u)}
                       className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-left hover:bg-white/20"
                       title={`Adicionar ${u.full_name}`}
                     >
-                      <div className="h-8 w-8 rounded-full overflow-hidden border border-white/30 bg-white/20">
-                        {photo ? <img src={photo} alt={u.full_name} className="h-8 w-8 object-cover" /> : <div className="h-8 w-8 flex items-center justify-center text-white">👤</div>}
-                      </div>
+                      <Avatar className="h-8 w-8">
+                        {url ? <AvatarImage src={url} alt={u.full_name} /> : <AvatarFallback>👤</AvatarFallback>}
+                      </Avatar>
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{u.full_name}</div>
                         <div className="text-xs text-white/80 truncate">{u.username}</div>
@@ -500,36 +567,35 @@ const HierarchyPage: React.FC = () => {
                     </button>
                   );
                 })}
-                {userResults.length === 0 && (
-                  <div className="text-xs text-white/70">Nenhum usuário encontrado. Você pode adicionar manualmente abaixo.</div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Adicionar manualmente (opcional)" className="bg-white text-black" />
-                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>Adicionar</Button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {responsibles.map((r, idx) => (
-                  <div key={`root-resp-${r.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1">
-                    <button
-                      type="button"
-                      className={`text-xs rounded-sm px-2 py-0.5 ${primaryIndex === idx ? "bg-[#10b981] text-white" : "bg-white/20 text-white"}`}
-                      onClick={() => setPrimary(idx)}
-                      title="Definir como principal"
-                    >
-                      {primaryIndex === idx ? "Principal" : "Tornar principal"}
-                    </button>
-                    <span className="text-xs">{r.name}</span>
-                    <button
-                      type="button"
-                      className="text-xs text-red-300 hover:text-red-400"
-                      onClick={() => removeResponsible(idx)}
-                      title="Remover"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ))}
+                {responsibles.map((r, idx) => {
+                  const url = r.photo_rel ? `${API_URL}/${r.photo_rel}` : null;
+                  return (
+                    <div key={`root-resp-${r.username || r.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1">
+                      <button
+                        type="button"
+                        className={`text-xs rounded-sm px-2 py-0.5 ${primaryIndex === idx ? "bg-[#10b981] text-white" : "bg-white/20 text-white"}`}
+                        onClick={() => setPrimary(idx)}
+                        title="Definir como principal"
+                      >
+                        {primaryIndex === idx ? "Principal" : "Tornar principal"}
+                      </button>
+                      <Avatar className="h-6 w-6">
+                        {url ? <AvatarImage src={url} alt={r.name} /> : <AvatarFallback>👤</AvatarFallback>}
+                      </Avatar>
+                      <span className="text-xs">{r.name}</span>
+                      <button
+                        type="button"
+                        className="text-xs text-red-300 hover:text-red-400"
+                        onClick={() => removeResponsible(idx)}
+                        title="Remover"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  );
+                })}
                 {responsibles.length === 0 && <span className="text-xs text-white/70">Nenhum responsável ainda.</span>}
               </div>
             </div>
@@ -546,9 +612,9 @@ const HierarchyPage: React.FC = () => {
       <Dialog open={openNewChild} onOpenChange={setOpenNewChild}>
         <DialogContent className="sm:max-w-lg rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
           <DialogHeader>
-            <DialogTitle>Novo Dependente</DialogTitle>
+            <DialogTitle>Nova Filial</DialogTitle>
             <DialogDescription className="text-white/80">
-              Adicione um ambiente filial ao pai selecionado. Responsáveis do pai e dos níveis acima são herdados automaticamente.
+              Responsáveis do pai e dos níveis acima são herdados automaticamente. Você pode adicionar novos via busca.
             </DialogDescription>
           </DialogHeader>
 
@@ -556,7 +622,7 @@ const HierarchyPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nome</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Sala de Reunião" className="bg-white text-black" />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Sala de Reunião" className="bg:white text:black" />
               </div>
               <div className="space-y-2">
                 <Label>Cor</Label>
@@ -566,24 +632,30 @@ const HierarchyPage: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Resumo do ambiente" className="bg-white text-black" />
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Resumo do ambiente" className="bg:white text:black" />
             </div>
 
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Input value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} placeholder="Digite ou escolha uma categoria" className="bg-white text-black" />
-              <div className="flex flex-wrap gap-1 mt-1">
-                {categories.map((c) => (
-                  <button key={`child-cat-${c}`} type="button" className="text-xs rounded-md border bg-white/10 text-white px-2 py-1 hover:bg-white/20" onClick={() => setCategoryInput(c)}>
-                    {c}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <select value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} className="rounded-md border px-2 py-2 bg-white text-black">
+                  <option value="">Selecione</option>
+                  {categories.map((c) => (
+                    <option key={`child-cat-${c}`} value={c}>{c}</option>
+                  ))}
+                </select>
+                <Button variant="outline" className="border-white/30 bg-white/10 text:white hover:bg:white/20" onClick={() => setOpenCatManager(true)}>
+                  Gerenciar
+                </Button>
               </div>
             </div>
 
+            {/* Responsáveis via busca */}
             <div className="space-y-2">
               <Label>Responsáveis</Label>
-              <div className="text-xs text-white/70">Herdados do pai e dos níveis acima; você pode adicionar novos via busca.</div>
+              <div className="text-xs text-white/70">
+                Herdados do pai e dos níveis acima; você pode adicionar novos via busca abaixo.
+              </div>
               <div className="flex items-center gap-2">
                 <Input
                   value={userQuery}
@@ -594,26 +666,19 @@ const HierarchyPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {userResults.map((u) => {
-                  const photo = u.profile_photo_path
-                    ? `${API_URL}/${String(u.profile_photo_path).replace(/\\/g, "/").replace(/^media\//, "static/")}`
-                    : null;
-                  const nm = u.full_name || u.username;
+                  const photoRel = normalizePhotoRel(u.profile_photo_path || null);
+                  const url = photoRel ? `${API_URL}/${photoRel}` : null;
                   return (
                     <button
                       key={`child-${u.username}`}
                       type="button"
-                      onClick={() => {
-                        if (responsibles.find((r) => r.name.toLowerCase() === nm.toLowerCase())) return;
-                        const next = [...responsibles, { name: nm }];
-                        setResponsibles(next);
-                        if (primaryIndex === -1) setPrimaryIndex(0);
-                      }}
+                      onClick={() => addResponsibleFromUser(u)}
                       className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-left hover:bg-white/20"
                       title={`Adicionar ${u.full_name}`}
                     >
-                      <div className="h-8 w-8 rounded-full overflow-hidden border border-white/30 bg-white/20">
-                        {photo ? <img src={photo} alt={u.full_name} className="h-8 w-8 object-cover" /> : <div className="h-8 w-8 flex items-center justify-center text-white">👤</div>}
-                      </div>
+                      <Avatar className="h-8 w-8">
+                        {url ? <AvatarImage src={url} alt={u.full_name} /> : <AvatarFallback>👤</AvatarFallback>}
+                      </Avatar>
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{u.full_name}</div>
                         <div className="text-xs text-white/80 truncate">{u.username}</div>
@@ -622,39 +687,72 @@ const HierarchyPage: React.FC = () => {
                   );
                 })}
               </div>
-              <div className="flex items-center gap-2">
-                <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} placeholder="Adicionar manualmente (opcional)" className="bg-white text-black" />
-                <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={addResponsible}>Adicionar</Button>
-              </div>
               <div className="flex flex-wrap items-center gap-2">
-                {responsibles.map((r, idx) => (
-                  <div key={`child-resp-${r.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1">
-                    <button
-                      type="button"
-                      className={`text-xs rounded-sm px-2 py-0.5 ${primaryIndex === idx ? "bg-[#10b981] text-white" : "bg-white/20 text-white"}`}
-                      onClick={() => setPrimary(idx)}
-                      title="Definir como principal"
-                    >
-                      {primaryIndex === idx ? "Principal" : "Tornar principal"}
-                    </button>
-                    <span className="text-xs">{r.name}</span>
-                    <button
-                      type="button"
-                      className="text-xs text-red-300 hover:text-red-400"
-                      onClick={() => removeResponsible(idx)}
-                      title="Remover"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ))}
-                {responsibles.length === 0 && <span className="text-xs text-white/70">Nenhum responsável ainda.</span>}
+                {responsibles.map((r, idx) => {
+                  const url = r.photo_rel ? `${API_URL}/${r.photo_rel}` : null;
+                  return (
+                    <div key={`child-resp-${r.username || r.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1">
+                      <button
+                        type="button"
+                        className={`text-xs rounded-sm px-2 py-0.5 ${primaryIndex === idx ? "bg-[#10b981] text-white" : "bg-white/20 text-white"}`}
+                        onClick={() => setPrimary(idx)}
+                        title="Definir como principal"
+                      >
+                        {primaryIndex === idx ? "Principal" : "Tornar principal"}
+                      </button>
+                      <Avatar className="h-6 w-6">
+                        {url ? <AvatarImage src={url} alt={r.name} /> : <AvatarFallback>👤</AvatarFallback>}
+                      </Avatar>
+                      <span className="text-xs">{r.name}</span>
+                      <button
+                        type="button"
+                        className="text-xs text-red-300 hover:text-red-400"
+                        onClick={() => removeResponsible(idx)}
+                        title="Remover"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  );
+                })}
+                {responsibles.length === 0 && <span className="text-xs text:white/70">Nenhum responsável ainda.</span>}
               </div>
             </div>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" className="bg-white text-black hover:bg-white/90" onClick={() => setOpenNewChild(false)}>Cancelar</Button>
               <Button onClick={saveChild}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de gerenciamento de categorias */}
+      <Dialog open={openCatManager} onOpenChange={setOpenCatManager}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-[#0b1d3a]/50 border border-white/20 ring-1 ring-white/10 backdrop-blur-xl text-white">
+          <DialogHeader>
+            <DialogTitle>Categorias</DialogTitle>
+            <DialogDescription className="text-white/80">Adicione ou remova categorias da lista.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="Nova categoria"
+                className="bg-white text-black"
+              />
+              <Button className="bg-white/20 text-white hover:bg:white/25" onClick={addCategory}>Adicionar</Button>
+            </div>
+            <div className="space-y-2">
+              {categories.length ? categories.map((c) => (
+                <div key={`mgr-cat-${c}`} className="flex items-center justify-between rounded-md border border-white/20 bg-white/10 px-3 py-2">
+                  <span className="text-sm">{c}</span>
+                  <Button variant="destructive" size="sm" onClick={() => removeCategory(c)}>Remover</Button>
+                </div>
+              )) : (
+                <div className="text-xs text-white/70">Nenhuma categoria cadastrada.</div>
+              )}
             </div>
           </div>
         </DialogContent>

@@ -58,6 +58,29 @@ def ensure_category(name: Optional[str]) -> None:
         _save_store(data)
 
 
+def add_category(name: str) -> List[str]:
+    nm = (name or "").strip()
+    if not nm:
+        return list_all().get("categories", [])
+    data = _ensure_store()
+    cats: List[str] = data.get("categories") or []
+    if not any(c.lower() == nm.lower() for c in cats):
+        cats.append(nm)
+        data["categories"] = cats
+        _save_store(data)
+    return data["categories"]
+
+
+def remove_category(name: str) -> List[str]:
+    nm = (name or "").strip()
+    data = _ensure_store()
+    cats: List[str] = data.get("categories") or []
+    new_cats = [c for c in cats if c.lower() != nm.lower()]
+    data["categories"] = new_cats
+    _save_store(data)
+    return new_cats
+
+
 def _index_nodes(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     idx = {}
     def visit(lst: List[Dict[str, Any]]):
@@ -91,6 +114,24 @@ def _delete_recursive(nodes: List[Dict[str, Any]], target_id: str) -> bool:
     return removed
 
 
+def _sanitize_responsibles(responsibles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for r in (responsibles or []):
+        name = str(r.get("name") or "").strip()
+        username = str(r.get("username") or "").strip()
+        photo_rel = str(r.get("photo_rel") or "").strip()
+        is_primary = bool(r.get("isPrimary", False))
+        if not name and not username:
+            continue
+        out.append({
+            "name": name or username,
+            "username": username or None,
+            "photo_rel": photo_rel or None,
+            "isPrimary": is_primary,
+        })
+    return out
+
+
 def add_root(
     name: str,
     description: Optional[str],
@@ -106,11 +147,7 @@ def add_root(
         "description": (description or "").strip() or None,
         "color": (color or "").strip() or None,
         "category": (category or "").strip() or None,
-        "responsibles": [
-            {"name": str(r.get("name") or "").strip(), "isPrimary": bool(r.get("isPrimary", False))}
-            for r in (responsibles or [])
-            if str(r.get("name") or "").strip()
-        ],
+        "responsibles": _sanitize_responsibles(responsibles),
         "children": [],
         "parentId": None,
     }
@@ -139,11 +176,7 @@ def add_child(
         "description": (description or "").strip() or None,
         "color": (color or "").strip() or None,
         "category": (category or "").strip() or None,
-        "responsibles": [
-            {"name": str(r.get("name") or "").strip(), "isPrimary": bool(r.get("isPrimary", False))}
-            for r in (responsibles or [])
-            if str(r.get("name") or "").strip()
-        ],
+        "responsibles": _sanitize_responsibles(responsibles),
         "children": [],
         "parentId": str(parent_id),
     }
@@ -177,11 +210,7 @@ def update_node(
         if cat:
             ensure_category(cat)
     if responsibles is not None:
-        node["responsibles"] = [
-            {"name": str(r.get("name") or "").strip(), "isPrimary": bool(r.get("isPrimary", False))}
-            for r in (responsibles or [])
-            if str(r.get("name") or "").strip()
-        ]
+        node["responsibles"] = _sanitize_responsibles(responsibles)
     _save_store(data)
     return node
 

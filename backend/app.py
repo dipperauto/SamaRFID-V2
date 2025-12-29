@@ -48,6 +48,8 @@ from storage_gallery import list_gallery_for_event, add_images_to_event, apply_l
 from storage_finance import record_purchase, get_finance_summary, list_finance_purchases
 # ADDED: storage_hierarchy
 from storage_hierarchy import list_all as hierarchy_list_all, add_root as hierarchy_add_root, add_child as hierarchy_add_child, update_node as hierarchy_update_node, delete_node as hierarchy_delete_node
+# ADDED
+from storage_hierarchy import add_category as hierarchy_add_category, remove_category as hierarchy_remove_category
 
 # ADD: importar funções de eventos usadas abaixo
 from storage_events import get_events_for_user, add_event, update_event, delete_event, get_event_by_id
@@ -1339,6 +1341,29 @@ def hierarchy_list(request: Request):
     if not token or not _verify_session_token(token):
         raise HTTPException(status_code=401, detail="Não autenticado.")
     return hierarchy_list_all()
+
+# ADDED: categorias (add/remove)
+@app.post("/hierarchy/categories")
+def hierarchy_category_add(request: Request, payload: Dict[str, Any] = Body(...)):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome da categoria é obrigatório.")
+    cats = hierarchy_add_category(name)
+    return {"categories": cats}
+
+@app.delete("/hierarchy/categories")
+def hierarchy_category_delete(request: Request, payload: Dict[str, Any] = Body(...)):
+    token = request.cookies.get("session")
+    if not token or not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Não autenticado.")
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome da categoria é obrigatório.")
+    cats = hierarchy_remove_category(name)
+    return {"categories": cats}
 
 @app.post("/hierarchy/root")
 def hierarchy_add_root_endpoint(payload: Dict[str, Any], request: Request):
