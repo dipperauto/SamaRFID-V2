@@ -18,21 +18,8 @@ const Home: React.FC = () => {
         <Card className="rounded-3xl border border-white/20 bg-[#0b1d3a]/50 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl text-white">
           <CardHeader>
             <CardTitle className="text-white">
-              Bem-vindo ao <span className="text-[#93c5fd] font-semibold">UniCosta Contabilidade</span>
+              Bem-vindo(a) ao <span className="text-[#93c5fd] font-semibold">SamaRFID</span>
             </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <p className="text-white/90">
-                A plataforma UniCosta Contabilidade centraliza o dia a dia financeiro da sua empresa: cadastro de clientes e fornecedores,
-                emissão de notas e recibos, controle de despesas e receitas, conciliação bancária e acompanhamento de obrigações fiscais.
-                Tudo com segurança, trilhas de auditoria e acesso por perfis.
-              </p>
-              <p className="text-white/90">
-                Tenha dashboards em tempo real com indicadores de lucratividade, fluxo de caixa, impostos a recolher, folha de pagamento
-                e documentos organizados em um só lugar. Automatize rotinas, reduza erros e ganhe agilidade para tomar decisões com confiança.
-              </p>
-            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
