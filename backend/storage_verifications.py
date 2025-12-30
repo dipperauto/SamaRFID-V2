@@ -133,12 +133,11 @@ def verify_item_in_session(session_id: str, item_code: str, quantity: float) -> 
     found_item = None
     code_lower = item_code.lower()
     for asset in session["assets"]:
-        # Corrigir a busca para incluir todos os códigos
         item_c = (asset.get("item_code") or "").lower()
         qr_c = (asset.get("qr_code") or "").lower()
         rfid_c = (asset.get("rfid_code") or "").lower()
 
-        if code_lower in [item_c, qr_c, rfid_c]:
+        if code_lower in [item_c, qr_c, rfid_c] and code_lower != "":
             asset["verified_quantity"] += quantity
             if asset["verified_quantity"] >= asset.get("expected_quantity", 1):
                 asset["verified"] = True
