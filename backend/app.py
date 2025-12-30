@@ -1657,9 +1657,16 @@ def verification_verify_item(session_id: str, request: Request, payload: Dict[st
     _require_page_access(request, "hierarchy")
     item_code = str(payload.get("item_code") or "")
     quantity = float(payload.get("quantity", 1.0))
+    
+    print(f"--- Verificando item: session_id='{session_id}', item_code='{item_code}' ---")
+    
     verified_item = verify_item_in_session(session_id, item_code, quantity)
+    
     if not verified_item:
+        print(f"--- Item não encontrado na sessão '{session_id}' ---")
         raise HTTPException(status_code=404, detail="Item não encontrado na lista de verificação.")
+    
+    print(f"--- Item encontrado: {verified_item['name']} ---")
     return {"item": verified_item}
 
 @app.post("/verifications/sessions/{session_id}/finish")

@@ -68,7 +68,7 @@ const VerificationSessionPage: React.FC = () => {
     const quantity = useCustomQty ? customQty : 1;
 
     try {
-      const res = await fetch(`${API_URL}/api/verifications/sessions/${sessionId}/verify-item`, {
+      const res = await fetch(`${API_URL}/api/verifications/sessions/${encodeURIComponent(sessionId || '')}/verify-item`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
