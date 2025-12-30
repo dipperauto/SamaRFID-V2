@@ -1597,15 +1597,59 @@ def verification_get_session(session_id: str, request: Request):
 @app.post("/verifications/sessions/start")
 def verification_start_session(request: Request, payload: Dict[str, Any] = Body(...)):
     user = _require_page_access(request, "hierarchy")
+    
+    session_type = payload["type"]
+    target_id = payload["target_id"]
+    include_sub_units = payload.get("include_sub_units", False)
+    
+    assets_to_verify = []
+    if session_type == "unit":
+        from storage_hierarchy import list_all as hierarchy_list_all
+        from storage_assets import get_all_assets_flat
+
+        all_nodes = hierarchy_list_all().get("nodes", [])
+        
+        def get_all_subunit_ids(start_id: str, nodes: List[Dict]) -> List[str]:
+            id_map = {n['id']: n for n in nodes}
+            children_map = {}
+            for n in nodes:
+                if n.get('parentId'):
+                    if n['parentId'] not in children_map:
+                        children_map[n['parentId']] = []
+                    children_map[n['parentId']].append(n['id'])
+
+            sub_ids = []
+            q = [start_id]
+            visited = {start_id}
+            while q:
+                curr_id = q.pop(0)
+                sub_ids.append(curr_id)
+                for child_id in children_map.get(curr_id, []):
+                    if child_id not in visited:
+                        visited.add(child_id)
+                        q.append(child_id)
+            return sub_ids
+
+        unit_ids_to_check = [target_id]
+        if include_sub_units:
+            unit_ids_to_check = get_all_subunit_ids(target_id, all_nodes)
+
+        all_assets = get_all_assets_flat()
+        assets_to_verify = [a for a in all_assets if a.get("unit_id") in unit_ids_to_check]
+
+    elif session_type == "custom":
+        # Lógica para listas personalizadas (se necessário)
+        pass
+
     session = start_session(
         user=user["username"],
-        type=payload["type"],
+        type=session_type,
         name=payload["name"],
-        include_sub_units=payload.get("include_sub_units"),
-        target_id=payload["target_id"],
-        assets_to_verify=payload["assets_to_verify"]
+        include_sub_units=include_sub_units,
+        target_id=target_id,
+        assets_to_verify=assets_to_verify
     )
-    append_log(user["username"], "verification:start", payload.get("target_id"), None, f"Iniciada verificação: {payload['name']}")
+    append_log(user["username"], "verification:start", target_id, None, f"Iniciada verificação: {payload['name']}")
     return {"session": session}
 
 @app.post("/verifications/sessions/{session_id}/verify-item")

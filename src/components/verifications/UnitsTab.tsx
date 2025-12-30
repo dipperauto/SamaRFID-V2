@@ -39,16 +39,11 @@ export const UnitsTab: React.FC = () => {
   const handleStart = async () => {
     if (!selectedUnit) return;
 
-    // Lógica para buscar ativos (similar a UnitAssets.tsx)
-    // ...
-    
-    // Por simplicidade, vamos assumir que o backend lida com a busca de ativos
     const payload = {
       type: "unit",
       name: `Verificação de ${selectedUnit.name}${includeSubUnits ? " e filiais" : ""}`,
       target_id: selectedUnit.id,
       include_sub_units: includeSubUnits,
-      assets_to_verify: [], // O backend deve preencher isso
     };
 
     try {

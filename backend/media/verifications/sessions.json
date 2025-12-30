@@ -11,6 +11,30 @@
       "start_time": "2025-12-29T23:55:56.607406",
       "end_time": "2025-12-29T23:57:07.165283",
       "assets": []
+    },
+    {
+      "id": "session_6f7aca64",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Sala de Cinema",
+      "target_id": "loc_1767049053648_71babbe6",
+      "include_sub_units": false,
+      "status": "active",
+      "start_time": "2025-12-30T00:03:06.763816",
+      "end_time": null,
+      "assets": []
+    },
+    {
+      "id": "session_a2994cd0",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Sala do Projetor",
+      "target_id": "loc_1767049098805_de86e2a1",
+      "include_sub_units": false,
+      "status": "finished",
+      "start_time": "2025-12-30T00:04:08.857881",
+      "end_time": "2025-12-30T00:04:29.221704",
+      "assets": []
     }
   ]
 }
