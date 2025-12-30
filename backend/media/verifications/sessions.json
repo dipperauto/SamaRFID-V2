@@ -35,6 +35,29 @@
       "start_time": "2025-12-30T00:04:08.857881",
       "end_time": "2025-12-30T00:04:29.221704",
       "assets": []
+    },
+    {
+      "id": "session_aa221a02",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Sala do Projetor",
+      "target_id": "loc_1767049098805_de86e2a1",
+      "include_sub_units": false,
+      "status": "active",
+      "start_time": "2025-12-30T00:06:47.608130",
+      "end_time": null,
+      "assets": [
+        {
+          "id": 2,
+          "name": "Projetor de Vídeo",
+          "item_code": "GDPDT55XZ5",
+          "unit_id": "loc_1767049098805_de86e2a1",
+          "unit_path": "",
+          "expected_quantity": 1.0,
+          "verified_quantity": 0,
+          "verified": false
+        }
+      ]
     }
   ]
 }
