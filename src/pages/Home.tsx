@@ -30,7 +30,7 @@ type Asset = {
 };
 
 const Home: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [openSearch, setOpenSearch] = React.useState(false);
   const [searchCode, setSearchCode] = React.useState("");
   const [foundAsset, setFoundAsset] = React.useState<Asset | null>(null);

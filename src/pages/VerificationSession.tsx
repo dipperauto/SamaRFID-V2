@@ -33,7 +33,7 @@ type VerificationSession = {
 const VerificationSessionPage: React.FC = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [session, setSession] = React.useState<VerificationSession | null>(null);
   const [itemCode, setItemCode] = React.useState("");

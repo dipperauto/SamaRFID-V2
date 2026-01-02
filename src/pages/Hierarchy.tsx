@@ -28,7 +28,7 @@ type LocationNode = {
 };
 
 const HierarchyPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const navigate = useNavigate();
 
   const [nodes, setNodes] = React.useState<LocationNode[]>([]);

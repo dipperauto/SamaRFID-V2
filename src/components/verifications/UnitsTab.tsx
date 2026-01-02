@@ -16,7 +16,7 @@ type LocationNode = {
 };
 
 export const UnitsTab: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [nodes, setNodes] = React.useState<LocationNode[]>([]);
   const [openStart, setOpenStart] = React.useState(false);
   const [selectedUnit, setSelectedUnit] = React.useState<LocationNode | null>(null);

@@ -17,7 +17,7 @@ type LogItem = {
 };
 
 const LogPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [logs, setLogs] = React.useState<LogItem[]>([]);
   const [user, setUser] = React.useState<string>("");

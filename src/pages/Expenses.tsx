@@ -27,7 +27,7 @@ type Expense = {
 type FileItem = { name: string; url: string; size_bytes: number };
 
 const ExpensesPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);

@@ -12,7 +12,7 @@ import { showError, showSuccess } from "@/utils/toast";
 const PublicCheckoutPage: React.FC = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const eventId = Number(params.get("eventId") || "0");
   const itemsParam = (params.get("items") || "").trim();

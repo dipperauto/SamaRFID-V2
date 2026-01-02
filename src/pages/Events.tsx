@@ -29,7 +29,7 @@ const normalizeStatic = (path?: string | null, apiUrl?: string): string | undefi
     p.startsWith("static/") ? p :
     p.startsWith("media/") ? p.replace(/^media\//, "static/") :
     `static/${p}`;
-  return `${apiUrl}/${webPath}`;
+  return `${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${webPath}`;
 };
 
 const statusForEvent = (ev: EventItem) => {
@@ -48,7 +48,7 @@ const statusForEvent = (ev: EventItem) => {
 };
 
 const EventsPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [events, setEvents] = React.useState<EventItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [openCreate, setOpenCreate] = React.useState(false);

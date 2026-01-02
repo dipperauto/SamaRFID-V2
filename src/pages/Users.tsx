@@ -19,7 +19,7 @@ type UsersResponse = {
 };
 
 const UsersPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const queryClient = useQueryClient();
 
   const { data, refetch } = useQuery<UsersResponse>({

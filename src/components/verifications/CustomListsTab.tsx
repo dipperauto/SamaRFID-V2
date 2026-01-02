@@ -14,7 +14,7 @@ type CustomList = {
 };
 
 export const CustomListsTab: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [lists, setLists] = React.useState<CustomList[]>([]);
 
   const loadLists = React.useCallback(async () => {

@@ -42,7 +42,7 @@ const unitsList = ["Unidade", "Kg", "g", "Metro", "cm", "Litros"];
 
 const UnitAssetsPage: React.FC = () => {
   const { unitId } = useParams();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [assets, setAssets] = React.useState<Asset[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);

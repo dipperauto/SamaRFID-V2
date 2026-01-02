@@ -19,7 +19,7 @@ type MatchItem = { id: string; url: string; uploader: string; score: number; upl
 
 const PublicFaceSearchPage: React.FC = () => {
   const { eventId } = useParams();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const navigate = useNavigate();
 
   const [info, setInfo] = React.useState<PublicEventInfo | null>(null);
@@ -178,7 +178,7 @@ const PublicFaceSearchPage: React.FC = () => {
       {info?.photo_url && (
         <div className="absolute inset-0">
           <img
-            src={`${API_URL}/${info.photo_url}`}
+            src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${info.photo_url}`}
             alt="Background do Evento"
             className="w-full h-full object-cover"
             style={{ filter: "blur(12px)", transform: "scale(1.08)" }}
@@ -210,7 +210,7 @@ const PublicFaceSearchPage: React.FC = () => {
                   <div key={p.username} className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       {p.profile_photo_url ? (
-                        <AvatarImage src={`${API_URL}/${p.profile_photo_url}`} alt={p.full_name} />
+                        <AvatarImage src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${p.profile_photo_url}`} alt={p.full_name} />
                       ) : (
                         <AvatarFallback>{(p.full_name || p.username).slice(0, 2).toUpperCase()}</AvatarFallback>
                       )}
@@ -294,7 +294,7 @@ const PublicFaceSearchPage: React.FC = () => {
                       <div key={m.id} className="group relative rounded-xl overflow-hidden border bg-white shadow-sm">
                         <AspectRatio ratio={16/10}>
                           <img
-                            src={`${API_URL}/${m.url}`}
+                            src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${m.url}`}
                             alt={m.id}
                             className="w-full h-full object-cover cursor-pointer"
                             onClick={() => { setViewerItem(m); setViewerOpen(true); }}
@@ -355,7 +355,7 @@ const PublicFaceSearchPage: React.FC = () => {
           {viewerItem && (
             <div className="w-full h-full flex items-center justify-center">
               <img
-                src={`${API_URL}/${viewerItem.url}`}
+                src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${viewerItem.url}`}
                 alt={viewerItem.id}
                 style={{ maxWidth: "100vw", maxHeight: "100vh" }}
                 className="object-contain"

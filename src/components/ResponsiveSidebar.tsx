@@ -11,7 +11,7 @@ import { PAGES } from "@/utils/pages";
 const ResponsiveSidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [allowedPages, setAllowedPages] = React.useState<string[] | null>(null);
   const [userInfo, setUserInfo] = React.useState<{ username?: string; full_name?: string; role?: string; photoUrl?: string } | null>(null);
 

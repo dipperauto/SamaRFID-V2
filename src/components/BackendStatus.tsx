@@ -9,7 +9,7 @@ type Health = {
 } | null;
 
 const BackendStatus: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [health, setHealth] = React.useState<Health>(null);
   const [error, setError] = React.useState<string | null>(null);
 

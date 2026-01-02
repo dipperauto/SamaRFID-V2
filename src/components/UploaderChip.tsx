@@ -16,7 +16,7 @@ type Props = {
   className?: string;
 };
 
-const UploaderChip: React.FC<Props> = ({ uploader, photographers = [], apiBase = "", className = "" }) => {
+const UploaderChip: React.FC<Props> = ({ uploader, photographers = [], apiBase = "https://sama.dipperauto.com", className = "" }) => {
   const sanitizeEmail = React.useCallback((u: string) => {
     return (u || "").toLowerCase().trim().replace(/@/g, "_").replace(/\./g, "_").replace(/[^a-z0-9_]/g, "");
   }, []);
@@ -66,10 +66,10 @@ const UploaderChip: React.FC<Props> = ({ uploader, photographers = [], apiBase =
 
   let photoSrc: string | undefined;
   if (match?.profile_photo_url) {
-    photoSrc = `${apiBase}/${match.profile_photo_url}`;
+    photoSrc = `${apiBase.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${match.profile_photo_url}`;
   } else if (uploader) {
     const guessed = `media/users/${sanitizeEmail(uploader)}.png`;
-    photoSrc = `${apiBase}/${guessed}`;
+    photoSrc = `${apiBase.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${guessed}`;
   }
 
   return (

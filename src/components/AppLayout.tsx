@@ -9,7 +9,7 @@ import AnimatedBackground from "./AnimatedBackground";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [checked, setChecked] = React.useState(false);
   const [authed, setAuthed] = React.useState(false);
   const [allowedPages, setAllowedPages] = React.useState<string[]>([]);

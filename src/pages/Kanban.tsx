@@ -14,7 +14,7 @@ import { KanbanBoard, KanbanList, KanbanCard } from "@/components/kanban/types";
 import { Search, Plus } from "lucide-react";
 
 const KanbanPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const queryClient = useQueryClient();
 
   const { data, refetch } = useQuery<KanbanBoard>({

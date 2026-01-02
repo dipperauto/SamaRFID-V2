@@ -37,7 +37,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   const { data, refetch } = useQuery<FilesResponse>({
     queryKey: ["client-files", clientId],
     queryFn: async () => {
-      const res = await fetch(`${apiUrl}/api/clients/${clientId}/files`, { credentials: "include" });
+      const res = await fetch(`${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/api/clients/${clientId}/files`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },
@@ -46,7 +46,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   const onUpload = async (file: File) => {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${apiUrl}/api/clients/${clientId}/files`, {
+    const res = await fetch(`${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/api/clients/${clientId}/files`, {
       method: "POST",
       credentials: "include",
       body: form,
@@ -61,7 +61,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
   };
 
   const onDelete = async (name: string) => {
-    const res = await fetch(`${apiUrl}/api/clients/${clientId}/files/${encodeURIComponent(name)}`, {
+    const res = await fetch(`${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/api/clients/${clientId}/files/${encodeURIComponent(name)}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -109,7 +109,7 @@ const ClientAttachments: React.FC<Props> = ({ clientId, apiUrl, editable = false
             data.files.map((f) => (
               <div key={f.name} className="flex items-center justify-between rounded-md border border-white/15 bg-white/5 px-3 py-2">
                 <a
-                  href={`${apiUrl}/${f.url}`}
+                  href={`${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${f.url}`}
                   target="_blank"
                   rel="noreferrer"
                   className="truncate text-white hover:underline"

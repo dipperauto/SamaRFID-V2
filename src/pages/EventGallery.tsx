@@ -31,7 +31,7 @@ type GalleryItem = {
 const EventGalleryPage: React.FC = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [raw, setRaw] = React.useState<GalleryItem[]>([]);
   const [edited, setEdited] = React.useState<GalleryItem[]>([]);
@@ -538,7 +538,7 @@ const EventGalleryPage: React.FC = () => {
                     <div key={it.id} className="group relative rounded-lg overflow-hidden border bg-white">
                       <AspectRatio ratio={1}>
                         <img
-                          src={`${API_URL}/${it.url}`}
+                          src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${it.url}`}
                           alt={it.id}
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => { setViewerItem(it); setViewerOpen(true); }}
@@ -577,7 +577,7 @@ const EventGalleryPage: React.FC = () => {
                     <div key={it.id} className="group relative rounded-lg overflow-hidden border bg-white">
                       <AspectRatio ratio={1}>
                         <img
-                          src={`${API_URL}/${it.url}`}
+                          src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${it.url}`}
                           alt={it.id}
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => { setViewerItem(it); setViewerOpen(true); }}
@@ -627,7 +627,7 @@ const EventGalleryPage: React.FC = () => {
             {viewerItem && (
               <div className="space-y-3">
                 <img
-                  src={`${API_URL}/${viewerItem.url}`}
+                  src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${viewerItem.url}`}
                   alt={viewerItem.id}
                   className="w-full max-h-[60vh] object-contain rounded-md border"
                 />

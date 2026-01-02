@@ -26,7 +26,7 @@ type Summary = {
 };
 
 const BalancoPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [period, setPeriod] = React.useState<"7" | "30" | "90" | "all">("30");
   const [summary, setSummary] = React.useState<Summary | null>(null);

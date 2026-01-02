@@ -32,7 +32,7 @@ type Props = {
 };
 
 const ClientCard: React.FC<Props> = ({ client, apiUrl, onView, onEdit, editMode = false }) => {
-  const photoUrl = client.profile_photo_path ? `${apiUrl}/${client.profile_photo_path}` : null;
+  const photoUrl = client.profile_photo_path ? `${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${client.profile_photo_path}` : null;
 
   return (
     <Card className="rounded-2xl border border-white/25 bg-black/40 shadow-xl ring-1 ring-white/20 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-75 text-white">

@@ -39,7 +39,7 @@ const UserCard: React.FC<Props> = ({ user, apiUrl, onView, onEdit, editMode = fa
       p.startsWith("static/") ? p :
       p.startsWith("media/") ? p.replace(/^media\//, "static/") :
       `static/${p.replace(/^\//, "")}`;
-    return `${apiUrl}/${webPath}`;
+    return `${apiUrl.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${webPath}`;
   }, [user.profile_photo_path, apiUrl]);
 
   const displayRole = React.useMemo(() => {

@@ -30,7 +30,7 @@ type LutPreset = {
 };
 
 const ParametrosPage: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   const [imageId, setImageId] = React.useState<string | null>(null);
   const [originalUrl, setOriginalUrl] = React.useState<string | null>(null);
@@ -112,8 +112,8 @@ const ParametrosPage: React.FC = () => {
     }
     const data = await res.json();
     setImageId(data.image_id);
-    setOriginalUrl(`${API_URL}/${data.original_url}`);
-    setProcessedUrl(`${API_URL}/${data.original_url}`); // inicial
+    setOriginalUrl(`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${data.original_url}`);
+    setProcessedUrl(`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${data.original_url}`); // inicial
     setProcessedRelPath(null);
   };
 
@@ -160,7 +160,7 @@ const ParametrosPage: React.FC = () => {
       return;
     }
     const out: ProcessOut = await res.json();
-    setProcessedUrl(`${API_URL}/${out.processed_url}`);
+    setProcessedUrl(`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${out.processed_url}`);
     setProcessedRelPath(out.processed_url); // caminho relativo para thumbnail do LUT
     setIsProcessing(false);
   }, [imageId, brightness, exposure, gamma, shadows, highlights, curves, temperature, saturation, vibrance, vignette, contrast, cropMode, croppedRect, cropAspect, faceScale, faceAnchor, API_URL]);
@@ -601,7 +601,7 @@ const ParametrosPage: React.FC = () => {
                         <div key={p.id} className="border rounded-md overflow-hidden bg-white">
                           {p.thumb_url ? (
                             <img
-                              src={`${API_URL}/${p.thumb_url}`}
+                              src={`${API_URL.replace('http://localhost:8000', 'https://sama.dipperauto.com')}/${p.thumb_url}`}
                               alt={p.name}
                               className="w-full h-28 object-cover"
                             />

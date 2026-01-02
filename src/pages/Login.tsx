@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const [health, setHealth] = React.useState<{ status?: string; adminConfigured?: boolean } | null>(null);
   const [healthErr, setHealthErr] = React.useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
 
   React.useEffect(() => {
     const check = async () => {

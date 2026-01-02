@@ -16,7 +16,7 @@ type Session = {
 };
 
 export const HistoryTab: React.FC = () => {
-  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "https://sama.dipperauto.com";
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [userFilter, setUserFilter] = React.useState("");
   const [dateFilter, setDateFilter] = React.useState("");
