@@ -40,9 +40,51 @@
         }
       ],
       "parentId": null
+    },
+    {
+      "id": "loc_1767053811801_fe28cc51",
+      "name": "Primeiro Andar",
+      "description": "Primeiro Andar do Escritório",
+      "color": "#0ea5e9",
+      "category": "Andares",
+      "responsibles": [
+        {
+          "name": "José Barros",
+          "username": "jose@dipperauto.com",
+          "photo_rel": "static/users/jose_dipperauto_com.png",
+          "isPrimary": true
+        }
+      ],
+      "children": [
+        {
+          "id": "loc_1767053856644_e8f5f6c6",
+          "name": "Banheiro",
+          "description": "Banheiro do Escritório",
+          "color": "#36d38a",
+          "category": "Extra",
+          "responsibles": [
+            {
+              "name": "José Barros",
+              "username": "jose@dipperauto.com",
+              "photo_rel": "static/users/jose_dipperauto_com.png",
+              "isPrimary": true
+            },
+            {
+              "name": "Pedro Ladeira",
+              "username": "ladeira@dipperauto.com",
+              "photo_rel": "static/users/ladeira_dipperauto_com.png",
+              "isPrimary": false
+            }
+          ],
+          "children": [],
+          "parentId": "loc_1767053811801_fe28cc51"
+        }
+      ],
+      "parentId": null
     }
   ],
   "categories": [
-    "Extra"
+    "Extra",
+    "Andares"
   ]
 }

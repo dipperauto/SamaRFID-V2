@@ -81,6 +81,52 @@
           "verified": true
         }
       ]
+    },
+    {
+      "id": "session_cdd00a8b",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Sala do Projetor",
+      "target_id": "loc_1767049098805_de86e2a1",
+      "include_sub_units": false,
+      "status": "finished",
+      "start_time": "2025-12-30T00:11:41.322397",
+      "end_time": "2025-12-30T00:12:55.504076",
+      "assets": [
+        {
+          "id": 2,
+          "name": "Projetor de Vídeo",
+          "item_code": "GDPDT55XZ5",
+          "unit_id": "loc_1767049098805_de86e2a1",
+          "unit_path": "",
+          "expected_quantity": 1.0,
+          "verified_quantity": 1.0,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "id": "session_bbab4533",
+      "user": "jose@dipperauto.com",
+      "type": "unit",
+      "name": "Verificação de Banheiro",
+      "target_id": "loc_1767053856644_e8f5f6c6",
+      "include_sub_units": false,
+      "status": "finished",
+      "start_time": "2025-12-30T00:24:07.156367",
+      "end_time": "2025-12-30T00:24:57.976928",
+      "assets": [
+        {
+          "id": 3,
+          "name": "Papel Higiênico",
+          "item_code": "EREMW40EEN",
+          "unit_id": "loc_1767053856644_e8f5f6c6",
+          "unit_path": "",
+          "expected_quantity": 3.0,
+          "verified_quantity": 3.0,
+          "verified": true
+        }
+      ]
     }
   ]
 }
